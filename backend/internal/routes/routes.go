@@ -16,4 +16,12 @@ func SetUpRoutes (r *gin.Engine){
 		users.PUT("/:id", handlers.UpdateUser)
 		users.DELETE("/:id", handlers.DeleteUser)
 	}
+	degreeProgram := r.Group("degreeProgram")
+	{
+		degreeProgram.GET("/", handlers.GetAllPrograms)
+		degreeProgram.POST("/", handlers.CreateProgram)
+		degreeProgram.GET("/:id", handlers.GetProgramById)
+		degreeProgram.PUT("/:id", handlers.UpdateProgram)
+		degreeProgram.DELETE("/:id", handlers.DeleteProgram)
+	}
 }
