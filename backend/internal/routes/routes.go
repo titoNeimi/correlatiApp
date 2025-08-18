@@ -18,10 +18,17 @@ func SetUpRoutes (r *gin.Engine){
 	}
 	degreeProgram := r.Group("degreeProgram")
 	{
-		degreeProgram.GET("/", handlers.GetAllPrograms)
+		degreeProgram.GET("/", handlers.GetAllDegreeProgramsWithSubjects)
 		degreeProgram.POST("/", handlers.CreateProgram)
 		degreeProgram.GET("/:id", handlers.GetProgramById)
 		degreeProgram.PUT("/:id", handlers.UpdateProgram)
 		degreeProgram.DELETE("/:id", handlers.DeleteProgram)
+	}
+	subjects := r.Group("/subjects")
+	{
+		subjects.POST("/", handlers.CreateSubject)
+		subjects.GET("/:programId", handlers.GetAllSubjectsFromProgram)
+		subjects.PUT("/:id", handlers.UpdateSubject)
+		subjects.DELETE("/:id", handlers.DeleteSubject)
 	}
 }

@@ -16,7 +16,13 @@ func Connect() {
 		slog.Error("failed to connect database", slog.Any("error", err))
 	}
 	Db = database
-	Db.AutoMigrate(&models.User{})
-	Db.AutoMigrate(&models.DegreeProgram{})
-	Db.AutoMigrate(&models.Subject{})
+	Db.SetupJoinTable(&models.Subject{}, "Requirements", &models.SubjectRequirement{})
+	Db.AutoMigrate(
+    &models.User{},
+    &models.DegreeProgram{},
+    &models.Subject{},
+    &models.SubjectRequirement{},
+	)
+
+
 }

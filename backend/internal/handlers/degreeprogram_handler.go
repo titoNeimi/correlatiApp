@@ -13,9 +13,9 @@ import (
 func GetAllPrograms (c *gin.Context){
 	var programs *[]models.DegreeProgram
 	
-	result := db.Db.Find(&programs)
-	if result.Error != nil{
-		slog.Error("Error getting all the programs from db", slog.Any("error: ", result.Error))
+    err := db.Db.Model(&models.DegreeProgram{}).Preload("DegreeProgramID").Find(&programs).Error
+	if err != nil{
+		slog.Error("Error getting all the programs from db", slog.Any("error: ", err))
 		c.IndentedJSON(http.StatusInternalServerError, "An error ocurred while getting the programs")
 		return
 	}
@@ -109,4 +109,36 @@ func DeleteProgram (c *gin.Context){
 
 	slog.Info("A program has been deleted ", "id: ", id)
 	c.IndentedJSON(http.StatusAccepted, "Program deleted")
+}
+
+func GetAllDegreeProgramsWithSubjects(c *gin.Context) {
+	var degreePrograms []models.DegreeProgram
+
+	// Preload incluye las materias relacionadas
+	result := db.Db.Preload("Subjects").Find(&degreePrograms)
+	
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error getting all the degrees",
+			"message": result.Error.Error(),
+		})
+		return
+	}
+
+	// requirements de cada materia
+	/*
+	result = db.Db.Preload("Subjects.Requirements").Find(&degreePrograms)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error getting al the dregrees programs with their requirements",
+			"message": result.Error.Error(),
+		})
+		return
+	}
+	*/
+
+	c.JSON(http.StatusOK, gin.H{
+		"count":  len(degreePrograms),
+		"data":   degreePrograms,
+	})
 }

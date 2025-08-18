@@ -39,7 +39,7 @@ func CreateUser (c *gin.Context){
 func GetUser (c *gin.Context){
 	id := c.Param("id")
 	var user *models.User
-	result := db.Db.First(&user).Where("id = ?", id)
+	result := db.Db.Where("id = ?", id).Preload("DegreePrograms").First(&user)
 	if result.Error != nil{
 		slog.Info("Error finding user by ID in db", slog.Any("Error: ", result.Error))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"Error": "Error getting the user by ID"})
@@ -52,28 +52,56 @@ func GetUser (c *gin.Context){
 func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 
-	var updates map[string]interface{}
-	if err := c.BindJSON(&updates); err != nil {
+	var dto models.UserUpdateDTO
+	if err := c.BindJSON(&dto); err != nil {
 		slog.Error("Error getting the json from the body", slog.Any("Error: ", err))
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
 		return
 	}
 
-	//Todo: If the user wants to change the password, hash it again.
+	if dto.Password != nil && *dto.Password != "" {
+		hashedPassword, err := utils.HashPassword(*dto.Password)
+		if err != nil {
+			slog.Error("Error hashing the password", slog.Any("error", err))
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error updating the user password"})
+			return
+		}
+		dto.Password = &hashedPassword
+	}
 
 	var updatedUser models.User
 	if err := db.Db.First(&updatedUser).Where("id = ?", id).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-
-	if err := db.Db.Model(&updatedUser).Updates(updates).Error; err != nil {
+	if err := db.Db.Model(&updatedUser).Updates(dto).Error; err != nil {
 		slog.Error("Error updating the user from db", "userId", id, slog.Any("Error: ", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error updating the user"})
 		return
 	}
 
-	if err := db.Db.First(&updatedUser).Where("id = ?", id).Error; err != nil {
+	if dto.DegreeProgramsID != nil {
+    if len(*dto.DegreeProgramsID) == 0 {
+      if err := db.Db.Model(&updatedUser).Association("DegreePrograms").Clear(); err != nil {
+        c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error clearing the degree program"})
+        return
+        }
+      } else {
+					var reqs []models.DegreeProgram
+          if err := db.Db.Where("id IN ?", *dto.DegreeProgramsID).Find(&reqs).Error; err != nil {
+            c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Some DegreeProgram IDs are invalid"})
+            return
+          }
+					slog.Info("trying to update the user degrePrograms ", slog.Any("Reqs:", reqs))
+          if err := db.Db.Model(&updatedUser).Association("DegreePrograms").Replace(&reqs); err != nil {
+						slog.Error("Error updating DegreeProgram", slog.Any("error", err))
+            c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error updating DegreeProgram"})
+            return
+          }
+      }
+	}
+
+	if err := db.Db.Where("id = ?", id).Preload("DegreePrograms").First(&updatedUser).Error; err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error getting the updated user"})
 		return
 	}
@@ -103,7 +131,7 @@ func DeleteUser(c *gin.Context){
 
 func GetAllUsers (c *gin.Context){
 	var users *[]models.User
-	result := db.Db.Find(&users)
+	result := db.Db.Model(&users).Preload("DegreePrograms").Find(&users)
 	if result.Error != nil{
 		slog.Error("An error occurred while getting users from the database.", slog.Any("Error: ", result.Error))
 		c.IndentedJSON(http.StatusInternalServerError, "An error occurred while getting users")
