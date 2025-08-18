@@ -19,7 +19,7 @@ func GetAllPrograms (c *gin.Context){
 		c.IndentedJSON(http.StatusInternalServerError, "An error ocurred while getting the programs")
 		return
 	}
-	c.IndentedJSON(http.StatusAccepted, programs)
+	c.IndentedJSON(http.StatusOK, programs)
 }
 
 func CreateProgram (c *gin.Context){
@@ -52,7 +52,7 @@ func GetProgramById (c *gin.Context){
 		return
 	}
 
-	c.IndentedJSON(http.StatusAccepted, program)
+	c.IndentedJSON(http.StatusOK, program)
 
 }
 
@@ -84,7 +84,7 @@ func UpdateProgram (c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusAccepted, updatedProgram)
+	c.IndentedJSON(http.StatusOK, updatedProgram)
 
 }
 
@@ -108,7 +108,7 @@ func DeleteProgram (c *gin.Context){
 	}
 
 	slog.Info("A program has been deleted ", "id: ", id)
-	c.IndentedJSON(http.StatusAccepted, "Program deleted")
+	c.IndentedJSON(http.StatusOK, "Program deleted")
 }
 
 func GetAllDegreeProgramsWithSubjects(c *gin.Context) {

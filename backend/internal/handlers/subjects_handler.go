@@ -22,7 +22,7 @@ func GetAllSubjectsFromProgram (c *gin.Context){
 			return
 	}
 
-	c.IndentedJSON(http.StatusAccepted, subjects)
+	c.IndentedJSON(http.StatusOK, subjects)
 }
 func DeleteSubject (c *gin.Context){
 	id := c.Param("id")
@@ -40,7 +40,7 @@ func DeleteSubject (c *gin.Context){
 		return
 	}
 
-	c.IndentedJSON(http.StatusAccepted, "The subject was deleted")
+	c.IndentedJSON(http.StatusOK, "The subject was deleted")
 }
 func UpdateSubject(c *gin.Context) {
   id := c.Param("id")
@@ -85,7 +85,7 @@ func UpdateSubject(c *gin.Context) {
       c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Updated subject not found"})
       return
     }
-    c.IndentedJSON(http.StatusAccepted, subject)
+    c.IndentedJSON(http.StatusOK, subject)
 }
 
 func CreateSubject (c *gin.Context){

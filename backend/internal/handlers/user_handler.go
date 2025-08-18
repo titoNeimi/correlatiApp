@@ -45,7 +45,7 @@ func GetUser (c *gin.Context){
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"Error": "Error getting the user by ID"})
 		return
 	}
-	c.IndentedJSON(http.StatusAccepted, user)
+	c.IndentedJSON(http.StatusOK, user)
 
 }
 
