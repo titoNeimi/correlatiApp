@@ -153,9 +153,9 @@ export default function Home() {
             Únete a miles de estudiantes que ya están usando CorrelatiApp para 
             planificar su futuro académico de manera inteligente.
           </p>
-          <button className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <a href='/register' className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
             Registrarse Gratis
-          </button>
+          </a>
         </div>
       </section>
 
