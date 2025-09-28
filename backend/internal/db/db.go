@@ -3,15 +3,29 @@ package db
 import (
 	"correlatiApp/internal/models"
 	"log/slog"
-
+	"os"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
 )
 
 var Db *gorm.DB
 func Connect() {
-	dsn := "root:dolores230236@tcp(127.0.0.1:3306)/correlatiApp?charset=utf8mb4&parseTime=True&loc=Local"
-  database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
+	err := godotenv.Load(".env")
+  if err != nil {
+    slog.Any("Error al cargar el archivo .env:", err)
+  } else {
+    slog.Info("Archivo .env cargado exitosamente.")
+  }
+	
+	dsn := os.Getenv("MYSQL_DSN")
+	slog.Any("dsn :", dsn)
+	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		slog.Error("failed to connect database", slog.Any("error", err))
 	}
