@@ -4,28 +4,6 @@ import { BookOpen, TrendingUp, Users, Star, ChevronRight, GraduationCap } from '
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-blue-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl">
-                <GraduationCap className="h-8 w-8 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                CorrelatiApp
-              </h1>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Inicio</a>
-              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Carreras</a>
-              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Universidades</a>
-              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Contacto</a>
-            </nav>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
@@ -43,10 +21,10 @@ export default function Home() {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center">
+            <a href='/carreras' className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center">
               Explorar Carreras
               <ChevronRight className="ml-2 h-5 w-5" />
-            </button>
+            </a>
           </div>
 
           {/* Stats */}
@@ -175,9 +153,9 @@ export default function Home() {
             Únete a miles de estudiantes que ya están usando CorrelatiApp para 
             planificar su futuro académico de manera inteligente.
           </p>
-          <button className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <a href='/register' className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
             Registrarse Gratis
-          </button>
+          </a>
         </div>
       </section>
 

@@ -4,14 +4,15 @@ import (
 	"correlatiApp/internal/models"
 	"log/slog"
 	"os"
+
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
 )
 
 var Db *gorm.DB
+
 func Connect() {
 
 	err := godotenv.Load(".env")
@@ -28,15 +29,36 @@ func Connect() {
 	})
 	if err != nil {
 		slog.Error("failed to connect database", slog.Any("error", err))
+		panic(err)
 	}
-	Db = database
-	Db.SetupJoinTable(&models.Subject{}, "Requirements", &models.SubjectRequirement{})
-	Db.AutoMigrate(
-    &models.User{},
-    &models.DegreeProgram{},
-    &models.Subject{},
-    &models.SubjectRequirement{},
-	)
 
+	Db = database
+
+	if err := Db.SetupJoinTable(&models.Subject{}, "Requirements", &models.SubjectRequirement{}); err != nil {
+		slog.Error("SetupJoinTable subject_requirements failed", slog.Any("error", err))
+		panic(err)
+	}
+	if err := Db.SetupJoinTable(&models.User{}, "Subjects", &models.UserSubject{}); err != nil {
+		slog.Error("SetupJoinTable user_subjects failed", slog.Any("error", err))
+		panic(err)
+	}
+
+	if err := Db.AutoMigrate(
+		&models.User{},
+		&models.DegreeProgram{},
+		&models.Subject{},
+		&models.UserSubject{},
+		&models.SubjectRequirement{},
+	); err != nil {
+		slog.Error("automigrate failed", slog.Any("error", err))
+		panic(err)
+	}
+
+	sqlDB, err := Db.DB()
+	if err == nil {
+		if err := sqlDB.Ping(); err != nil {
+			slog.Error("database ping failed", slog.Any("error", err))
+		}
+	}
 
 }
