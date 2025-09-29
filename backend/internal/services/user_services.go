@@ -1,11 +1,10 @@
 package services
 
 import (
-	
+	"correlatiApp/internal/db"
 	"correlatiApp/internal/models"
 	"log/slog"
-	"correlatiApp/internal/db"
-
+	"github.com/google/uuid"
 )
 
 func GetUserByEmail(email string) (models.User){
@@ -16,4 +15,14 @@ func GetUserByEmail(email string) (models.User){
 		return models.User{}
 	}
 	return *user
+}
+
+func CreateUser(user models.User) (models.User, error){
+	user.ID = uuid.New().String()
+	result := db.Db.Create(&user)
+	if result.Error != nil {
+		slog.Info("Error creating user in db", slog.Any("Error: ", result.Error))
+		return models.User{}, result.Error
+	}
+	return user, nil
 }

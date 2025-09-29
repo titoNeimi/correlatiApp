@@ -23,7 +23,7 @@ func SetUpRoutes (r *gin.Engine){
 
 	users := r.Group("/users") 
 	{
-		users.GET("/", handlers.GetAllUsers)
+		users.GET("/", middleware.Auth(), handlers.GetAllUsers)
 		users.POST("/", handlers.CreateUser)
 		users.GET("/:id", handlers.GetUser)
 		users.PUT("/:id", handlers.UpdateUser)
@@ -44,7 +44,13 @@ func SetUpRoutes (r *gin.Engine){
 		subjects.PUT("/:id", handlers.UpdateSubject)
 		subjects.DELETE("/:id", handlers.DeleteSubject)
 	}
-	r.GET("/me", middleware.Auth(), handlers.LoginHandler)
-	r.POST("/login", handlers.LoginHandler)
-	r.POST("/logout", handlers.Logout)
+
+	auth := r.Group("/auth")
+	{
+		auth.POST("/me", middleware.Auth() ,handlers.GetUser)
+		auth.POST("/login", handlers.LoginHandler)
+		auth.POST("/logout", handlers.Logout)
+		auth.POST("/register", handlers.Register)
+	}
+
 }

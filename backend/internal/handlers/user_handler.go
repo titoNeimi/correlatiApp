@@ -5,7 +5,7 @@ import (
 	"correlatiApp/internal/models"
 	"log/slog"
 	"net/http"
-  "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 	"correlatiApp/internal/utils"
 )
