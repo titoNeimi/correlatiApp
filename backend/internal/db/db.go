@@ -49,6 +49,7 @@ func Connect() {
 		&models.Subject{},
 		&models.UserSubject{},
 		&models.SubjectRequirement{},
+		&models.Session{},
 	); err != nil {
 		slog.Error("automigrate failed", slog.Any("error", err))
 		panic(err)

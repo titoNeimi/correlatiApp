@@ -1,36 +1,35 @@
 package middleware
 
 import (
-	"correlatiApp/internal/utils"
-	"log/slog"
 	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"correlatiApp/internal/http"
+	"correlatiApp/internal/models"
+	"correlatiApp/internal/services"
 )
 
-func Auth () gin.HandlerFunc {
-	return func (c *gin.Context) {
-		if c.Request.Method == http.MethodOptions {
-      c.Next()
-      return
+func AuthRequired(db *gorm.DB, sessions *services.Service, cookies httpx.CookieCfg) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cookie, err := c.Request.Cookie(cookies.Name)
+		if err != nil || cookie.Value == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+			return
 		}
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
-			return 
-		}
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		tokenString = strings.TrimSpace(tokenString)
 
-		err := utils.VerifyToken(tokenString)
-
+		sess, err := sessions.FindActive(cookie.Value)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
-			slog.Info("Error al verificar el token", slog.Any("Error: ", err))
-			return 
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "sesión inválida o vencida"})
+			return
 		}
-		slog.Info("Middleware y token exitoso")
+
+		var user models.User
+		if err := db.First(&user, "id = ?", sess.UserID).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "usuario no encontrado"})
+			return
+		}
+
+		c.Set("user", user)
 		c.Next()
 	}
 }

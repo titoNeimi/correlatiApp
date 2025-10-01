@@ -2,6 +2,7 @@ package models
 
 import (
 	"time"
+	"gorm.io/gorm"
 )
 type SubjectStatus string
 
@@ -56,10 +57,6 @@ type UserSubject struct {
 
 func (UserSubject) TableName() string { return "user_subjects" }
 
-// ----------------------------------------------------
-// Join explícito para requisitos: Subject × Subject
-// ----------------------------------------------------
-
 type SubjectRequirement struct {
 	SubjectID     string  `gorm:"primaryKey;size:191;index:uniq_subject_req,unique"`
 	RequirementID string  `gorm:"primaryKey;size:191;index:uniq_subject_req,unique"`
@@ -68,3 +65,14 @@ type SubjectRequirement struct {
 }
 
 func (SubjectRequirement) TableName() string { return "subject_requirements" }
+
+
+type Session struct {
+	ID        string         `gorm:"type:char(36);primaryKey"`
+	UserID    string          `gorm:"not null;index"`
+	ExpiresAt time.Time      `gorm:"index;not null"`
+	Revoked   bool           `gorm:"default:false;not null"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
