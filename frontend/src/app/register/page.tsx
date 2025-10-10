@@ -60,7 +60,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const resp = await fetch('http://localhost:8080/auth/register', {
+      const resp = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -68,7 +68,7 @@ export default function RegisterPage() {
       const data = await resp.json();
 
       if (!resp.ok) {
-        setSubmitError(data || "Error en el registro");
+        setSubmitError(data.error || "Error en el registro");
         return;
       }
 

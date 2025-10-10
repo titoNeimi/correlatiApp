@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
+import { useUser } from '@/context/UserContext'
 
 interface FormData {
   email: string;
@@ -18,6 +19,7 @@ const LoginPage: React.FC = () => {
   const [authError, setAuthError] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
+  const { refresh } = useUser()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
@@ -48,8 +50,9 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const result = await fetch('http://localhost:8080/auth/login', {
+      const result = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
@@ -57,6 +60,13 @@ const LoginPage: React.FC = () => {
       if (!result.ok) {
         setAuthError('Usuario o contraseña incorrectos');
         return;
+      }
+
+      try {
+        await refresh()
+      } catch {
+        window.location.reload()
+        return
       }
 
       router.push('/');

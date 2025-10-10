@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import './globals.css'
 import { Navbar } from "@/components/navbar";
+import { UserProvider } from '@/context/UserContext'
 
 export const metadata: Metadata = {
   title: "Corralati App",
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-      <Navbar/>
+      <UserProvider>
+        <Navbar/>
         {children}
+      </UserProvider>
       </body>
     </html>
   );
