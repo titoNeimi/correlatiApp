@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	httpx "correlatiApp/internal/http"
+	"correlatiApp/internal/http"
 	"correlatiApp/internal/models"
 	"correlatiApp/internal/services"
 	"correlatiApp/internal/utils"
@@ -33,11 +33,6 @@ type meResponse struct {
 type registerRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
-}
-
-type userResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
 }
 
 func (h *AuthHandlers) LoginHandler(c *gin.Context) {
