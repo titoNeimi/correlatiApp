@@ -47,7 +47,7 @@ func GetProgramById (c *gin.Context){
 	id := c.Param("id")
 	var program *models.DegreeProgram
 
-	if err := db.Db.First(&program).Where("id = ?", id).Error; err != nil {
+	if err := db.Db.Preload("Subjects").First(&program).Where("id = ?", id).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
 	}
