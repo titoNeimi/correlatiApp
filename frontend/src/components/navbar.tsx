@@ -3,16 +3,13 @@
 import { useState } from 'react';
 import { ChevronDown, User, LogOut, Settings, GraduationCap, CircleUserRound } from 'lucide-react';
 import Link from 'next/link';
+import { useUser } from '@/context/UserContext'
 
 export function Navbar(){
 
-  const isLoggedIn = false; 
+  const { user: ctxUser, isLoggedIn, logout } = useUser()
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  
-  const user = {
-    name: "Juan Pérez",
-    email: "juan@example.com",
-  };
+  const user = ctxUser ? { name: ctxUser.email.split('@')[0], email: ctxUser.email } : null
 
   return(
     <header className="bg-white/80 backdrop-blur-sm border-b border-blue-100 sticky top-0 z-50">
@@ -34,8 +31,8 @@ export function Navbar(){
               <Link href="/universidades" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Universidades</Link>
               <Link href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Contacto</Link>
             </nav>
-            
-            {/* Botones de autenticación o perfil */}
+          </div>
+          <div>
             {!isLoggedIn ? (
               <div className="flex items-center space-x-4">
                 <Link
@@ -58,7 +55,7 @@ export function Navbar(){
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <CircleUserRound className="w-8 h-8"/>
-                  <span className="hidden sm:block text-gray-700 font-medium">{user.name}</span>
+                  <span className="hidden sm:block text-gray-700 font-medium">{user?.name}</span>
                   <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
@@ -67,8 +64,8 @@ export function Navbar(){
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center space-x-3">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                            <p className="text-sm text-gray-500">{user?.email}</p>
                         </div>
                       </div>
                     </div>
@@ -95,9 +92,10 @@ export function Navbar(){
                     
                     <div className="border-t border-gray-100 pt-2">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setDropdownOpen(false);
-                          // Aquí va tu lógica de logout
+                          await logout()
+                          window.location.href = '/'
                         }}
                         className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                       >
