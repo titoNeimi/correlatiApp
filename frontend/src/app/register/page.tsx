@@ -47,6 +47,8 @@ export default function RegisterPage() {
     if (!password) newErrors.password = 'Campo requerido';
     if (!password2) newErrors.password2 = 'Campo requerido';
 
+    if(password?.length < 8) newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+
     if (!newErrors.password2 && password && password2 && password !== password2) {
       newErrors.password2 = 'Las contraseñas no coinciden';
     }
