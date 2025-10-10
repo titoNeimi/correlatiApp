@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"correlatiApp/internal/http"
+	httpx "correlatiApp/internal/http"
 	"correlatiApp/internal/models"
 	"correlatiApp/internal/services"
 	"correlatiApp/internal/utils"
@@ -26,7 +26,7 @@ type AuthHandlers struct {
 }
 
 type meResponse struct {
-	ID    string   `json:"id"`
+	ID    string `json:"id"`
 	Email string `json:"email"`
 }
 
@@ -40,21 +40,20 @@ type userResponse struct {
 	Email string `json:"email"`
 }
 
-
 func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 	var data loginData
 	if err := c.ShouldBindJSON(&data); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, "Invalid request data")
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Parametros invalidos"})
 		return
 	}
 	user := services.GetUserByEmail(data.Email)
 	if user.ID == "" {
-		c.IndentedJSON(http.StatusBadRequest, "Incorrect data")
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Datos incorrectos"})
 		return
 	}
 	isValidPassword := utils.CheckPasswordHash(data.Password, user.Password)
 	if !isValidPassword {
-		c.IndentedJSON(http.StatusBadRequest, "Incorrect data")
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Datos incorrectos"})
 		slog.Info("No se a podido iniciar sesion, contrasenia incorrecta")
 		return
 	}
@@ -77,7 +76,6 @@ func (h *AuthHandlers) Logout(c *gin.Context) {
 	httpx.ClearSessionCookie(c.Writer, h.Cookies)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
-
 
 func (h *AuthHandlers) Register(c *gin.Context) {
 	var req registerRequest
@@ -105,7 +103,7 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 	}
 
 	user := models.User{
-		ID:       uuid.NewString(), 
+		ID:       uuid.NewString(),
 		Email:    email,
 		Password: hashed,
 	}
@@ -115,7 +113,15 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, userResponse{ID: user.ID, Email: user.Email})
+	sess, err := h.Sessions.Create(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo crear la sesión"})
+		return
+	}
+
+	httpx.SetSessionCookie(c.Writer, h.Cookies, sess.ID, sess.ExpiresAt)
+
+	c.JSON(http.StatusCreated, meResponse{ID: user.ID, Email: user.Email})
 }
 
 func (h *AuthHandlers) Me(c *gin.Context) {

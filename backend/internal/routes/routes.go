@@ -60,7 +60,7 @@ func SetUpRoutes (r *gin.Engine, db *gorm.DB) {
 
 	auth := r.Group("/auth")
 	{
-		auth.POST("/me" ,middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Me)
+		auth.GET("/me" ,middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Me)
 		auth.POST("/login", authHandlers.LoginHandler)
 		auth.POST("/logout",middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Logout)
 		auth.POST("/register", authHandlers.Register)
