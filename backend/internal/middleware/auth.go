@@ -1,12 +1,12 @@
 package middleware
 
 import (
-	"net/http"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"correlatiApp/internal/http"
 	"correlatiApp/internal/models"
 	"correlatiApp/internal/services"
+	"net/http"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func AuthRequired(db *gorm.DB, sessions *services.Service, cookies httpx.CookieCfg) gin.HandlerFunc {
