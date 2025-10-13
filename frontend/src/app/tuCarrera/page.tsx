@@ -3,24 +3,8 @@
 import { useUser } from '@/context/UserContext'
 import { useCallback, useMemo, useState } from 'react'
 import UserSubjectsGate from '@/components/userSubjectGate'
-
-type SubjectStatus = 'not_available'  | 'available' | 'in_progress' | 'final_pending' | 'passed' | 'passed_with_distinction'
-
-type SubjectDTO = {
-  id: string
-  name: string
-  subjectYear: number
-  degreeProgramID: string
-  status: SubjectStatus
-  requirements?: string[]
-}
-
-type SubjectsFromProgram = {
-  Id: string
-  Name: string
-  University: string
-  Subjects: SubjectDTO[]
-}
+import { SubjectStatus, SubjectsFromProgram, SubjectDTO } from '@/types/subjects'
+import { computeAvailability } from '@/lib/subject_status';
 
 type Subject = {
   id: string
@@ -32,7 +16,7 @@ type Subject = {
 const statusConfig: Record<SubjectStatus,{ label: string; classes: string; borderColor: string }> = {
   not_available: {
     label: 'No disponible',
-    classes: 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-300 text-gray-500',
+    classes: 'bg-gradient-to-br from-gray-200 to-gray-300 border-gray-400 text-gray-600',
     borderColor: 'border-l-gray-400'
   },
   available: {
@@ -69,7 +53,7 @@ export default function SubjectsPage() {
 
   const [selectedProgramId, setSelectedProgramId] = useState<string>('')
   const [subjectsData, setSubjectsData] = useState<SubjectsFromProgram | null>(null)
-  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [subjects, setSubjects] = useState<SubjectDTO[]>([])
   const [loadingSubjects, setLoadingSubjects] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -87,15 +71,13 @@ export default function SubjectsPage() {
       if (!res.ok) throw new Error('No se pudieron cargar las materias')
 
       const data: SubjectsFromProgram = await res.json()
+
+      const subjectWithStatus = computeAvailability(data.Subjects ?? [])
+      data.Subjects = subjectWithStatus
+
       setSubjectsData(data)
-      setSubjects(
-        (data.Subjects ?? []).map(s => ({
-          id: s.id,
-          name: s.name,
-          subjectYear: s.subjectYear,
-          status: s.status
-        }))
-      )
+      setSubjects(data.Subjects)
+      
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error inesperado')
     } finally {
@@ -117,14 +99,16 @@ export default function SubjectsPage() {
 
   const handleRightClick = (e: React.MouseEvent, subjectId: string) => {
     e.preventDefault()
-    setSubjects(prev =>
-      prev.map(s => {
-        if (s.id !== subjectId) return s
-        const i = statusOrder.indexOf(s.status)
-        const next = statusOrder[(i + 1) % statusOrder.length]
-        return { ...s, status: next }
+    if( subjects.find(s => s.id === subjectId)?.status === 'not_available' ) return
+    setSubjects(prev => {
+      const updated = prev.map(s => {
+      if (s.id !== subjectId) return s
+      const i = statusOrder.indexOf(s.status)
+      const next = statusOrder[(i + 1) % statusOrder.length]
+      return { ...s, status: next }
       })
-    )
+      return computeAvailability(updated)
+    })
   }
 
   return (

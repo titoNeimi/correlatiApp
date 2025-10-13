@@ -68,21 +68,26 @@ func GetMySubjectsFromProgram (c *gin.Context){
 			st = models.StatusAvailable
 		}
 
+		requirementIds := make([]string, len(s.Requirements))
+		for i, req := range s.Requirements {
+			requirementIds[i] = req.ID
+		}
+
 		dto := models.SubjectWithUserStatusDTO{
 			ID:              s.ID,
 			Name:            s.Name,
 			SubjectYear:     s.SubjectYear,
 			DegreeProgramID: s.DegreeProgramID,
 			Status:          st,
+			RequirementsIDs: requirementIds,
 		}
 		out = append(out, dto)
 	}
 	programOut := SubjectsFromProgram{
-		Id: program.ID,
-		Name: program.Name,
+		Id:         program.ID,
+		Name:       program.Name,
 		University: program.University,
-		Subjects: out,
+		Subjects:   out,
 	}
 	c.IndentedJSON(http.StatusOK, programOut)
-
 }
