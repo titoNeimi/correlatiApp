@@ -10,7 +10,7 @@ import (
 	"correlatiApp/internal/utils"
 )
 
-func CreateUser (c *gin.Context){
+func CreateUser(c *gin.Context){
 	var newUser *models.User
 		if err := c.BindJSON(&newUser); err != nil {
 		slog.Error("Error getting the json from the body", slog.Any("error", err))
@@ -36,7 +36,7 @@ func CreateUser (c *gin.Context){
 	c.IndentedJSON(http.StatusCreated, newUser)
 }
 
-func GetUser (c *gin.Context){
+func GetUser(c *gin.Context){
 	id := c.Param("id")
 	var user *models.User
 	result := db.Db.Where("id = ?", id).Preload("DegreePrograms").First(&user)
@@ -70,7 +70,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	var updatedUser models.User
-	if err := db.Db.First(&updatedUser).Where("id = ?", id).Error; err != nil {
+	if err := db.Db.Where("id = ?", id).First(&updatedUser).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
@@ -81,24 +81,24 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	if dto.DegreeProgramsID != nil {
-    if len(*dto.DegreeProgramsID) == 0 {
-      if err := db.Db.Model(&updatedUser).Association("DegreePrograms").Clear(); err != nil {
-        c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error clearing the degree program"})
-        return
-        }
-      } else {
-					var reqs []models.DegreeProgram
-          if err := db.Db.Where("id IN ?", *dto.DegreeProgramsID).Find(&reqs).Error; err != nil {
-            c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Some DegreeProgram IDs are invalid"})
-            return
-          }
-					slog.Info("trying to update the user degrePrograms ", slog.Any("Reqs:", reqs))
-          if err := db.Db.Model(&updatedUser).Association("DegreePrograms").Replace(&reqs); err != nil {
-						slog.Error("Error updating DegreeProgram", slog.Any("error", err))
-            c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error updating DegreeProgram"})
-            return
-          }
-      }
+		if len(*dto.DegreeProgramsID) == 0 {
+			if err := db.Db.Model(&updatedUser).Association("DegreePrograms").Clear(); err != nil {
+				c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error clearing the degree program"})
+				return
+			}
+		} else {
+			var reqs []models.DegreeProgram
+    	    if err := db.Db.Where("id IN ?", *dto.DegreeProgramsID).Find(&reqs).Error; err != nil {
+				c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Some DegreeProgram IDs are invalid"})
+				return
+			}
+			slog.Info("trying to update the user degrePrograms ", slog.Any("Reqs:", reqs))
+			if err := db.Db.Model(&updatedUser).Association("DegreePrograms").Replace(reqs); err != nil {
+				slog.Error("Error updating DegreeProgram", slog.Any("error", err))
+				c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error updating DegreeProgram"})
+				return
+			}
+		}
 	}
 
 	if err := db.Db.Where("id = ?", id).Preload("DegreePrograms").First(&updatedUser).Error; err != nil {
@@ -129,7 +129,7 @@ func DeleteUser(c *gin.Context){
 		slog.Info("An user has been deleted", slog.Any("User: ", user))
 }
 
-func GetAllUsers (c *gin.Context){
+func GetAllUsers(c *gin.Context){
 	var users *[]models.User
 	result := db.Db.Model(&users).Preload("DegreePrograms").Find(&users)
 	if result.Error != nil{

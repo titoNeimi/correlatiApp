@@ -26,8 +26,9 @@ type AuthHandlers struct {
 }
 
 type meResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
+	ID    			 string   `json:"id"`
+	Email 		     string   `json:"email"`
+	DegreeProgramIds []string `json:"degreeProgramIds"`
 }
 
 type registerRequest struct {
@@ -126,5 +127,11 @@ func (h *AuthHandlers) Me(c *gin.Context) {
 		return
 	}
 	user := u.(models.User)
-	c.JSON(http.StatusOK, meResponse{ID: user.ID, Email: user.Email})
+
+	DegreeProgramIds := make([]string, len(user.DegreePrograms))
+	for i := range user.DegreePrograms {
+		DegreeProgramIds[i] = user.DegreePrograms[i].ID
+	}
+	slog.Info("user degreePrograms: ", slog.Any("", user.DegreePrograms))
+	c.JSON(http.StatusOK, meResponse{ID: user.ID, Email: user.Email, DegreeProgramIds: DegreeProgramIds})
 }
