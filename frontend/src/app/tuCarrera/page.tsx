@@ -113,11 +113,6 @@ export default function SubjectsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
-      <UserSubjectsGate
-        user={user ? { id: user.id, degreeProgramIds: user.degreeProgramIds } : null}
-        isLoading={isLoadingUser}
-        fetchUserSubjects={fetchUserSubjects}
-      />
 
       {loadingSubjects && (
         <p className="mt-4 text-sm text-gray-600">Cargando materias…</p>
@@ -144,7 +139,7 @@ export default function SubjectsPage() {
 
           <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Estados de las Materias</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {Object.entries(statusConfig).map(([status, config]) => (
                 <div key={status} className="flex items-center space-x-2">
                   <div className={`w-4 h-4 rounded border-2 ${config.classes}`} />
@@ -190,7 +185,7 @@ export default function SubjectsPage() {
           </div>
 
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl p-8 my-8 text-white">
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 text-center">
               {Object.entries(statusConfig).map(([status, config]) => {
                 const count = subjects.filter(s => s.status === status).length
                 return (
@@ -204,6 +199,7 @@ export default function SubjectsPage() {
           </div>
         </div>
       )}
+        <UserSubjectsGate user={user ? { id: user.id, degreeProgramIds: user.degreeProgramIds } : null} isLoading={isLoadingUser} fetchUserSubjects={fetchUserSubjects}/>
     </div>
   )
 }
