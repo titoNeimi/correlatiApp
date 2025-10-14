@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"slices"
 	"correlatiApp/internal/http"
 	"correlatiApp/internal/models"
 	"correlatiApp/internal/services"
@@ -32,4 +33,18 @@ func AuthRequired(db *gorm.DB, sessions *services.Service, cookies httpx.CookieC
 		c.Set("user", user)
 		c.Next()
 	}
+}
+
+func RoleRequired(roles ...string) gin.HandlerFunc {
+  return func(c *gin.Context) {
+    user, _ := c.Get("user")
+    u := user.(models.User)
+
+    if slices.Contains(roles, u.Role) {
+      c.Next()
+      return
+    }
+
+    c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+  }
 }

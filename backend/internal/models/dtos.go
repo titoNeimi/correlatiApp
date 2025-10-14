@@ -13,6 +13,7 @@ type UserUpdateDTO struct {
 	Email             *string        `json:"email,omitempty"`
 	Password          *string        `json:"password,omitempty"`
 	DegreeProgramsID  *[]string      `json:"degreePrograms,omitempty" gorm:"-"`
+	Role 							*string        `json:"role,omitempty"`
 }
 
 type SubjectWithUserStatusDTO struct {

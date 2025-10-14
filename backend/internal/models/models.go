@@ -14,12 +14,14 @@ const (
 	StatusPassed              SubjectStatus = "passed"
 )
 
+
 type User struct {
 	ID             string           `json:"id" gorm:"primaryKey;size:191"`
 	Email          string           `json:"email" gorm:"unique;not null;size:191"`
 	Password       string           `json:"password" gorm:"not null"`
 	DegreePrograms []*DegreeProgram `json:"degreePrograms" gorm:"many2many:user_degree_programs"`
 	Subjects       []Subject        `json:"subjects" gorm:"many2many:user_subjects"`
+	Role					 string           `json:"role" gorm:"type:enum('admin', 'user', 'staff');default:'user'"`
 	CreatedAt      time.Time        `json:"created_at"`
 	UpdatedAt      time.Time        `json:"updated_at"`
 }

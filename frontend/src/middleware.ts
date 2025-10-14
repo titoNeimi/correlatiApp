@@ -1,23 +1,9 @@
 // middleware.ts (en la raíz del proyecto)
-import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { publicPaths } from './middlewares/auth'
+import auth_middleware from './middlewares/auth'
 
 export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
-
-  if (publicPaths.includes(pathname)) {
-    return NextResponse.next()
-  }
-  const token = req.cookies.get('session_id')?.value
-
-  if (!token) {
-    console.log('No token found, redirecting to login')
-    const loginUrl = new URL('/login', req.url)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  return NextResponse.next()
+  auth_middleware(req)
 }
 
 export const config = {

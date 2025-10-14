@@ -26,9 +26,10 @@ type AuthHandlers struct {
 }
 
 type meResponse struct {
-	ID    			 string   `json:"id"`
-	Email 		     string   `json:"email"`
+	ID    			     string   `json:"id"`
+	Email 		       string   `json:"email"`
 	DegreeProgramIds []string `json:"degreeProgramIds"`
+	Role 						 string   `json:"role"`
 }
 
 type registerRequest struct {
