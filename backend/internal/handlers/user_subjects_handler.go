@@ -10,79 +10,100 @@ import (
 )
 
 type SubjectsFromProgram struct {
-	Id string
+	Id         string
 	Name       string
 	University string
 	Subjects   []models.SubjectWithUserStatusDTO
 }
 
-func GetMySubjectsFromProgram (c *gin.Context){
+func GetMySubjectsFromProgram(c *gin.Context) {
 	user, exists := c.Get("user")
-
 	if !exists {
-		c.IndentedJSON(401, gin.H{"error": "Unauthorized"})
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	
 	u, ok := user.(models.User)
 	if !ok {
-		c.IndentedJSON(500, gin.H{"error": "Invalid user type"})
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
 		return
 	}
-	//TODO: Validar programId para que el usuario tenga estar inscripto
+
 	programId := c.Param("programId")
-	if !ok {
-		c.IndentedJSON(300, gin.H{"error": "You are not registered"})
+
+	// Si no vino por param, usar el primero (si existe)
+	if programId == "" {
+		if len(u.DegreePrograms) == 0 {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "User has no degree programs"})
+			return
+		}
+		programId = u.DegreePrograms[0].ID
 	}
 
-	if programId == "" {programId = u.DegreePrograms[0].ID}
-	program, err := services.GetAllSubjectsFromProgram(programId)
-	
-	subjects := program.Subjects
+	// Validar que el usuario esté inscripto a ese programa
+	registered := false
+	for _, dp := range u.DegreePrograms {
+		if dp.ID == programId {
+			registered = true
+			break
+		}
+	}
+	if !registered {
+		c.IndentedJSON(http.StatusForbidden, gin.H{"error": "You are not registered in this program"})
+		return
+	}
 
+	program, err := services.GetAllSubjectsFromProgram(programId)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
+		return
 	}
-	if len(program.Subjects) == 0 {
-		c.IndentedJSON(http.StatusOK, []models.SubjectWithUserStatusDTO{})
 
+	if len(program.Subjects) == 0 {
+		programOut := SubjectsFromProgram{
+			Id:         program.ID,
+			Name:       program.Name,
+			University: program.University,
+			Subjects:   []models.SubjectWithUserStatusDTO{},
+		}
+		c.IndentedJSON(http.StatusOK, programOut)
+		return
 	}
 
 	userSubjects, err := services.GetAllUserSubjects(u.ID, programId)
-
 	if err != nil {
-		slog.Info("Error getting the user subjects")
+		slog.Info("Error getting the user subjects", "err", err)
+		// No necesariamente es fatal: seguimos y asumimos AVAILABLE
 	}
-
 
 	statusBySubject := make(map[string]models.SubjectStatus, len(userSubjects))
 	for _, us := range userSubjects {
 		statusBySubject[us.SubjectID] = us.Status
 	}
 
-	out := make([]models.SubjectWithUserStatusDTO, 0, len(subjects))
-	for _, s := range subjects {
-		st, ok := statusBySubject[s.ID]
-		if !ok {
+	out := make([]models.SubjectWithUserStatusDTO, 0, len(program.Subjects))
+	for _, s := range program.Subjects {
+		st, found := statusBySubject[s.ID]
+		if !found {
 			st = models.StatusAvailable
 		}
 
-		requirementIds := make([]string, len(s.Requirements))
-		for i, req := range s.Requirements {
-			requirementIds[i] = req.ID
+		// Con el modelo nuevo: s.Requirements es []SubjectRequirement
+		requirementIds := make([]string, 0, len(s.Requirements))
+		for _, req := range s.Requirements {
+			requirementIds = append(requirementIds, req.ID)
 		}
 
-		dto := models.SubjectWithUserStatusDTO{
+		out = append(out, models.SubjectWithUserStatusDTO{
 			ID:              s.ID,
 			Name:            s.Name,
 			SubjectYear:     s.SubjectYear,
 			DegreeProgramID: s.DegreeProgramID,
 			Status:          st,
 			RequirementsIDs: requirementIds,
-		}
-		out = append(out, dto)
+		})
 	}
+
 	programOut := SubjectsFromProgram{
 		Id:         program.ID,
 		Name:       program.Name,

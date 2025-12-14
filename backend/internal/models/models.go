@@ -2,18 +2,26 @@ package models
 
 import (
 	"time"
+
 	"gorm.io/gorm"
 )
+
 type SubjectStatus string
 
 const (
-	StatusAvailable           SubjectStatus = "available"
-	StatusInProgress          SubjectStatus = "in_progress"
-	StatusPassedWithDist      SubjectStatus = "passed_with_distinction"
-	StatusFinalPending        SubjectStatus = "final_pending"
-	StatusPassed              SubjectStatus = "passed"
+	StatusAvailable      SubjectStatus = "available"
+	StatusInProgress     SubjectStatus = "in_progress"
+	StatusPassedWithDist SubjectStatus = "passed_with_distinction"
+	StatusFinalPending   SubjectStatus = "final_pending"
+	StatusPassed         SubjectStatus = "passed"
 )
 
+type RequirementMinStatus string
+
+const (
+	ReqPassed       RequirementMinStatus = "passed"
+	ReqFinalPending RequirementMinStatus = "final_pending"
+)
 
 type User struct {
 	ID             string           `json:"id" gorm:"primaryKey;size:191"`
@@ -21,7 +29,7 @@ type User struct {
 	Password       string           `json:"password" gorm:"not null"`
 	DegreePrograms []*DegreeProgram `json:"degreePrograms" gorm:"many2many:user_degree_programs"`
 	Subjects       []Subject        `json:"subjects" gorm:"many2many:user_subjects"`
-	Role					 string           `json:"role" gorm:"type:enum('admin', 'user', 'staff');default:'user'"`
+	Role           string           `json:"role" gorm:"type:enum('admin', 'user', 'staff');default:'user'"`
 	CreatedAt      time.Time        `json:"created_at"`
 	UpdatedAt      time.Time        `json:"updated_at"`
 }
@@ -44,36 +52,34 @@ type Subject struct {
 	DegreeProgramID string     `json:"degreeProgramID" gorm:"not null;size:191;index"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
-	UserSubject *UserSubject   `json:"-" gorm:"-:all"`
 }
-
 
 type UserSubject struct {
 	UserID    string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
 	SubjectID string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
 	Status    SubjectStatus `gorm:"type:enum('available','in_progress','passed_with_distinction','final_pending','passed');default:'available'"`
 	UpdatedAt time.Time
-	User    User    `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	Subject Subject `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	User      User    `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	Subject   Subject `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
 }
 
 func (UserSubject) TableName() string { return "user_subjects" }
 
 type SubjectRequirement struct {
-	SubjectID     string  `gorm:"primaryKey;size:191;index:uniq_subject_req,unique"`
-	RequirementID string  `gorm:"primaryKey;size:191;index:uniq_subject_req,unique"`
-	Subject       Subject `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	Requirement   Subject `gorm:"foreignKey:RequirementID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	SubjectID     string               `gorm:"primaryKey;size:191;index:uniq_subject_req,unique"`
+	RequirementID string               `gorm:"primaryKey;size:191;index:uniq_subject_req,unique"`
+	MinStatus     RequirementMinStatus `gorm:"type:enum('passed','final_pending');not null;default:'passed'"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 func (SubjectRequirement) TableName() string { return "subject_requirements" }
 
-
 type Session struct {
-	ID        string         `gorm:"type:char(36);primaryKey"`
-	UserID    string          `gorm:"not null;index"`
-	ExpiresAt time.Time      `gorm:"index;not null"`
-	Revoked   bool           `gorm:"default:false;not null"`
+	ID        string    `gorm:"type:char(36);primaryKey"`
+	UserID    string    `gorm:"not null;index"`
+	ExpiresAt time.Time `gorm:"index;not null"`
+	Revoked   bool      `gorm:"default:false;not null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
