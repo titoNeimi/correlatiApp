@@ -72,11 +72,11 @@ export default function SubjectsPage() {
 
       const data: SubjectsFromProgram = await res.json()
 
-      const subjectWithStatus = computeAvailability(data.Subjects ?? [])
-      data.Subjects = subjectWithStatus
+      const subjectWithStatus = computeAvailability(data.subjects ?? [])
+      data.subjects = subjectWithStatus
 
       setSubjectsData(data)
-      setSubjects(data.Subjects)
+      setSubjects(data.subjects)
       
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error inesperado')
@@ -126,10 +126,10 @@ export default function SubjectsPage() {
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-8">
             <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white p-6 sm:p-8">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2">
-                {subjectsData.Name}
+                {subjectsData.name}
               </h1>
               <p className="text-lg sm:text-xl opacity-90">
-                {subjectsData.University}
+                {subjectsData.university}
               </p>
               <p className="text-sm mt-4 opacity-75">
                 Click derecho en cualquier materia para cambiar su estado

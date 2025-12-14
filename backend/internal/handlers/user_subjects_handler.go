@@ -1,11 +1,11 @@
 package handlers
 
 import (
+		"correlatiApp/internal/db"
 	"correlatiApp/internal/models"
 	"correlatiApp/internal/services"
 	"log/slog"
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,14 +15,12 @@ type SubjectsFromProgram struct {
 	University string
 	Subjects   []models.SubjectWithUserStatusDTO
 }
-
 func GetMySubjectsFromProgram(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-
 	u, ok := user.(models.User)
 	if !ok {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
@@ -30,8 +28,6 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 	}
 
 	programId := c.Param("programId")
-
-	// Si no vino por param, usar el primero (si existe)
 	if programId == "" {
 		if len(u.DegreePrograms) == 0 {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "User has no degree programs"})
@@ -40,7 +36,6 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 		programId = u.DegreePrograms[0].ID
 	}
 
-	// Validar que el usuario esté inscripto a ese programa
 	registered := false
 	for _, dp := range u.DegreePrograms {
 		if dp.ID == programId {
@@ -53,27 +48,34 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 		return
 	}
 
-	program, err := services.GetAllSubjectsFromProgram(programId)
-	if err != nil {
+	var program models.DegreeProgram
+	if err := db.Db.Where("id = ?", programId).First(&program).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
 	}
 
-	if len(program.Subjects) == 0 {
-		programOut := SubjectsFromProgram{
-			Id:         program.ID,
-			Name:       program.Name,
-			University: program.University,
-			Subjects:   []models.SubjectWithUserStatusDTO{},
-		}
-		c.IndentedJSON(http.StatusOK, programOut)
+	var subjects []models.Subject
+	if err := db.Db.
+		Where("degree_program_id = ?", programId).
+		Find(&subjects).Error; err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error loading subjects"})
 		return
 	}
 
+	if len(subjects) == 0 {
+		c.IndentedJSON(http.StatusOK, gin.H{
+			"id":         program.ID,
+			"name":       program.Name,
+			"university": program.University,
+			"subjects":   []any{},
+		})
+		return
+	}
+
+	// estados del usuario
 	userSubjects, err := services.GetAllUserSubjects(u.ID, programId)
 	if err != nil {
 		slog.Info("Error getting the user subjects", "err", err)
-		// No necesariamente es fatal: seguimos y asumimos AVAILABLE
 	}
 
 	statusBySubject := make(map[string]models.SubjectStatus, len(userSubjects))
@@ -81,34 +83,52 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 		statusBySubject[us.SubjectID] = us.Status
 	}
 
-	out := make([]models.SubjectWithUserStatusDTO, 0, len(program.Subjects))
-	for _, s := range program.Subjects {
+	// Traer reglas de requirements (join table)
+	subjectIDs := make([]string, 0, len(subjects))
+	for _, s := range subjects {
+		subjectIDs = append(subjectIDs, s.ID)
+	}
+
+	type ReqRuleDTO struct {
+		ID        string `json:"id"`
+		MinStatus string `json:"minStatus"`
+	}
+
+	var links []models.SubjectRequirement
+	if err := db.Db.Where("subject_id IN ?", subjectIDs).Find(&links).Error; err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error loading subject requirements"})
+		return
+	}
+
+	reqRulesBySubject := make(map[string][]ReqRuleDTO, len(subjectIDs))
+	for _, l := range links {
+		reqRulesBySubject[l.SubjectID] = append(reqRulesBySubject[l.SubjectID], ReqRuleDTO{
+			ID:        l.RequirementID,
+			MinStatus: string(l.MinStatus),
+		})
+	}
+
+	out := make([]any, 0, len(subjects))
+	for _, s := range subjects {
 		st, found := statusBySubject[s.ID]
 		if !found {
 			st = models.StatusAvailable
 		}
 
-		// Con el modelo nuevo: s.Requirements es []SubjectRequirement
-		requirementIds := make([]string, 0, len(s.Requirements))
-		for _, req := range s.Requirements {
-			requirementIds = append(requirementIds, req.ID)
-		}
-
-		out = append(out, models.SubjectWithUserStatusDTO{
-			ID:              s.ID,
-			Name:            s.Name,
-			SubjectYear:     s.SubjectYear,
-			DegreeProgramID: s.DegreeProgramID,
-			Status:          st,
-			RequirementsIDs: requirementIds,
+		out = append(out, gin.H{
+			"id":              s.ID,
+			"name":            s.Name,
+			"subjectYear":     s.SubjectYear,
+			"degreeProgramID": s.DegreeProgramID,
+			"status":          st,
+			"requirements":    reqRulesBySubject[s.ID], // [{id, minStatus}]
 		})
 	}
 
-	programOut := SubjectsFromProgram{
-		Id:         program.ID,
-		Name:       program.Name,
-		University: program.University,
-		Subjects:   out,
-	}
-	c.IndentedJSON(http.StatusOK, programOut)
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"id":         program.ID,
+		"name":       program.Name,
+		"university": program.University,
+		"subjects":   out,
+	})
 }

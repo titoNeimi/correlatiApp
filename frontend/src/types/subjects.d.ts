@@ -10,10 +10,10 @@ type SubjectDTO = {
 }
 
 type SubjectsFromProgram = {
-  Id: string
-  Name: string
-  University: string
-  Subjects: SubjectDTO[]
+  id: string
+  name: string
+  university: string
+  subjects: SubjectDTO[]
 }
 
 export type { SubjectDTO, SubjectsFromProgram, SubjectStatus }
