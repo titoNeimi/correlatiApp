@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { ChevronDown, User, LogOut, Settings, GraduationCap, CircleUserRound } from 'lucide-react';
+import { ChevronDown, User, LogOut, Settings, GraduationCap, CircleUserRound, ShieldUser } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext'
 
@@ -9,7 +9,7 @@ export function Navbar(){
 
   const { user: ctxUser, isLoggedIn, logout } = useUser()
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const user = ctxUser ? { name: ctxUser.email.split('@')[0], email: ctxUser.email } : null
+  const user = ctxUser ? { name: ctxUser.email.split('@')[0], email: ctxUser.email, role: ctxUser.role} : null
 
   return(
     <header className="bg-white/80 backdrop-blur-sm border-b border-blue-100 sticky top-0 z-50">
@@ -88,6 +88,18 @@ export function Navbar(){
                         <Settings className="w-4 h-4" />
                         <span>Configuración</span>
                       </Link>
+                      {user?.role == 'admin' ? 
+                        <Link
+                          href="/admin"
+                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <ShieldUser className="w-4 h-4" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      :
+                        <></>
+                      }
                     </div>
                     
                     <div className="border-t border-gray-100 pt-2">

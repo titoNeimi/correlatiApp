@@ -134,5 +134,5 @@ func (h *AuthHandlers) Me(c *gin.Context) {
 		DegreeProgramIds[i] = user.DegreePrograms[i].ID
 	}
 	slog.Info("user degreePrograms: ", slog.Any("", user.DegreePrograms))
-	c.JSON(http.StatusOK, meResponse{ID: user.ID, Email: user.Email, DegreeProgramIds: DegreeProgramIds})
+	c.JSON(http.StatusOK, meResponse{ID: user.ID, Email: user.Email, DegreeProgramIds: DegreeProgramIds, Role: user.Role})
 }

@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import auth_middleware from './middlewares/auth'
 
 export function middleware(req: NextRequest) {
-  auth_middleware(req)
+  return auth_middleware(req)
 }
 
 export const config = {

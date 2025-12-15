@@ -23,6 +23,7 @@ async function resolveSessionAndRole(req: NextRequest): Promise<{ ok: boolean; r
   const apiBase = 'http://localhost:8080'
 
   try {
+    console.log("Fetch a auth/me")
     const res = await fetch(`${apiBase}/auth/me`, {
       method: 'GET',
       headers: { cookie: req.headers.get('cookie') || '' },
@@ -34,7 +35,6 @@ async function resolveSessionAndRole(req: NextRequest): Promise<{ ok: boolean; r
     }
 
     const me = (await res.json()) as { id: string; email: string; role: Role }
-
     const role = me.role
     if (role === 'admin' || role === 'staff' || role === 'user') {
       return { ok: true, role }
@@ -52,6 +52,7 @@ function isAllowed(pathname: string, role: Role): boolean {
 }
 
 export default async function auth_middleware(req: NextRequest) {
+  
   const { pathname, origin } = req.nextUrl
 
   if (isPublicPath(pathname)) {
@@ -60,10 +61,14 @@ export default async function auth_middleware(req: NextRequest) {
 
   const { ok, role } = await resolveSessionAndRole(req)
 
+  console.log(`OK?: ${ok}, Rol: ${role}`)
+
   if (!ok) {
     const loginUrl = new URL('/login', origin)
     return NextResponse.redirect(loginUrl)
   }
+
+  console.log("El rol de usuario es :", role)
 
   if (!isAllowed(pathname, role)) {
     const forbiddenUrl = new URL('/403', origin)
