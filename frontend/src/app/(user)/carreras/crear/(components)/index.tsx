@@ -2,7 +2,8 @@ import { Button } from "@/app/(user)/carreras/crear/(components)/button";
 import { Input } from "@/app/(user)/carreras/crear/(components)/input";
 import { Label } from "@/app/(user)/carreras/crear/(components)/label";
 import { Select } from "@/app/(user)/carreras/crear/(components)/select";
-import { CurriculumSubject } from "../(types)/types";
+import { CurriculumSubject, PrerequisiteType } from "../(types)/types";
+import { useDegree } from "../degree-context";
 
 import { useDroppable } from "@dnd-kit/core";
 import {
@@ -12,7 +13,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, PlusCircleIcon, Trash2 } from "lucide-react";
+import { GripVertical, Info, PlusCircleIcon, Trash2 } from "lucide-react";
 import React from "react";
 
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
@@ -177,6 +178,21 @@ const SubjectCard: React.FC<{
   onRenameSubmit,
   onRenameCancel,
 }) => {
+  const { subjects: allSubjects } = useDegree();
+
+  const prerequisiteTypeLabels: Record<PrerequisiteType, string> = {
+    approved: "Aprobada",
+    pending_final: "Final pendiente",
+  };
+
+  const requirements = subject.prerequisites.map((prereq) => {
+    const foundSubject = allSubjects.find((s) => s.id === prereq.subjectId);
+    return {
+      ...prereq,
+      name: foundSubject?.name ?? "Materia no encontrada",
+    };
+  });
+
   return (
     <div
       className={`bg-white border border-gray-200 rounded-lg p-3 shadow-sm transition-all ${
@@ -227,7 +243,32 @@ const SubjectCard: React.FC<{
               </div>
             </div>
           ) : (
-            <span className="text-sm font-medium text-gray-900">{subject.name}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-900">{subject.name}</span>
+              <div
+                className="relative group"
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                <Info className="w-4 h-4 text-gray-400 hover:text-blue-600 cursor-default" />
+                <div className="pointer-events-none absolute right-0 top-5 z-20 w-64 rounded-md border border-gray-200 bg-white p-3 text-gray-700 shadow-lg opacity-0 translate-y-1 transition duration-150 ease-out group-hover:opacity-100 group-hover:translate-y-0">
+                  <p className="text-xs font-semibold text-gray-900 mb-1">Requisitos</p>
+                  {requirements.length > 0 ? (
+                    <ul className="space-y-1">
+                      {requirements.map((req, idx) => (
+                        <li key={`${req.subjectId}-${idx}`} className="text-xs text-gray-700">
+                          <span className="font-medium">{req.name}</span>
+                          <span className="text-gray-500"> · {prerequisiteTypeLabels[req.type]}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-gray-500">Sin requisitos asignados</p>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
