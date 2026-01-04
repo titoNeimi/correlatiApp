@@ -16,4 +16,6 @@ type SubjectsFromProgram = {
   subjects: SubjectDTO[]
 }
 
+
+
 export type { SubjectDTO, SubjectsFromProgram, SubjectStatus }
