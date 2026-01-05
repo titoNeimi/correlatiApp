@@ -25,6 +25,7 @@ const YearGrid: React.FC = () => {
   const [count, setCount] = useState<number>(() => subjects.length + 1);
   const [confirming, setConfirming] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [resultMessage, setResultMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -209,17 +210,54 @@ const YearGrid: React.FC = () => {
 
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
+      setResultMessage(null);
       return;
     }
 
     setErrors([]);
+    setResultMessage(null);
     setConfirming(true);
     try {
-      await confirmCreation({ degreeData, subjects });
+      const result = await confirmCreation({ degreeData, subjects });
+      if (result.ok) {
+        setResultMessage({ type: 'success', text: result.message || 'Carrera creada correctamente' });
+      } else {
+        setResultMessage({ type: 'error', text: result.message || 'No se pudo crear la carrera' });
+      }
     } finally {
       setConfirming(false);
     }
   };
+
+  const isSuccessMessage = resultMessage?.type === 'success';
+
+  if (isSuccessMessage) {
+    return (
+      <div className="w-full">
+        <div className="rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 via-white to-green-100 p-10 md:p-16 text-center shadow-sm">
+          <p className="text-sm uppercase tracking-[0.2em] text-green-700">Creacion exitosa</p>
+          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-green-900">
+            {degreeData?.degreeName}
+          </h1>
+          <p className="mt-4 text-lg md:text-xl text-green-800">
+            {resultMessage?.text ?? 'Carrera creada correctamente'}
+          </p>
+          <p className="mt-2 text-base text-green-700">
+            {degreeData?.universityName ||
+              MOCK_UNIVERSITIES.find((u) => u.id === degreeData?.universityId)?.name}
+          </p>
+          <div className="mt-8 flex justify-center">
+            <a
+              href="/carreras"
+              className="inline-flex items-center justify-center rounded-full bg-green-700 px-6 py-3 text-base font-semibold text-white hover:bg-green-800"
+            >
+              Ir a carreras
+            </a>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -359,6 +397,17 @@ const YearGrid: React.FC = () => {
           {errors.map((err, idx) => (
             <div key={idx}>{err}</div>
           ))}
+        </div>
+      )}
+      {resultMessage && (
+        <div
+          className={`mt-4 rounded border p-3 text-sm ${
+            isSuccessMessage
+              ? 'border-green-200 bg-green-50 text-green-800'
+              : 'border-red-200 bg-red-50 text-red-800'
+          }`}
+        >
+          {resultMessage.text}
         </div>
       )}
       <div className="mt-6 flex justify-end">

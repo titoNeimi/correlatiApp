@@ -58,6 +58,23 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
     name: degreeData.degreeName,
     universityID: degreeData.universityId,
   }
+  const createdSubjectIds: string[] = []
+  let createdProgramId: string | null = null
+
+  const cleanupCreation = async () => {
+    if (createdSubjectIds.length > 0) {
+      await Promise.allSettled(
+        createdSubjectIds.map((id) =>
+          fetch(`${process.env.NEXT_PUBLIC_APIURL}/subjects/${id}`, { method: 'DELETE' })
+        )
+      )
+    }
+    if (createdProgramId) {
+      await fetch(`${process.env.NEXT_PUBLIC_APIURL}/degreeProgram/${createdProgramId}`, {
+        method: 'DELETE',
+      })
+    }
+  }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/degreeProgram`, {
       method: 'POST',
@@ -67,18 +84,18 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
       body: JSON.stringify(degreeProgram)
     })
     if(!response.ok){
-      return {ok:false}
+      return {ok:false, message: 'No se pudo crear la carrera'}
     }
-    const degreeData = await response.json()
+    const createdProgram = await response.json()
+    createdProgramId = createdProgram.id
     console.log('Carrera creada, creando subjects')
-    const newSubjects: CurriculumSubject[] = []
     const idMap = new Map<string, string>() // oldId -> newId
 
     for (const subject of subjects) {
       const subjectData = {
         name: subject.name,
         subjectYear: subject.year,
-        degreeProgramID: degreeData.id,
+        degreeProgramID: createdProgram.id,
       }
       const subjectResponse = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/subjects`, {
         method: 'POST',
@@ -88,17 +105,12 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
         body: JSON.stringify(subjectData)
       })
       if(!subjectResponse.ok){
-        return { ok: false }
+        await cleanupCreation()
+        return { ok: false, message: 'No se pudieron crear todas las materias' }
       }
       const newSubjectData = await subjectResponse.json()
-      newSubjects.push(newSubjectData)
+      createdSubjectIds.push(newSubjectData.id)
       idMap.set(subject.id, newSubjectData.id)
-    }
-
-    if (newSubjects.length != subjects.length){
-      console.log(`no se pudo crear todas las subjects, error en la subject ${newSubjects.length}}`)
-      //Borrar las subjects anteriores y el degreeProgram
-      return { ok: false }
     }
 
     // Actualizar requirements con IDs nuevos
@@ -106,7 +118,10 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
       if (!oldSubject.prerequisites || oldSubject.prerequisites.length === 0) continue;
 
       const newSubjectId = idMap.get(oldSubject.id)
-      if (!newSubjectId) return { ok: false }
+      if (!newSubjectId) {
+        await cleanupCreation()
+        return { ok: false, message: 'No se pudieron actualizar los requisitos' }
+      }
 
       const requirements = oldSubject.prerequisites.map<subjectRequirement>((req) => {
         const newReqId = idMap.get(req.subjectId)
@@ -130,13 +145,15 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
       })
       if (!updateResp.ok) {
         console.log('No se pudo actualizar requirements de subject', newSubjectId)
-        return { ok: false }
+        await cleanupCreation()
+        return { ok: false, message: 'No se pudieron actualizar los requisitos' }
       }
     }
 
-    return {ok: true}
+    return {ok: true, message: 'Carrera creada correctamente'}
   } catch (error) {
     console.log(error)
-    return { ok: false }
+    await cleanupCreation()
+    return { ok: false, message: 'Ocurrió un error al crear la carrera' }
   }
 }
