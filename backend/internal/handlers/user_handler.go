@@ -18,7 +18,18 @@ func CreateUser(c *gin.Context){
 		return
 	}
 	newUser.ID = uuid.New().String()
-	//Todo: Search the user by email, if the email is allready in use return an error
+	// validar email único
+	var existing int64
+	if err := db.Db.Model(&models.User{}).Where("email = ?", newUser.Email).Count(&existing).Error; err != nil {
+		slog.Error("Error checking user email", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error creating the user"})
+		return
+	}
+	if existing > 0 {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Email already in use"})
+		return
+	}
+
 	newPassword, err := utils.HashPassword(newUser.Password)
 	if err != nil{
 		slog.Error("Error hashing the password", slog.Any("error", err))
@@ -110,10 +121,10 @@ func UpdateUser(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context){
-	var user *models.User
 	id := c.Param("id")
 
-	if err := db.Db.First(&user).Where("id = ?", id).Error; err != nil {
+	var user models.User
+	if err := db.Db.Where("id = ?", id).First(&user).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}

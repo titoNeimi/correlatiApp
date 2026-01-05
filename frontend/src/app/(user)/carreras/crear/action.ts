@@ -8,8 +8,13 @@ type fetchDegreeProgramsResponse = {
 }
 
 export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse> => {
+  const apiUrl = process.env.NEXT_PUBLIC_APIURL
+  if (!apiUrl) {
+    console.log("NEXT_PUBLIC_APIURL no está configurada")
+    return {count:0, data:[]}
+  }
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/universities`)
+    const response = await fetch(`${apiUrl}/universities`)
 
     if (!response.ok) {
       console.log("No se pudo obtener las universidades")
@@ -24,8 +29,13 @@ export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse
 }
 
 export const createUniversity = async (name: string): Promise<University | null> => {
+  const apiUrl = process.env.NEXT_PUBLIC_APIURL
+  if (!apiUrl) {
+    console.log("NEXT_PUBLIC_APIURL no está configurada")
+    return null
+  }
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/universities`, {
+    const response = await fetch(`${apiUrl}/universities`, {
       method: 'POST',
       headers: {
       'Content-Type': 'application/json',
@@ -54,6 +64,10 @@ type minStatus ='passed' | 'final_pending'
 
 export const confirmCreation = async (payload: { degreeData: DegreeData, subjects: CurriculumSubject[] }) => {
   const {degreeData, subjects} = payload
+  const apiUrl = process.env.NEXT_PUBLIC_APIURL
+  if (!apiUrl) {
+    return { ok: false, message: 'NEXT_PUBLIC_APIURL no está configurada' }
+  }
   const degreeProgram = {
     name: degreeData.degreeName,
     universityID: degreeData.universityId,
@@ -65,18 +79,18 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
     if (createdSubjectIds.length > 0) {
       await Promise.allSettled(
         createdSubjectIds.map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_APIURL}/subjects/${id}`, { method: 'DELETE' })
+          fetch(`${apiUrl}/subjects/${id}`, { method: 'DELETE' })
         )
       )
     }
     if (createdProgramId) {
-      await fetch(`${process.env.NEXT_PUBLIC_APIURL}/degreeProgram/${createdProgramId}`, {
+      await fetch(`${apiUrl}/degreeProgram/${createdProgramId}`, {
         method: 'DELETE',
       })
     }
   }
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/degreeProgram`, {
+    const response = await fetch(`${apiUrl}/degreeProgram`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -97,7 +111,7 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
         subjectYear: subject.year,
         degreeProgramID: createdProgram.id,
       }
-      const subjectResponse = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/subjects`, {
+      const subjectResponse = await fetch(`${apiUrl}/subjects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +152,7 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
         requirements,
       }
 
-      const updateResp = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/subjects/${newSubjectId}`, {
+      const updateResp = await fetch(`${apiUrl}/subjects/${newSubjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateBody),

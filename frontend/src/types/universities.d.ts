@@ -3,7 +3,7 @@ type University = {
   name: string,
   location?: string,
   website?: string,
-  degreePrograms?: degreeProgram[],
+  degreePrograms?: DegreeProgram[],
   created_at: string,
   updated_at: string
 }

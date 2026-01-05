@@ -1,24 +1,21 @@
+export type DegreeProgram = {
+  id: string;
+  name: string;
+  university: University;
+  universityID: string;
+  subjects?: DegreeProgramSubject[];
+  users?: { id: string; email?: string; role?: string }[];
+  created_at: string;
+  updated_at: string;
+};
 
-type degreeProgram = {
-  id: string,
-  name: string,
-  university: university,
-  universityID: string,
-  subjects?: [subjects],
-  users?: [users],
-  created_at: string,
-  updated_at: string
-}
-
-//!Aclaro que no hay ningun tipo que este chequeado al 100%
-
-type subjects = {
-  id: string,
-  name: string,
-  subjectYear: int,
-  requirements: [subjects],
-  status: [users],
-  degreeProgramID: string,
-  created_at: string,
-  updated_at: string
-}
+export type DegreeProgramSubject = {
+  id: string;
+  name: string;
+  subjectYear: number;
+  requirements?: string[];
+  status?: SubjectStatus;
+  degreeProgramID: string;
+  created_at: string;
+  updated_at: string;
+};

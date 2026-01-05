@@ -34,10 +34,15 @@ const degreeSchema = z.object({
   degreeName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
 });
 
-const structureSchema = z.object({
-  years: z.number().min(1).max(8),
-  subjects: z.number().min(1).max(80),
-});
+const structureSchema = z
+  .object({
+    years: z.number().min(1).max(8),
+    subjects: z.number().min(1).max(80),
+  })
+  .refine((data) => data.subjects >= data.years, {
+    message: 'Debe haber al menos tantas materias como años',
+    path: ['subjects'],
+  });
 
 const UniversityStep: React.FC<{
   onNext: (data: z.infer<typeof universitySchema>) => void;
@@ -356,6 +361,7 @@ const CreateDegreeWizard: React.FC<{ onComplete: () => void }> = ({ onComplete }
     setSubjects(initialSubjects);
     setDegreeData(finalData);
     localStorage.setItem('degreeData', JSON.stringify(finalData));
+    localStorage.setItem('degreeSubjects', JSON.stringify(initialSubjects));
     onComplete();
   };
 

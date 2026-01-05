@@ -6,13 +6,18 @@ import (
 )
 
 func GetAllUserSubjects (userId string, subjectId string) ([]models.UserSubject, error){
-	var userSubjects *[]models.UserSubject
+	var userSubjects []models.UserSubject
 
-	result := db.Db.Find(&userSubjects).Where("id = ?", userId)
-	if result.Error != nil {
-		return []models.UserSubject{}, result.Error
+	tx := db.Db.Model(&models.UserSubject{}).
+		Where("user_id = ?", userId)
+
+	if subjectId != "" {
+		tx = tx.Where("subject_id = ?", subjectId)
 	}
 
-	return *userSubjects, nil
+	if err := tx.Find(&userSubjects).Error; err != nil {
+		return nil, err
+	}
 
+	return userSubjects, nil
 }

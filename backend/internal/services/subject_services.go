@@ -6,11 +6,13 @@ import (
 )
 
 func GetAllSubjectsFromProgram (id string) (models.DegreeProgram, error){
-	var degreeProgram *models.DegreeProgram
+	var degreeProgram models.DegreeProgram
 
-	result := db.Db.Preload("Subjects.Requirements").Find(&degreeProgram)
-	if result.Error != nil {
-		return models.DegreeProgram{}, result.Error
+	if err := db.Db.
+		Preload("Subjects.Requirements").
+		Where("id = ?", id).
+		First(&degreeProgram).Error; err != nil {
+		return models.DegreeProgram{}, err
 	}
-	return *degreeProgram, nil
+	return degreeProgram, nil
 }

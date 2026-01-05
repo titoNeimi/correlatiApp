@@ -19,8 +19,8 @@ import { CurriculumSubject, PrerequisiteType } from './(types)/types';
 import { Select, YearColumn, SubjectCard, UnassignedPool } from './(components)';
 import { confirmCreation } from './action';
 
-const YearGrid: React.FC = () => {
-  const { degreeData, subjects, setSubjects } = useDegree();
+const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) => {
+  const { degreeData, setDegreeData, subjects, setSubjects } = useDegree();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [count, setCount] = useState<number>(() => subjects.length + 1);
   const [confirming, setConfirming] = useState(false);
@@ -57,6 +57,39 @@ const YearGrid: React.FC = () => {
   };
 
   useEffect(() => {
+    // restaurar desde localStorage si se recargó la página
+    try {
+      const storedDegree = localStorage.getItem('degreeData');
+      if (!degreeData && storedDegree) {
+        setDegreeData(JSON.parse(storedDegree));
+      }
+      const storedSubjects = localStorage.getItem('degreeSubjects');
+      if (storedSubjects) {
+        const parsed = JSON.parse(storedSubjects) as CurriculumSubject[];
+        if (parsed.length > 0) {
+          setSubjects(parsed);
+        }
+      }
+    } catch (err) {
+      console.log('No se pudieron restaurar datos de la carrera', err);
+    }
+    // solo queremos intentar restaurar en el primer render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (degreeData) {
+      localStorage.setItem('degreeData', JSON.stringify(degreeData));
+    }
+  }, [degreeData]);
+
+  useEffect(() => {
+    if (subjects.length > 0) {
+      localStorage.setItem('degreeSubjects', JSON.stringify(subjects));
+    }
+  }, [subjects]);
+
+  useEffect(() => {
     if (!contextMenu) return;
     const closeMenuOnScroll = () => setContextMenu(null);
     window.addEventListener('scroll', closeMenuOnScroll, true);
@@ -91,6 +124,14 @@ const YearGrid: React.FC = () => {
     setEditingName('');
   };
 
+  const handleCancel = () => {
+    localStorage.removeItem('degreeData');
+    localStorage.removeItem('degreeSubjects');
+    setDegreeData(null);
+    setSubjects([]);
+    if (onResetWizard) onResetWizard();
+  };
+
   const handleAddPrerequisite = (id: string, prereqId: string, type: PrerequisiteType) => {
     if (!prereqId) return;
     setSubjects(
@@ -111,7 +152,24 @@ const YearGrid: React.FC = () => {
     setContextMenu(null);
   };
 
-  if (!degreeData) return null;
+  if (!degreeData) {
+    return (
+      <div className="w-full max-w-xl mx-auto text-center space-y-4">
+        <h2 className="text-2xl font-semibold text-gray-900">Falta configurar la carrera</h2>
+        <p className="text-gray-600">
+          No encontramos datos guardados de la carrera. Volvé al asistente para crearlos.
+        </p>
+        <div className="flex justify-center">
+          <button
+            onClick={onResetWizard}
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Volver al asistente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const unassignedSubjects = subjects.filter((s) => s.year === null);
   const yearSubjects = Array.from({ length: degreeData.years }, (_, i) => ({
@@ -411,6 +469,12 @@ const YearGrid: React.FC = () => {
         </div>
       )}
       <div className="mt-6 flex justify-end">
+        <button
+          onClick={handleCancel}
+          className="px-4 py-2 mr-3 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
         <button
           onClick={handleConfirmCreation}
           disabled={confirming}

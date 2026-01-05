@@ -68,7 +68,7 @@ func GetProgramById(c *gin.Context) {
 func UpdateProgram(c *gin.Context) {
 	id := c.Param("id")
 
-	var updates *map[string]interface{}
+	updates := map[string]interface{}{}
 	var updatedProgram *models.DegreeProgram
 
 	if err := c.BindJSON(&updates); err != nil {
@@ -82,14 +82,14 @@ func UpdateProgram(c *gin.Context) {
 		return
 	}
 
-	if updates != nil {
-		if raw, ok := (*updates)["universityID"]; ok {
-			if uid, ok := raw.(string); ok && uid != "" {
-				if err := db.Db.First(&models.University{}, "id = ?", uid).Error; err != nil {
-					c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "University not found"})
-					return
-				}
+	if raw, ok := updates["universityID"]; ok {
+		if uid, ok := raw.(string); ok && uid != "" {
+			if err := db.Db.First(&models.University{}, "id = ?", uid).Error; err != nil {
+				c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "University not found"})
+				return
 			}
+		} else {
+			delete(updates, "universityID")
 		}
 	}
 
