@@ -5,21 +5,21 @@ import (
 	"correlatiApp/internal/http"
 	"correlatiApp/internal/middleware"
 	"correlatiApp/internal/services"
-	"net/http"
-	"time"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"net/http"
+	"time"
 )
 
-func SetUpRoutes (r *gin.Engine, db *gorm.DB) {
+func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 
 	r.Use(cors.New(cors.Config{
-    AllowOrigins:     []string{"http://localhost:3000"},
-    AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-    AllowHeaders:     []string{"Origin", "Content-Type", "X-Requested-With"},
-    ExposeHeaders:    []string{"Content-Length"},
-    AllowCredentials: true,
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
 	}))
 
 	sessSvc := services.New(db, 7*24*time.Hour)
@@ -28,41 +28,48 @@ func SetUpRoutes (r *gin.Engine, db *gorm.DB) {
 		Name:     "session_id",
 		Domain:   "",
 		Path:     "/",
-		Secure:   false,                  
+		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 	}
 	authHandlers := &handlers.AuthHandlers{DB: db, Sessions: sessSvc, Cookies: cookies}
 
-
-	users := r.Group("/users") 
+	users := r.Group("/users")
 	{
-		users.GET("/", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.GetAllUsers)
-		users.POST("/", handlers.CreateUser)
+		users.GET("", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.GetAllUsers)
+		users.POST("", handlers.CreateUser)
 		users.GET("/:id", handlers.GetUser)
-		users.PUT("/:id", handlers.UpdateUser, middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"))
-		users.DELETE("/:id", handlers.DeleteUser, middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"))
+		users.PUT("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.UpdateUser)
+		users.DELETE("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.DeleteUser)
 	}
-	degreeProgram := r.Group("degreeProgram")
+	degreeProgram := r.Group("/degreeProgram")
 	{
-		degreeProgram.GET("/", handlers.GetAllDegreeProgramsWithSubjects)
-		degreeProgram.POST("/", handlers.CreateProgram)
+		degreeProgram.GET("", handlers.GetAllDegreeProgramsWithSubjects)
+		degreeProgram.POST("", handlers.CreateProgram)
 		degreeProgram.GET("/:id", handlers.GetProgramById)
 		degreeProgram.PUT("/:id", handlers.UpdateProgram)
 		degreeProgram.DELETE("/:id", handlers.DeleteProgram)
 	}
 	subjects := r.Group("/subjects")
 	{
-		subjects.POST("/", handlers.CreateSubject)
+		subjects.POST("", handlers.CreateSubject)
 		subjects.GET("/:programId", handlers.GetAllSubjectsFromProgram)
 		subjects.PUT("/:id", handlers.UpdateSubject)
 		subjects.DELETE("/:id", handlers.DeleteSubject)
 	}
+	universities := r.Group("/universities")
+	{
+		universities.GET("", handlers.GetAllUniversities)
+		universities.POST("", handlers.CreateUniversity)
+		universities.GET("/:id", handlers.GetUniversityByID)
+		universities.PUT("/:id", handlers.UpdateUniversity)
+		universities.DELETE("/:id", handlers.DeleteUniversity)
+	}
 
 	auth := r.Group("/auth")
 	{
-		auth.GET("/me" ,middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Me)
+		auth.GET("/me", middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Me)
 		auth.POST("/login", authHandlers.LoginHandler)
-		auth.POST("/logout",middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Logout)
+		auth.POST("/logout", middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Logout)
 		auth.POST("/register", authHandlers.Register)
 	}
 

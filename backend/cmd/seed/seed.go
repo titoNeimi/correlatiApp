@@ -49,7 +49,18 @@ func Connect() {
 		panic(err)
 	}
 
+	if Db.Migrator().HasColumn(&models.DegreeProgram{}, "university") {
+		_ = Db.Migrator().DropColumn(&models.DegreeProgram{}, "university")
+	}
+
+	// Permite migrar aunque existan datos antiguos sin FK válidas (MySQL)
+	if Db.Dialector.Name() == "mysql" {
+		_ = Db.Exec("SET FOREIGN_KEY_CHECKS=0;")
+		defer Db.Exec("SET FOREIGN_KEY_CHECKS=1;")
+	}
+
 	if err := Db.AutoMigrate(
+		&models.University{},
 		&models.User{},
 		&models.DegreeProgram{},
 		&models.Subject{},
@@ -88,28 +99,45 @@ func Seed(gdb *gorm.DB) error {
 			return err
 		}
 
-		// 2) Degree Programs
+		// 2) Universities
+		utn := models.University{
+			ID:       uuid.NewString(),
+			Name:     "UTN",
+			Location: "Argentina",
+			Website:  "https://utn.edu.ar",
+		}
+		uba := models.University{
+			ID:       uuid.NewString(),
+			Name:     "UBA",
+			Location: "Argentina",
+			Website:  "https://uba.ar",
+		}
+		if err := tx.Create(&[]models.University{utn, uba}).Error; err != nil {
+			return err
+		}
+
+		// 3) Degree Programs
 		dpSistemas := models.DegreeProgram{
-			ID:         uuid.NewString(),
-			Name:       "Ingeniería en Sistemas de Información",
-			University: "UTN",
+			ID:           uuid.NewString(),
+			Name:         "Ingeniería en Sistemas de Información",
+			UniversityID: utn.ID,
 		}
 		dpAnalista := models.DegreeProgram{
-			ID:         uuid.NewString(),
-			Name:       "Analista de Sistemas",
-			University: "UTN",
+			ID:           uuid.NewString(),
+			Name:         "Analista de Sistemas",
+			UniversityID: utn.ID,
 		}
 		if err := tx.Create(&[]models.DegreeProgram{dpSistemas, dpAnalista}).Error; err != nil {
 			return err
 		}
 
-		// 3) Subjects (por programa) + correlativas (Requirements many2many)
+		// 4) Subjects (por programa) + correlativas (Requirements many2many)
 		// --- Sistemas (ejemplo razonable)
 		ams := newSubject("Análisis Matemático I", 1, dpSistemas.ID)
 		algebra := newSubject("Álgebra y Geometría Analítica", 1, dpSistemas.ID)
 		logica := newSubject("Lógica y Estructuras Discretas", 1, dpSistemas.ID)
 		algo1 := newSubject("Algoritmos y Estructuras de Datos", 1, dpSistemas.ID)
-		nego := newSubject("Sistemas y procesos de Negocios",1, dpSistemas.ID)
+		nego := newSubject("Sistemas y procesos de Negocios", 1, dpSistemas.ID)
 		arq := newSubject("Arquitectura de Computadoras", 1, dpSistemas.ID)
 		fi1 := newSubject("Física I", 1, dpSistemas.ID)
 
@@ -126,7 +154,7 @@ func Seed(gdb *gorm.DB) error {
 		desa := newSubject("Desarrollo de Software", 3, dpSistemas.ID)
 
 		sisSubjects := []*models.Subject{
-			ams, algebra, logica, algo1, am2, proba, arq, sintaxis, so, bd, ingsoft, nego, fi1, fi2, asi, para , desa,
+			ams, algebra, logica, algo1, am2, proba, arq, sintaxis, so, bd, ingsoft, nego, fi1, fi2, asi, para, desa,
 		}
 		if err := tx.Create(&sisSubjects).Error; err != nil {
 			return err
@@ -144,7 +172,7 @@ func Seed(gdb *gorm.DB) error {
 		if err := addReq(fi2.ID, fi1.ID, models.ReqFinalPending); err != nil {
 			return err
 		}
-		
+
 		if err := addReq(asi.ID, nego.ID, models.ReqFinalPending); err != nil {
 			return err
 		}
@@ -346,7 +374,8 @@ func resetAll(tx *gorm.DB) error {
 			sessions,
 			subjects,
 			degree_programs,
-			users
+			users,
+			universities
 		RESTART IDENTITY CASCADE;`
 		return tx.Exec(sql).Error
 
@@ -359,6 +388,7 @@ func resetAll(tx *gorm.DB) error {
 			"sessions",
 			"subjects",
 			"degree_programs",
+			"universities",
 			"users",
 		}
 		for _, t := range tables {

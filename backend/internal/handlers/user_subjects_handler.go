@@ -1,20 +1,22 @@
 package handlers
 
 import (
-		"correlatiApp/internal/db"
+	"correlatiApp/internal/db"
 	"correlatiApp/internal/models"
 	"correlatiApp/internal/services"
+	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"
-	"github.com/gin-gonic/gin"
 )
 
 type SubjectsFromProgram struct {
-	Id         string
-	Name       string
-	University string
-	Subjects   []models.SubjectWithUserStatusDTO
+	Id           string
+	Name         string
+	University   string
+	UniversityID string
+	Subjects     []models.SubjectWithUserStatusDTO
 }
+
 func GetMySubjectsFromProgram(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -49,10 +51,11 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 	}
 
 	var program models.DegreeProgram
-	if err := db.Db.Where("id = ?", programId).First(&program).Error; err != nil {
+	if err := db.Db.Preload("University").Where("id = ?", programId).First(&program).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
 	}
+	universityName := program.University.Name
 
 	var subjects []models.Subject
 	if err := db.Db.
@@ -64,10 +67,11 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 
 	if len(subjects) == 0 {
 		c.IndentedJSON(http.StatusOK, gin.H{
-			"id":         program.ID,
-			"name":       program.Name,
-			"university": program.University,
-			"subjects":   []any{},
+			"id":           program.ID,
+			"name":         program.Name,
+			"university":   universityName,
+			"universityID": program.UniversityID,
+			"subjects":     []any{},
 		})
 		return
 	}
@@ -126,9 +130,10 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{
-		"id":         program.ID,
-		"name":       program.Name,
-		"university": program.University,
-		"subjects":   out,
+		"id":           program.ID,
+		"name":         program.Name,
+		"university":   universityName,
+		"universityID": program.UniversityID,
+		"subjects":     out,
 	})
 }

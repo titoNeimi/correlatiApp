@@ -10,11 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetAllPrograms (c *gin.Context){
+func GetAllPrograms(c *gin.Context) {
 	var programs *[]models.DegreeProgram
-	
-    err := db.Db.Model(&models.DegreeProgram{}).Preload("DegreeProgramID").Find(&programs).Error
-	if err != nil{
+
+	err := db.Db.Model(&models.DegreeProgram{}).Preload("Subjects").Preload("University").Find(&programs).Error
+	if err != nil {
 		slog.Error("Error getting all the programs from db", slog.Any("error: ", err))
 		c.IndentedJSON(http.StatusInternalServerError, "An error ocurred while getting the programs")
 		return
@@ -22,32 +22,41 @@ func GetAllPrograms (c *gin.Context){
 	c.IndentedJSON(http.StatusOK, programs)
 }
 
-func CreateProgram (c *gin.Context){
+func CreateProgram(c *gin.Context) {
 	var newProgram *models.DegreeProgram
 
 	if err := c.BindJSON(&newProgram); err != nil {
 		slog.Error("Error getting the json from the body", slog.Any("error", err))
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error":"invalid JSON"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
 		return
 	}
 
 	newProgram.ID = uuid.New().String()
+	if newProgram.UniversityID == "" {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "UniversityID is required"})
+		return
+	}
+
+	if err := db.Db.First(&models.University{}, "id = ?", newProgram.UniversityID).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "University not found"})
+		return
+	}
 
 	result := db.Db.Create(&newProgram)
-	if result.Error != nil{
+	if result.Error != nil {
 		slog.Error("Error creating the degree program", slog.Any("error", result.Error))
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error":"Error creating the degree program"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Error creating the degree program"})
 		return
 	}
 	slog.Info("Degree program created", "id", newProgram.ID)
 	c.IndentedJSON(http.StatusCreated, newProgram)
 }
 
-func GetProgramById (c *gin.Context){
+func GetProgramById(c *gin.Context) {
 	id := c.Param("id")
 	var program *models.DegreeProgram
 
-	if err := db.Db.Preload("Subjects").First(&program).Where("id = ?", id).Error; err != nil {
+	if err := db.Db.Preload("Subjects").Preload("University").Where("id = ?", id).First(&program).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
 	}
@@ -56,21 +65,32 @@ func GetProgramById (c *gin.Context){
 
 }
 
-func UpdateProgram (c *gin.Context) {
+func UpdateProgram(c *gin.Context) {
 	id := c.Param("id")
 
 	var updates *map[string]interface{}
 	var updatedProgram *models.DegreeProgram
 
-		if err := c.BindJSON(&updates); err != nil {
-			slog.Error("Error getting the json from the body", slog.Any("Error: ", err))
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
+	if err := c.BindJSON(&updates); err != nil {
+		slog.Error("Error getting the json from the body", slog.Any("Error: ", err))
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
 		return
 	}
 
-	if err := db.Db.First(&updatedProgram).Where("id = ?", id).Error; err != nil {
+	if err := db.Db.Where("id = ?", id).First(&updatedProgram).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
+	}
+
+	if updates != nil {
+		if raw, ok := (*updates)["universityID"]; ok {
+			if uid, ok := raw.(string); ok && uid != "" {
+				if err := db.Db.First(&models.University{}, "id = ?", uid).Error; err != nil {
+					c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "University not found"})
+					return
+				}
+			}
+		}
 	}
 
 	if err := db.Db.Model(&updatedProgram).Updates(updates).Error; err != nil {
@@ -79,7 +99,7 @@ func UpdateProgram (c *gin.Context) {
 		return
 	}
 
-	if err := db.Db.First(&updatedProgram).Where("id = ?", id).Error; err != nil {
+	if err := db.Db.Preload("Subjects").Preload("University").Where("id = ?", id).First(&updatedProgram).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Error getting the program after the update"})
 		return
 	}
@@ -88,20 +108,19 @@ func UpdateProgram (c *gin.Context) {
 
 }
 
-func DeleteProgram (c *gin.Context){
+func DeleteProgram(c *gin.Context) {
 	id := c.Param("id")
 
 	var program *models.DegreeProgram
 
-	
-	if err := db.Db.First(&program).Where("id = ?", id).Error; err != nil {
+	if err := db.Db.Where("id = ?", id).First(&program).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
 	}
 
 	result := db.Db.Delete(program)
 
-	if result.Error != nil{
+	if result.Error != nil {
 		slog.Error("Error deleting the program from db", "programID", id, slog.Any("Error: ", result.Error))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error deleting the program"})
 		return
@@ -115,8 +134,8 @@ func GetAllDegreeProgramsWithSubjects(c *gin.Context) {
 	var degreePrograms []models.DegreeProgram
 
 	// Preload incluye las materias relacionadas
-	result := db.Db.Preload("Subjects").Find(&degreePrograms)
-	
+	result := db.Db.Preload("Subjects").Preload("University").Find(&degreePrograms)
+
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Error getting all the degrees",
@@ -127,18 +146,18 @@ func GetAllDegreeProgramsWithSubjects(c *gin.Context) {
 
 	// requirements de cada materia
 	/*
-	result = db.Db.Preload("Subjects.Requirements").Find(&degreePrograms)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Error getting al the dregrees programs with their requirements",
-			"message": result.Error.Error(),
-		})
-		return
-	}
+		result = db.Db.Preload("Subjects.Requirements").Find(&degreePrograms)
+		if result.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "Error getting al the dregrees programs with their requirements",
+				"message": result.Error.Error(),
+			})
+			return
+		}
 	*/
 
 	c.JSON(http.StatusOK, gin.H{
-		"count":  len(degreePrograms),
-		"data":   degreePrograms,
+		"count": len(degreePrograms),
+		"data":  degreePrograms,
 	})
 }

@@ -34,14 +34,25 @@ type User struct {
 	UpdatedAt      time.Time        `json:"updated_at"`
 }
 
+type University struct {
+	ID             string          `json:"id" gorm:"primaryKey;size:191"`
+	Name           string          `json:"name" gorm:"unique;not null;size:191"`
+	Location       string          `json:"location,omitempty" gorm:"size:191"`
+	Website        string          `json:"website,omitempty" gorm:"size:191"`
+	DegreePrograms []DegreeProgram `json:"degreePrograms,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+}
+
 type DegreeProgram struct {
-	ID         string    `json:"id" gorm:"primaryKey;size:191"`
-	Name       string    `json:"name" gorm:"not null;size:191"`
-	University string    `json:"university" gorm:"not null;size:191"`
-	Subjects   []Subject `json:"subjects" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
-	Users      []*User   `json:"users" gorm:"many2many:user_degree_programs"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID           string     `json:"id" gorm:"primaryKey;size:191"`
+	Name         string     `json:"name" gorm:"not null;size:191"`
+	UniversityID string     `json:"universityID" gorm:"not null;size:191;index"`
+	University   University `json:"university" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Subjects     []Subject  `json:"subjects" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
+	Users        []*User    `json:"users" gorm:"many2many:user_degree_programs"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 type Subject struct {
