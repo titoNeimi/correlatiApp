@@ -1,4 +1,5 @@
 'use client'
+
 import React, { useEffect, useState } from 'react';
 import {
   DndContext,
@@ -16,11 +17,14 @@ import { MOCK_UNIVERSITIES } from '@/lib/mocks';
 import { useDegree } from './degree-context';
 import { CurriculumSubject, PrerequisiteType } from './(types)/types';
 import { Select, YearColumn, SubjectCard, UnassignedPool } from './(components)';
+import { confirmCreation } from './action';
 
 const YearGrid: React.FC = () => {
   const { degreeData, subjects, setSubjects } = useDegree();
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [count, setCount] = useState<number>(0);
+  const [count, setCount] = useState<number>(() => subjects.length + 1);
+  const [confirming, setConfirming] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -160,8 +164,15 @@ const YearGrid: React.FC = () => {
   };
 
   const handleDeleteSubject = (subjectId: string) => {
-    const goodSubjects = subjects.filter((subject) => subject.id != subjectId);
-    setSubjects(goodSubjects);
+    const remainingSubjects = subjects.filter((subject) => subject.id !== subjectId);
+    const cleanedSubjects = remainingSubjects.map((subject) => {
+      if (subject.prerequisites.length === 0) return subject;
+      const filtered = subject.prerequisites.filter((req) => req.subjectId !== subjectId);
+      return filtered.length === subject.prerequisites.length
+        ? subject
+        : { ...subject, prerequisites: filtered };
+    });
+    setSubjects(cleanedSubjects);
     if (editingSubjectId === subjectId) {
       cancelRename();
     }
@@ -180,6 +191,35 @@ const YearGrid: React.FC = () => {
   };
 
   const activeSubject = subjects.find((s) => s.id === activeId);
+
+  const handleConfirmCreation = async () => {
+    if (!degreeData) return;
+    const missingYears = Array.from({ length: degreeData.years }, (_, i) => i + 1).filter(
+      (year) => !subjects.some((s) => s.year === year)
+    );
+    const unassigned = subjects.filter((s) => s.year === null).map((s) => s.name);
+
+    const validationErrors: string[] = [];
+    if (missingYears.length > 0) {
+      validationErrors.push(`Años sin materias asignadas: ${missingYears.join(', ')}`);
+    }
+    if (unassigned.length > 0) {
+      validationErrors.push(`Materias sin asignar: ${unassigned.join(', ')}`);
+    }
+
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setErrors([]);
+    setConfirming(true);
+    try {
+      await confirmCreation({ degreeData, subjects });
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   return (
     <div>
@@ -211,8 +251,8 @@ const YearGrid: React.FC = () => {
           onRenameCancel={cancelRename}
         />
 
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-min">
+        <div className="pb-4">
+          <div className="flex flex-wrap gap-4 min-w-0">
             {yearSubjects.map(({ year, subjects: yearSubs }) => (
               <YearColumn
                 key={year}
@@ -291,8 +331,8 @@ const YearGrid: React.FC = () => {
                     }))
                   }
                 >
-                  <option value="approved">approved</option>
-                  <option value="pending_final">pending_final</option>
+                  <option value="passed">Aprovada</option>
+                  <option value="pending_final">Final pendiente</option>
                 </Select>
                 <div className="flex justify-end gap-2 pt-1">
                   <button
@@ -314,6 +354,22 @@ const YearGrid: React.FC = () => {
           </div>
         </>
       )}
+      {errors.length > 0 && (
+        <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800 space-y-1">
+          {errors.map((err, idx) => (
+            <div key={idx}>{err}</div>
+          ))}
+        </div>
+      )}
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={handleConfirmCreation}
+          disabled={confirming}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          {confirming ? 'Confirmando...' : 'Crear'}
+        </button>
+      </div>
     </div>
   )
 }

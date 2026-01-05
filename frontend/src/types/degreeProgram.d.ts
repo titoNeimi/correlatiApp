@@ -3,6 +3,7 @@ type degreeProgram = {
   id: string,
   name: string,
   university: university,
+  universityID: string,
   subjects?: [subjects],
   users?: [users],
   created_at: string,

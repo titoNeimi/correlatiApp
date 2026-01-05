@@ -9,13 +9,9 @@ const App: React.FC = () => {
 
   return (
     <DegreeProvider>
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          {view === 'wizard' ? (
-            <CreateDegreeWizard onComplete={() => setView('grid')} />
-          ) : (
-            <YearGrid />
-          )}
+      <div className="bg-gray-50 py-8 px-4 flex justify-center items-center min-h-[calc(100vh-82px)] overflow-hidden">
+        <div className="w-full max-w-screen-2xl mx-auto flex justify-center">
+          {view === 'wizard' ? <CreateDegreeWizard onComplete={() => setView('grid')}/> : <YearGrid />}
         </div>
       </div>
     </DegreeProvider>

@@ -1,13 +1,17 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, ArrowLeft, ArrowRight, Check } from 'lucide-react';
-import { MOCK_UNIVERSITIES } from '@/lib/mocks';
 import { useDegree } from './degree-context';
-import { DegreeData } from './(types)/types';
+import { CurriculumSubject, DegreeData } from './(types)/types';
 import { Button, Input, Label, Select, Card } from './(components)';
+import { fetchDegreePrograms, createUniversity } from './action';
+
+const Spinner = () => (
+  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+);
 
 const universitySchema = z
   .object({
@@ -32,12 +36,17 @@ const degreeSchema = z.object({
 
 const structureSchema = z.object({
   years: z.number().min(1).max(8),
+  subjects: z.number().min(1).max(80),
 });
 
 const UniversityStep: React.FC<{
   onNext: (data: z.infer<typeof universitySchema>) => void;
 }> = ({ onNext }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select');
+  const [programs, setPrograms] = useState<University[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [creating, setCreating] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -52,8 +61,19 @@ const UniversityStep: React.FC<{
     },
   });
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const data = await fetchDegreePrograms();
+      setPrograms(data.data || []);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
   const handleModeChange = (newMode: 'select' | 'create') => {
     setMode(newMode);
+    setError(null);
 
     if (newMode === 'select') {
       setValue('universityName', '');
@@ -64,7 +84,25 @@ const UniversityStep: React.FC<{
     clearErrors(['universityId', 'universityName']);
   };
 
-  const onSubmit = (data: z.infer<typeof universitySchema>) => {
+  const onSubmit = async (data: z.infer<typeof universitySchema>) => {
+    setError(null);
+    if (mode === 'create') {
+      const name = data.universityName?.trim();
+      if (!name) {
+        setError('El nombre es requerido para crear una universidad');
+        return;
+      }
+      setCreating(true);
+      const created = await createUniversity(name);
+      setCreating(false);
+      if (!created) {
+        setError('No se pudo crear la universidad');
+        return;
+      }
+      setPrograms((prev) => [...prev, created]);
+      setValue('universityId', created.id);
+      data.universityId = created.id;
+    }
     onNext(data);
   };
 
@@ -94,26 +132,44 @@ const UniversityStep: React.FC<{
           </Button>
         </div>
 
-        {mode === 'select' ? (
+        {mode === 'select' && (
           <div>
             <Label htmlFor="universityId">Universidad</Label>
-            <Select {...register('universityId')} error={!!errors.universityId}>
-              <option value="">Seleccione...</option>
-              {MOCK_UNIVERSITIES.map((uni) => (
-                <option key={uni.id} value={uni.id}>
-                  {uni.name}
-                </option>
-              ))}
-            </Select>
+            {loading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                <Spinner />
+                Cargando universidades...
+              </div>
+            ) : (
+              <Select
+                id="universityId"
+                {...register('universityId')}
+                error={!!errors.universityId}
+                disabled={loading}
+              >
+                <option value="">Seleccione...</option>
+                {programs.map((uni) => (
+                  <option key={uni.id} value={uni.id}>
+                    {uni.name}
+                  </option>
+                ))}
+              </Select>
+            )}
           </div>
-        ) : (
+        )}
+        {mode === 'create' && (
           <div>
             <Label htmlFor="universityName">Nombre de la nueva universidad</Label>
-            <Input
-              {...register('universityName')}
-              placeholder="Ej: Universidad Nacional de..."
-              error={!!errors.universityName}
-            />
+            <div className="flex items-center gap-3">
+              <Input
+                id="universityName"
+                {...register('universityName')}
+                placeholder="Ej: Universidad Nacional de..."
+                error={!!errors.universityName}
+                disabled={creating}
+              />
+              {creating && <Spinner />}
+            </div>
           </div>
         )}
 
@@ -122,10 +178,11 @@ const UniversityStep: React.FC<{
             {errors.universityId?.message || errors.universityName?.message}
           </p>
         )}
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" onClick={handleSubmit(onSubmit)}>
+        <Button type="button" onClick={handleSubmit(onSubmit)} disabled={creating || loading}>
           Siguiente
           <ArrowRight className="w-4 h-4" />
         </Button>
@@ -160,6 +217,7 @@ const DegreeStep: React.FC<{
       <div>
         <Label htmlFor="degreeName">Nombre de la carrera</Label>
         <Input
+          id="degreeName"
           {...register('degreeName')}
           placeholder="Ej: Licenciatura en Ciencias de la Computación"
           error={!!errors.degreeName}
@@ -194,10 +252,11 @@ const StructureStep: React.FC<{
     formState: { errors },
   } = useForm<z.infer<typeof structureSchema>>({
     resolver: zodResolver(structureSchema),
-    defaultValues: { years: 5 },
+    defaultValues: { years: 5, subjects: 12 },
   });
 
   const years = watch('years');
+  const subjects = watch('subjects');
 
   const onFormSubmit = (data: z.infer<typeof structureSchema>) => {
     onSubmit(data);
@@ -212,7 +271,11 @@ const StructureStep: React.FC<{
 
       <div>
         <Label htmlFor="years">Duración en años</Label>
-        <Select {...register('years', { valueAsNumber: true })} error={!!errors.years}>
+        <Select
+          id="years"
+          {...register('years', { valueAsNumber: true })}
+          error={!!errors.years}
+        >
           {[1, 2, 3, 4, 5, 6, 7, 8].map((y) => (
             <option key={y} value={y}>
               {y} {y === 1 ? 'año' : 'años'}
@@ -221,10 +284,32 @@ const StructureStep: React.FC<{
         </Select>
       </div>
 
+      <div>
+        <Label htmlFor="subjects">Cantidad de materias</Label>
+        <Input
+          id="subjects"
+          type="number"
+          min={1}
+          max={80}
+          {...register('subjects', { valueAsNumber: true })}
+          error={!!errors.subjects}
+        />
+        {errors.subjects && (
+          <p className="text-sm text-red-600 mt-1">{errors.subjects.message}</p>
+        )}
+      </div>
+
       <Card className="p-4 bg-blue-50 border-blue-200">
         <h3 className="font-semibold text-blue-900 mb-2">Vista previa</h3>
         <p className="text-blue-800">
-          La carrera tendrá <strong>{years} {years === 1 ? 'año' : 'años'}</strong>
+          La carrera tendrá{' '}
+          <strong>
+            {years} {years === 1 ? 'año' : 'años'}
+          </strong>{' '}
+          y{' '}
+          <strong>
+            {subjects} {subjects === 1 ? 'materia' : 'materias'}
+          </strong>
         </p>
       </Card>
 
@@ -244,7 +329,7 @@ const StructureStep: React.FC<{
 
 const CreateDegreeWizard: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
-  const { setDegreeData } = useDegree();
+  const { setDegreeData, setSubjects } = useDegree();
   const [formData, setFormData] = useState<Partial<DegreeData>>({});
 
   const handleUniversityNext = (data: z.infer<typeof universitySchema>) => {
@@ -259,9 +344,16 @@ const CreateDegreeWizard: React.FC<{ onComplete: () => void }> = ({ onComplete }
 
   const handleStructureSubmit = async (data: z.infer<typeof structureSchema>) => {
     const finalData = { ...formData, ...data } as DegreeData;
+    const initialSubjects: CurriculumSubject[] = Array.from({ length: data.subjects }, (_, idx) => ({
+      id: `subject-${idx + 1}`,
+      name: `Materia ${idx + 1}`,
+      year: null,
+      prerequisites: [],
+    }));
 
     await new Promise((r) => setTimeout(r, 500));
 
+    setSubjects(initialSubjects);
     setDegreeData(finalData);
     localStorage.setItem('degreeData', JSON.stringify(finalData));
     onComplete();

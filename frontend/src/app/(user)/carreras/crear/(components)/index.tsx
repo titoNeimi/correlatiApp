@@ -51,7 +51,7 @@ const YearColumn: React.FC<{
   const { setNodeRef, isOver } = useDroppable({ id: `year-${year}` });
 
   return (
-    <div className="flex-shrink-0 w-72">
+    <div className="w-full sm:w-72 flex-shrink-0">
       <Card className="h-full">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <h3 className="font-semibold text-gray-900">Año {year}</h3>
@@ -181,7 +181,7 @@ const SubjectCard: React.FC<{
   const { subjects: allSubjects } = useDegree();
 
   const prerequisiteTypeLabels: Record<PrerequisiteType, string> = {
-    approved: "Aprobada",
+    passed: "Aprobada",
     pending_final: "Final pendiente",
   };
 

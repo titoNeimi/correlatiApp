@@ -1,9 +1,16 @@
 import React from 'react';
 import { BookOpen, Users, GraduationCap } from 'lucide-react';
 
+type DegreeProgramDTO = {
+  id: string;
+  name: string;
+  university?: University;
+  subjects?: { id: string }[];
+};
+
 type fetchDegree = {
   count:number,
-  data: [degreeProgram]
+  data: DegreeProgramDTO[]
 }
 
 const fetchDegreePrograms = async (): Promise<fetchDegree | null> =>  {
@@ -23,7 +30,7 @@ const fetchDegreePrograms = async (): Promise<fetchDegree | null> =>  {
 
 
 
-export async function CareersPage () {
+async function CareersPage () {
 
   const colors = [
     "bg-blue-50 border-blue-200",
@@ -111,7 +118,7 @@ export async function CareersPage () {
               </h3>
               
               <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                {program.university}
+                {program.university?.name || 'Universidad'}
               </p>
 
               <div className="flex items-center justify-between">                

@@ -3,6 +3,7 @@ interface DegreeData {
   universityName?: string;
   degreeName: string;
   years: number;
+  subjects: number;
 }
 
 interface CurriculumSubject {
@@ -24,6 +25,6 @@ interface Prerequisite {
   type: PrerequisiteType;
 }
 
-type PrerequisiteType = 'approved' | 'pending_final';
+type PrerequisiteType = 'passed' | 'pending_final';
 
 export type { DegreeContextType, DegreeData, CurriculumSubject, PrerequisiteType, Prerequisite }

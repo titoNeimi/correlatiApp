@@ -25,9 +25,9 @@ type createSubjectDTO struct {
 }
 
 type updateSubjectDTO struct {
-	Name            *string            `json:"name,omitempty"`
-	SubjectYear     *int               `json:"subjectYear,omitempty"`
-	DegreeProgramID *string            `json:"degreeProgramID,omitempty"`
+	Name            *string             `json:"name,omitempty"`
+	SubjectYear     *int                `json:"subjectYear,omitempty"`
+	DegreeProgramID *string             `json:"degreeProgramID,omitempty"`
 	Requirements    *[]requirementInput `json:"requirements,omitempty"`
 }
 
