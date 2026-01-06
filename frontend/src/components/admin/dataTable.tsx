@@ -14,7 +14,7 @@ interface DataTableProps {
 
 export default function DataTable({ columns, data }: DataTableProps) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overflow-y-visible relative">
       <table className="w-full min-w-[640px]">
         <thead className="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
           <tr>

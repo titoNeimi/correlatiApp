@@ -15,7 +15,7 @@ interface CurriculumSubject {
 
 interface DegreeContextType {
   degreeData: DegreeData | null;
-  setDegreeData: (data: DegreeData) => void;
+  setDegreeData: (data: DegreeData | null) => void;
   subjects: CurriculumSubject[];
   setSubjects: (subjects: CurriculumSubject[]) => void;
 }

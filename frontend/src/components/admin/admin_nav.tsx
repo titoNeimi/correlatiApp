@@ -112,12 +112,25 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       ),
     },
     {
-      id: 'subjects',
-      label: 'Materias',
-      href: '/admin/subjects',
+      id: 'universities',
+      label: 'Universidades',
+      href: '/admin/universities',
       icon: (
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6l-9 5 9 5 9-5-9-5zm-7 9l7 4 7-4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7 4 7-4" />
+        </svg>
+      ),
+    },
+    {
+      id: 'observability',
+      label: 'Observabilidad',
+      href: '/admin/observability',
+      icon: (
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h2l2 10h8l2-8h-9" />
+          <circle cx="9" cy="18" r="1" />
+          <circle cx="17" cy="18" r="1" />
         </svg>
       ),
     },
@@ -179,7 +192,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               icon={item.icon}
               label={item.label}
               href={item.href}
-              isActive={pathname === item.href}
+              isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
               isCollapsed={isCollapsed}
             />
           ))}

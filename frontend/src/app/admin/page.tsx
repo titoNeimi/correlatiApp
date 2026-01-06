@@ -1,15 +1,67 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import StatCard from '@/components/admin/statCard';
 import { Card } from '@/components/admin/baseComponents';
 
+type ProgramApi = { id: string; name: string; subjects?: { id: string }[] };
+type DegreeProgramsResponse = { count: number; data: ProgramApi[] };
+type UserApi = { id: string; email: string; role?: string; created_at?: string };
+
 export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userCount, setUserCount] = useState<number>(0);
+  const [programCount, setProgramCount] = useState<number>(0);
+  const [subjectCount, setSubjectCount] = useState<number>(0);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_APIURL;
+    if (!apiUrl) {
+      setError('Falta NEXT_PUBLIC_APIURL');
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const [usersResp, programsResp] = await Promise.all([
+          fetch(`${apiUrl}/users`, { credentials: 'include' }),
+          fetch(`${apiUrl}/degreeProgram`, { credentials: 'include' }),
+        ]);
+
+        if (!usersResp.ok && usersResp.status !== 401) {
+          throw new Error('No se pudieron cargar usuarios');
+        }
+        if (!programsResp.ok) {
+          throw new Error('No se pudieron cargar carreras');
+        }
+
+        const usersJson = usersResp.ok ? ((await usersResp.json()) as UserApi[]) : [];
+        const programsJson = (await programsResp.json()) as DegreeProgramsResponse;
+
+        setUserCount(usersJson.length);
+        setProgramCount(programsJson.count);
+
+        const subjects = programsJson.data?.reduce((acc, program) => {
+          return acc + (program.subjects?.length ?? 0);
+        }, 0);
+        setSubjectCount(subjects || 0);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error cargando datos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const kpiData = useMemo(() => [
     {
-      title: 'Usuarios totales',
-      value: '1,248',
-      change: '+12%',
+      title: 'Usuarios',
+      value: loading ? '...' : userCount.toString(),
+      change: '',
       trend: 'up' as const,
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -18,9 +70,9 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: 'Carreras activas',
-      value: '6',
-      change: '+1',
+      title: 'Carreras',
+      value: loading ? '...' : programCount.toString(),
+      change: '',
       trend: 'up' as const,
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -29,9 +81,9 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: 'Materias',
-      value: '132',
-      change: '+8',
+      title: 'Materias (estimado)',
+      value: loading ? '...' : subjectCount.toString(),
+      change: '',
       trend: 'up' as const,
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,31 +92,9 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: 'Aprobadas (30 días)',
-      value: '87',
-      change: '+15%',
-      trend: 'up' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Finales pendientes',
-      value: '24',
-      change: '-3',
-      trend: 'down' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Tasa de aprobación',
-      value: '72%',
-      change: '+5%',
+      title: 'Pendientes de definir',
+      value: 'Configurar',
+      change: '',
       trend: 'up' as const,
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -72,19 +102,22 @@ export default function DashboardPage() {
         </svg>
       ),
     },
-  ], []);
+  ], [loading, programCount, subjectCount, userCount]);
 
   const recentActivity = useMemo(() => [
-    { text: 'Nuevo usuario registrado', time: 'hace 3 h' },
-    { text: 'Materia creada: Álgebra I', time: 'ayer' },
-    { text: 'Carrera actualizada: Ingeniería en Sistemas', time: '12/10' },
-    { text: 'Requisito agregado a Probabilidad', time: '12/10' },
-    { text: 'Usuario promovido a admin', time: '11/10' },
-    { text: 'Se importaron 24 materias', time: '10/10' },
+    { text: 'Actividad de admin: datos cargados', time: 'Ahora' },
+    { text: 'Pendiente: conectar eventos reales', time: '' },
   ], []);
 
   return (
     <div className="space-y-6">
+      {/* Estado de error */}
+      {error && (
+        <Card className="p-4 border border-red-200 bg-red-50 text-red-700">
+          {error}
+        </Card>
+      )}
+
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
         {kpiData.map((kpi, idx) => (
