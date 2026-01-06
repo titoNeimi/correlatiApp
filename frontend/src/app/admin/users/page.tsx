@@ -12,6 +12,15 @@ export default function UsersPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<null | string>(null);
   const [usersData, setUsersData] = useState<User[]>([])
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createFeedback, setCreateFeedback] = useState<string | null>(null);
+  const [newUser, setNewUser] = useState<{ email: string; password: string; role: User["role"] }>({
+    email: "",
+    password: "",
+    role: "user",
+  });
   const apiURL = process.env.NEXT_PUBLIC_APIURL
 
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat('es-AR', {
@@ -48,6 +57,55 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers()
   }, [fetchUsers])
+
+  const handleOpenCreate = () => {
+    setNewUser({ email: "", password: "", role: "user" });
+    setCreateError(null);
+    setShowCreateModal(true);
+  };
+
+  const handleCreateUser = async () => {
+    if (!apiURL) {
+      setCreateError("No existe NEXT_PUBLIC_APIURL en el .env");
+      return;
+    }
+    if (!newUser.email || !newUser.password) {
+      setCreateError("Email y contraseña son obligatorios");
+      return;
+    }
+
+    setCreateError(null);
+    setCreateLoading(true);
+    try {
+      const response = await fetch(`${apiURL}/users`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: newUser.email,
+          password: newUser.password,
+          role: newUser.role,
+        }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const message = body?.error || "No se pudo crear el usuario";
+        setCreateError(message);
+        return;
+      }
+
+      await fetchUsers();
+      setShowCreateModal(false);
+      setCreateFeedback("Usuario creado correctamente");
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Error desconocido al crear el usuario");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
 
   const columns = useMemo(() => [
     { key: 'email', label: 'Email', width: '30%' },
@@ -129,15 +187,25 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Usuarios</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona los usuarios registrados en la plataforma</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Usuarios</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona los usuarios registrados en la plataforma</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {createFeedback && (
+              <span className="text-xs text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-3 py-1 rounded-full">
+                {createFeedback}
+              </span>
+            )}
+            <button
+              onClick={handleOpenCreate}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            >
+              + Agregar usuario
+            </button>
+          </div>
         </div>
-        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-          + Agregar usuario
-        </button>
-      </div>
 
       {/* Filters */}
       <Card className="p-4">
@@ -192,6 +260,104 @@ export default function UsersPage() {
       <Card>
         <DataTable columns={columns} data={tableData} />
       </Card>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => !createLoading && setShowCreateModal(false)}
+          />
+          <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Nuevo usuario</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Completa los datos</h3>
+              </div>
+              <button
+                onClick={() => !createLoading && setShowCreateModal(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
+                aria-label="Cerrar"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="usuario@correo.com"
+                  disabled={createLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Contraseña temporal</label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Mínimo 6 caracteres"
+                  disabled={createLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Rol</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["admin", "staff", "user"] as User["role"][]).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setNewUser((prev) => ({ ...prev, role }))}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                        newUser.role === role
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                          : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
+                      disabled={createLoading}
+                    >
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {createError && (
+              <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-700 dark:text-red-200">
+                {createError}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => !createLoading && setShowCreateModal(false)}
+                className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                disabled={createLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateUser}
+                disabled={createLoading}
+                className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${
+                  createLoading
+                    ? "bg-blue-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {createLoading ? "Creando..." : "Crear usuario"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

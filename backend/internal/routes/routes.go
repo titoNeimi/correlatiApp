@@ -43,6 +43,7 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		users.GET("/:id", handlers.GetUser)
 		users.PUT("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.UpdateUser)
 		users.DELETE("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.DeleteUser)
+		users.POST("/:id/session/revoke", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.RevokeSession)
 	}
 	degreeProgram := r.Group("/degreeProgram")
 	{

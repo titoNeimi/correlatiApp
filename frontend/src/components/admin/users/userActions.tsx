@@ -53,12 +53,15 @@ type UserActionsProps = {
 };
 
 export function UserActions({ user, variant = "panel", className = "" }: UserActionsProps) {
+  const apiURL = process.env.NEXT_PUBLIC_APIURL;
   const [actionModal, setActionModal] = useState<AdminAction>(null);
   const [selectedRole, setSelectedRole] = useState<User["role"]>("user");
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [generatedMessage, setGeneratedMessage] = useState<string>("");
   const [tempPassword, setTempPassword] = useState<string>("");
   const [exportFormat, setExportFormat] = useState<"json" | "csv">("json");
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -108,11 +111,46 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
     setGeneratedMessage("");
     setTempPassword("");
     setExportFormat("json");
+    setActionError(null);
     setActionModal(action);
   };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     if (!actionModal) return;
+
+    if (actionModal === "sessions") {
+      if (!apiURL) {
+        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
+        return;
+      }
+
+      setActionError(null);
+      setActionLoading(true);
+      try {
+        const response = await fetch(`${apiURL}/users/${user.id}/session/revoke`, {
+          method: "POST",
+          credentials: "include",
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          const message = body?.error || "No se pudieron revocar las sesiones";
+          setActionError(message);
+          return;
+        }
+        const body = (await response.json().catch(() => null)) as { message?: string; deleted?: number } | null;
+        const deleted = typeof body?.deleted === "number" ? body?.deleted : undefined;
+        const message = body?.message || "Sesiones revocadas";
+        const feedback = deleted !== undefined ? `${message} (${deleted})` : message;
+        setGeneratedMessage(feedback);
+        setActionModal(null);
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : "Error desconocido al revocar sesiones");
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
     const map: Record<Exclude<AdminAction, null>, string> = {
       role: `Acción simulada: rol actualizado a ${selectedRole}`,
       password: "Acción simulada: contraseña reseteada",
@@ -176,7 +214,7 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
               Revocará todas las sesiones activas de este usuario. Se cerrará su sesión en todos los dispositivos.
             </p>
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800/50">
-              Acción solo visual. Aquí se llamaría al endpoint de revocación de sesiones.
+              Se llamará al endpoint POST /users/{user.id}/session/revoke.
             </div>
           </div>
         );
@@ -361,7 +399,7 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
           <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl p-6 space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Acción admin (visual)</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Acción admin</p>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {actionModal ? actionLabels[actionModal] : ""}
                 </h3>
@@ -381,6 +419,12 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
               {renderModalBody()}
             </div>
 
+            {actionError && (
+              <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-700 dark:text-red-200">
+                {actionError}
+              </div>
+            )}
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setActionModal(null)}
@@ -390,9 +434,14 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
               </button>
               <button
                 onClick={confirmAction}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+                disabled={actionLoading}
+                className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${
+                  actionLoading
+                    ? "bg-blue-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
               >
-                Confirmar (mock)
+                {actionModal === "sessions" ? (actionLoading ? "Revocando..." : "Revocar sesiones") : "Confirmar (mock)"}
               </button>
             </div>
           </div>
