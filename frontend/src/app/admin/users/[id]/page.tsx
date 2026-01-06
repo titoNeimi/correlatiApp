@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Badge, Card } from "@/components/admin/baseComponents";
 import { User } from "@/types/user";
+import { UserActions } from "@/components/admin/users/userActions";
 
 type ActivityEvent = {
   id: string;
@@ -220,6 +221,8 @@ export default function UserDetailPage() {
           Recargar datos
         </button>
       </div>
+
+      <UserActions user={user} variant="panel" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-6 lg:col-span-2">

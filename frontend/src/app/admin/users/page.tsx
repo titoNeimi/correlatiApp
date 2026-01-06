@@ -4,16 +4,14 @@ import Link from "next/link";
 import { Badge, Card } from "@/components/admin/baseComponents";
 import DataTable from "@/components/admin/dataTable";
 import { User } from "@/types/user";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { UserActions } from "@/components/admin/users/userActions";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<null | string>(null);
   const [usersData, setUsersData] = useState<User[]>([])
-  const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
-  const menuRef = useRef<HTMLDivElement | null>(null)
   const apiURL = process.env.NEXT_PUBLIC_APIURL
 
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat('es-AR', {
@@ -82,98 +80,23 @@ export default function UsersPage() {
           : '—',
         role: getRoleBadge(user.role),
         actions: (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Suspender/Restaurar usuario (placeholder)"
-              title="Suspender/Restaurar usuario"
-              className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6h2v12h-2zM12 12h2v6h-2z" />
-              </svg>
-            </button>
+          <div className="flex items-center justify-end gap-2">
+            <UserActions user={user} variant="menu" />
             <Link
               href={`/admin/users/${user.id}`}
               aria-label="Ver información del usuario"
               title="Ver información"
-              className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors inline-flex"
+              className="h-9 w-9 inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </Link>
-            <div className="relative">
-              <button
-                type="button"
-                aria-label="Más acciones (placeholder)"
-                data-menu-toggle
-                onClick={(e) => {
-                  const menuWidth = 176; // w-44
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  if (openMenu === user.id) {
-                    setOpenMenu(null);
-                    setMenuPosition(null);
-                  } else {
-                    setOpenMenu(user.id);
-                    setMenuPosition({
-                      top: rect.bottom + 8,
-                      left: rect.right - menuWidth
-                    });
-                  }
-                }}
-                className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6h.01M12 12h.01M12 18h.01" />
-                </svg>
-              </button>
-            </div>
           </div>
         ),
       }));
-  }, [usersData, roleFilter, dateFormatter, openMenu]);
-
-  const renderMenu = () => {
-    if (!openMenu || !menuPosition) return null;
-    return (
-      <div
-        ref={menuRef}
-        className="fixed z-50 w-44 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg"
-        style={{ top: menuPosition.top, left: menuPosition.left }}
-      >
-        <div className="py-1 text-sm text-gray-700 dark:text-gray-200">
-          <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Cambiar rol</button>
-          <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Resetear contraseña</button>
-          <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Revocar sesiones</button>
-          <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Asignar carreras</button>
-          <button className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Exportar datos</button>
-        </div>
-      </div>
-    );
-  };
-
-  useEffect(() => {
-    if (!openMenu) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (target?.closest('[data-menu-toggle]')) return;
-      if (menuRef.current && menuRef.current.contains(target)) return;
-      setOpenMenu(null);
-      setMenuPosition(null);
-    };
-    const handleScroll = () => {
-      setOpenMenu(null);
-      setMenuPosition(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside, true);
-    document.addEventListener('scroll', handleScroll, true);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside, true);
-      document.removeEventListener('scroll', handleScroll, true);
-    };
-  }, [openMenu]);
+  }, [usersData, roleFilter, dateFormatter]);
 
   if(loading){
     return (
@@ -269,7 +192,6 @@ export default function UsersPage() {
       <Card>
         <DataTable columns={columns} data={tableData} />
       </Card>
-      {renderMenu()}
     </div>
   );
 }
