@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { JSX, useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/admin/baseComponents";
 import { User } from "@/types/user";
 
@@ -50,9 +50,17 @@ type UserActionsProps = {
   user: UserActionUser;
   variant?: UserActionVariant;
   className?: string;
+  onRoleChange?: (role: User["role"]) => void;
+  onProgramsChange?: (programs: { id: string; name: string }[]) => void;
 };
 
-export function UserActions({ user, variant = "panel", className = "" }: UserActionsProps) {
+export function UserActions({
+  user,
+  variant = "panel",
+  className = "",
+  onRoleChange,
+  onProgramsChange,
+}: UserActionsProps) {
   const apiURL = process.env.NEXT_PUBLIC_APIURL;
   const [actionModal, setActionModal] = useState<AdminAction>(null);
   const [selectedRole, setSelectedRole] = useState<User["role"]>("user");
@@ -62,6 +70,8 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
   const [exportFormat, setExportFormat] = useState<"json" | "csv">("json");
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [programsLoading, setProgramsLoading] = useState(false);
+  const [programOptions, setProgramOptions] = useState<{ id: string; label: string }[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -90,16 +100,13 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
     };
   }, [menuOpen]);
 
-  const programOptions = useMemo(() => {
+  const programOptionsMemo = useMemo(() => {
+    if (programOptions) return programOptions;
     if (user?.degreePrograms?.length) {
       return user.degreePrograms.map((p) => ({ id: p.id, label: p.name }));
     }
-    return [
-      { id: "mock-1", label: "Ingeniería en Sistemas" },
-      { id: "mock-2", label: "Licenciatura en Informática" },
-      { id: "mock-3", label: "Tecnicatura en Datos" },
-    ];
-  }, [user]);
+    return [];
+  }, [programOptions, user]);
 
   const toggleProgram = (id: string) => {
     setSelectedPrograms((prev) =>
@@ -113,6 +120,25 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
     setExportFormat("json");
     setActionError(null);
     setActionModal(action);
+
+    if (action === "programs" && !programOptions && !programsLoading) {
+      if (!apiURL) {
+        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
+        return;
+      }
+      setProgramsLoading(true);
+      fetch(`${apiURL}/degreeProgram`, { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => {
+          const list: { id: string; label: string }[] =
+            Array.isArray(data?.data) ?
+              data.data.map((p: { id: string; name: string }) => ({ id: p.id, label: p.name })) :
+              [];
+          setProgramOptions(list);
+        })
+        .catch((err) => setActionError(err instanceof Error ? err.message : "Error cargando carreras"))
+        .finally(() => setProgramsLoading(false));
+    }
   };
 
   const confirmAction = async () => {
@@ -145,6 +171,69 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
         setActionModal(null);
       } catch (err) {
         setActionError(err instanceof Error ? err.message : "Error desconocido al revocar sesiones");
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
+    if (actionModal === "role") {
+      if (!apiURL) {
+        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
+        return;
+      }
+      setActionError(null);
+      setActionLoading(true);
+      try {
+        const response = await fetch(`${apiURL}/users/${user.id}`, {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: selectedRole }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          const message = body?.error || "No se pudo actualizar el rol";
+          setActionError(message);
+          return;
+        }
+        onRoleChange?.(selectedRole);
+        setGeneratedMessage(`Rol actualizado a ${selectedRole}`);
+        setActionModal(null);
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : "Error desconocido al actualizar rol");
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
+    if (actionModal === "programs") {
+      if (!apiURL) {
+        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
+        return;
+      }
+      setActionError(null);
+      setActionLoading(true);
+      try {
+        const response = await fetch(`${apiURL}/users/${user.id}`, {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ degreePrograms: selectedPrograms }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          const message = body?.error || "No se pudieron actualizar las carreras";
+          setActionError(message);
+          return;
+        }
+        const selected = programOptionsMemo.filter((p) => selectedPrograms.includes(p.id));
+        onProgramsChange?.(selected.map((p) => ({ id: p.id, name: p.label })));
+        setGeneratedMessage(`Carreras actualizadas (${selectedPrograms.length})`);
+        setActionModal(null);
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : "Error desconocido al actualizar carreras");
       } finally {
         setActionLoading(false);
       }
@@ -222,22 +311,30 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
         return (
           <div className="space-y-3">
             <p className="text-sm text-gray-500 dark:text-gray-400">Selecciona las carreras asignadas al usuario.</p>
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              {programOptions.map((program) => (
-                <label
-                  key={program.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedPrograms.includes(program.id)}
-                    onChange={() => toggleProgram(program.id)}
-                    className="accent-blue-600"
-                  />
-                  <span className="text-sm text-gray-800 dark:text-gray-100">{program.label}</span>
-                </label>
-              ))}
-            </div>
+            {programsLoading ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">Cargando carreras...</div>
+            ) : programOptionsMemo.length ? (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {programOptionsMemo.map((program) => (
+                  <label
+                    key={program.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedPrograms.includes(program.id)}
+                      onChange={() => toggleProgram(program.id)}
+                      className="accent-blue-600"
+                    />
+                    <span className="text-sm text-gray-800 dark:text-gray-100">{program.label}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                No hay carreras disponibles para asignar.
+              </div>
+            )}
           </div>
         );
       case "export":
@@ -441,7 +538,19 @@ export function UserActions({ user, variant = "panel", className = "" }: UserAct
                     : "bg-blue-600 hover:bg-blue-700"
                 }`}
               >
-                {actionModal === "sessions" ? (actionLoading ? "Revocando..." : "Revocar sesiones") : "Confirmar (mock)"}
+                {actionModal === "sessions"
+                  ? actionLoading
+                    ? "Revocando..."
+                    : "Revocar sesiones"
+                  : actionModal === "role"
+                  ? actionLoading
+                    ? "Actualizando..."
+                    : "Actualizar rol"
+                  : actionModal === "programs"
+                  ? actionLoading
+                    ? "Guardando..."
+                    : "Actualizar carreras"
+                  : "Confirmar (mock)"}
               </button>
             </div>
           </div>

@@ -139,7 +139,30 @@ export default function UsersPage() {
         role: getRoleBadge(user.role),
         actions: (
           <div className="flex items-center justify-end gap-2">
-            <UserActions user={user} variant="menu" />
+            <UserActions
+              user={user}
+              variant="menu"
+              onRoleChange={(role) =>
+                setUsersData((prev) =>
+                  prev.map((u) => (u.id === user.id ? { ...u, role } : u))
+                )
+              }
+              onProgramsChange={(programs) =>
+                setUsersData((prev) =>
+                  prev.map((u) =>
+                    u.id === user.id
+                      ? {
+                          ...u,
+                          degreePrograms: programs.map((p) => {
+                            const existing = u.degreePrograms?.find((dp) => dp.id === p.id);
+                            return existing ? { ...existing, name: p.name } : { id: p.id, name: p.name };
+                          }),
+                        }
+                      : u
+                  )
+                )
+              }
+            />
             <Link
               href={`/admin/users/${user.id}`}
               aria-label="Ver información del usuario"

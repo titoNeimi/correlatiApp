@@ -222,7 +222,18 @@ export default function UserDetailPage() {
         </button>
       </div>
 
-      <UserActions user={user} variant="panel" />
+      <UserActions
+        user={user}
+        variant="panel"
+        onRoleChange={(role) => setUser((prev) => (prev ? { ...prev, role } : prev))}
+        onProgramsChange={(programs) =>
+          setUser((prev) =>
+            prev
+              ? { ...prev, degreePrograms: programs.map((p) => ({ id: p.id, name: p.name })) }
+              : prev
+          )
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-6 lg:col-span-2">
