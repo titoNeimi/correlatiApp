@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/context/UserContext'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import UserSubjectsGate from '@/components/userSubjectGate'
 import { SubjectStatus, SubjectsFromProgram, SubjectDTO } from '@/types/subjects'
 import { computeAvailability } from '@/lib/subject_status';
@@ -47,6 +47,7 @@ const statusConfig: Record<SubjectStatus,{ label: string; classes: string; borde
 }
 
 const statusOrder: SubjectStatus[] = ['not_available','available', 'in_progress', 'final_pending', 'passed', 'passed_with_distinction']
+const STORAGE_KEY = 'tuCarrera_state';
 
 export default function SubjectsPage() {
   const { user, isLoading: isLoadingUser } = useUser()
@@ -77,6 +78,11 @@ export default function SubjectsPage() {
 
       setSubjectsData(data)
       setSubjects(data.subjects)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        selectedProgramId: programId,
+        subjectsData: data,
+        subjects: data.subjects,
+      }))
       
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error inesperado')
@@ -110,6 +116,33 @@ export default function SubjectsPage() {
       return computeAvailability(updated)
     })
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+    try {
+      const parsed = JSON.parse(raw) as {
+        selectedProgramId?: string
+        subjectsData?: SubjectsFromProgram | null
+        subjects?: SubjectDTO[]
+      }
+      if (parsed.selectedProgramId) setSelectedProgramId(parsed.selectedProgramId)
+      if (parsed.subjectsData) setSubjectsData(parsed.subjectsData)
+      if (parsed.subjects) setSubjects(parsed.subjects)
+    } catch (e) {
+      console.log(e)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!subjectsData) return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      selectedProgramId,
+      subjectsData,
+      subjects,
+    }))
+  }, [subjectsData, subjects, selectedProgramId])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
