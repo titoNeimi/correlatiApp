@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 type Role = 'admin' | 'staff' | 'user' | 'none'
-const PUBLIC_PATHS = ['/', '/login', '/register', '/about', '/universidades', '/carreras', '/contacto']
+const PUBLIC_PATHS = ['/', '/login', '/register', '/about', '/universidades', '/carreras', '/contacto', '/sugerencias']
+const PUBLIC_PREFIXES = ['/universidades/']
 
 const ACL: Array<{ pattern: RegExp; allow: Role[] }> = [
   { pattern: /^\/admin(\/|$)/, allow: ['admin'] },
@@ -11,6 +12,7 @@ const ACL: Array<{ pattern: RegExp; allow: Role[] }> = [
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true
+  if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true
   if (pathname.startsWith('/public/')) return true
   return false
 }
