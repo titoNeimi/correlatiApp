@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers'
+import { apiFetch } from '@/lib/api'
 
 export async function POST(req: Request) {
   const body = await req.json()
 
-  const backendRes = await fetch('http://localhost:8080/auth/login', {
+  const backendRes = await apiFetch('/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -29,4 +30,3 @@ export async function POST(req: Request) {
 
   return new Response(text, { status: backendRes.status, headers: { 'content-type': contentType } })
 }
-

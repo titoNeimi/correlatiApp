@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers'
+import { apiFetch } from '@/lib/api'
 
 export async function POST() {
   const ck = await cookies()
   const session = ck.get('session_id')?.value
 
-  await fetch('http://localhost:8080/auth/logout', {
+  await apiFetch('/auth/logout', {
     method: 'POST',
     headers: session ? { cookie: `session_id=${session}` } : {},
   })

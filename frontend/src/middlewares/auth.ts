@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { apiFetch } from '@/lib/api'
 
 type Role = 'admin' | 'staff' | 'user' | 'none'
 const PUBLIC_PATHS = ['/', '/login', '/register', '/about', '/universidades', '/carreras', '/contacto', '/sugerencias']
-const PUBLIC_PREFIXES = ['/universidades/']
+const PUBLIC_PREFIXES = ['/universidades/', '/carreras/']
 
 const ACL: Array<{ pattern: RegExp; allow: Role[] }> = [
   { pattern: /^\/admin(\/|$)/, allow: ['admin'] },
@@ -22,11 +23,9 @@ async function resolveSessionAndRole(req: NextRequest): Promise<{ ok: boolean; r
   const sessionId = req.cookies.get('session_id')?.value
   if (!sessionId) return { ok: false, role: 'none' }
 
-  const apiBase = 'http://localhost:8080'
-
   try {
     console.log("Fetch a auth/me")
-    const res = await fetch(`${apiBase}/auth/me`, {
+    const res = await apiFetch('/auth/me', {
       method: 'GET',
       headers: { cookie: req.headers.get('cookie') || '' },
       cache: 'no-store',

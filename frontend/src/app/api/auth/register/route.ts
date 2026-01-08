@@ -1,7 +1,9 @@
+import { apiFetch } from '@/lib/api'
+
 export async function POST(req: Request) {
   const body = await req.json()
 
-  const backendRes = await fetch('http://localhost:8080/auth/register', {
+  const backendRes = await apiFetch('/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
