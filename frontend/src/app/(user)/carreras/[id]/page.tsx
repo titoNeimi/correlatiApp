@@ -75,13 +75,14 @@ async function fetchProgramSubjects(id: string): Promise<DegreeProgramSubject[] 
 export default function CareerDetailPage() {
   const params = useParams<{ id: string }>()
   const id = Array.isArray(params.id) ? params.id[0] : params.id
-  const { user, isLoggedIn, isLoading: isLoadingUser } = useUser()
+  const { user, isLoggedIn, isLoading: isLoadingUser, refresh } = useUser()
   const [loading, setLoading] = useState(true)
   const [program, setProgram] = useState<DegreeProgramDetail | null>(null)
   const [subjects, setSubjects] = useState<DegreeProgramSubject[]>([])
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<'enroll' | 'unenroll' | 'favorite' | null>(null)
 
   useEffect(() => {
     if (!id) {
@@ -145,31 +146,98 @@ export default function CareerDetailPage() {
     return user.degreeProgramIds.includes(id)
   }, [id, user?.degreeProgramIds])
 
-  const handleEnrollmentClick = () => {
-    if (isLoadingUser) return
+  const handleEnrollmentClick = async () => {
+    if (isLoadingUser || actionLoading || !id) return
     if (!isLoggedIn) {
       setActionMessage('Necesitas iniciar sesion para inscribirte.')
       return
     }
     setActionMessage(null)
+    setActionLoading('enroll')
+    try {
+      const response = await apiFetch(`/me/programs/${id}/enroll`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+      if (response.status === 401) {
+        setActionMessage('Necesitas iniciar sesion para inscribirte.')
+        return
+      }
+      if (response.status === 409) {
+        setActionMessage('Ya estas inscripto en esta carrera.')
+        return
+      }
+      if (!response.ok) {
+        setActionMessage('No se pudo completar la inscripcion.')
+        return
+      }
+      await refresh()
+    } catch (err) {
+      setActionMessage(getApiErrorMessage(err, 'Error inesperado'))
+    } finally {
+      setActionLoading(null)
+    }
   }
 
-  const handleUnenrollClick = () => {
-    if (isLoadingUser) return
+  const handleUnenrollClick = async () => {
+    if (isLoadingUser || actionLoading || !id) return
     if (!isLoggedIn) {
       setActionMessage('Necesitas iniciar sesion para desinscribirte.')
       return
     }
     setActionMessage(null)
+    setActionLoading('unenroll')
+    try {
+      const response = await apiFetch(`/me/programs/${id}/enroll`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      if (response.status === 401) {
+        setActionMessage('Necesitas iniciar sesion para desinscribirte.')
+        return
+      }
+      if (response.status === 409) {
+        setActionMessage('No estas inscripto en esta carrera.')
+        return
+      }
+      if (!response.ok) {
+        setActionMessage('No se pudo completar la desinscripcion.')
+        return
+      }
+      await refresh()
+    } catch (err) {
+      setActionMessage(getApiErrorMessage(err, 'Error inesperado'))
+    } finally {
+      setActionLoading(null)
+    }
   }
 
-  const handleFavoriteClick = () => {
-    if (isLoadingUser) return
+  const handleFavoriteClick = async () => {
+    if (isLoadingUser || actionLoading || !id) return
     if (!isLoggedIn) {
       setActionMessage('Necesitas iniciar sesion para guardar favoritos.')
       return
     }
     setActionMessage(null)
+    setActionLoading('favorite')
+    try {
+      const response = await apiFetch(`/me/programs/${id}/favorite`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+      if (response.status === 401) {
+        setActionMessage('Necesitas iniciar sesion para guardar favoritos.')
+        return
+      }
+      if (!response.ok) {
+        setActionMessage('No se pudo guardar en favoritos.')
+        return
+      }
+    } catch (err) {
+      setActionMessage(getApiErrorMessage(err, 'Error inesperado'))
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   useEffect(() => {
@@ -226,26 +294,27 @@ export default function CareerDetailPage() {
                     type="button"
                     onClick={handleUnenrollClick}
                     className="inline-flex items-center justify-center gap-2 bg-white text-rose-600 px-6 py-3 rounded-xl text-sm font-semibold border border-rose-200 hover:border-rose-300 transition-colors"
-                    disabled={isLoadingUser}
+                    disabled={isLoadingUser || actionLoading === 'unenroll'}
                   >
-                    Desinscribirme
+                    {actionLoading === 'unenroll' ? 'Desinscribiendo...' : 'Desinscribirme'}
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleEnrollmentClick}
                     className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
-                    disabled={isLoadingUser}
+                    disabled={isLoadingUser || actionLoading === 'enroll'}
                   >
-                    Inscribirme
+                    {actionLoading === 'enroll' ? 'Inscribiendo...' : 'Inscribirme'}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={handleFavoriteClick}
                   className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-xl text-sm font-semibold border border-slate-200 hover:border-slate-300 transition-colors"
+                  disabled={isLoadingUser || actionLoading === 'favorite'}
                 >
-                  Guardar en favoritos
+                  {actionLoading === 'favorite' ? 'Guardando...' : 'Guardar en favoritos'}
                 </button>
               </div>
               {actionMessage && (
