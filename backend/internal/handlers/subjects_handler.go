@@ -40,7 +40,69 @@ func GetAllSubjectsFromProgram(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
 	}
-	c.IndentedJSON(http.StatusOK, subjects)
+
+	type requirementWithStatus struct {
+		ID        string `json:"id"`
+		Name      string `json:"name"`
+		MinStatus string `json:"minStatus"`
+	}
+
+	type subjectWithRequirements struct {
+		ID              string                  `json:"id"`
+		Name            string                  `json:"name"`
+		SubjectYear     int                     `json:"subjectYear"`
+		DegreeProgramID string                  `json:"degreeProgramID"`
+		Requirements    []requirementWithStatus `json:"requirements"`
+		CreatedAt       time.Time               `json:"created_at"`
+		UpdatedAt       time.Time               `json:"updated_at"`
+	}
+
+	subjectIDs := make([]string, 0, len(subjects))
+	for _, subject := range subjects {
+		subjectIDs = append(subjectIDs, subject.ID)
+	}
+
+	reqStatusBySubject := make(map[string]map[string]models.RequirementMinStatus)
+	if len(subjectIDs) > 0 {
+		var requirementRows []models.SubjectRequirement
+		if err := db.Db.Where("subject_id IN ?", subjectIDs).Find(&requirementRows).Error; err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error loading subject requirements"})
+			return
+		}
+		for _, row := range requirementRows {
+			if _, ok := reqStatusBySubject[row.SubjectID]; !ok {
+				reqStatusBySubject[row.SubjectID] = make(map[string]models.RequirementMinStatus)
+			}
+			reqStatusBySubject[row.SubjectID][row.RequirementID] = row.MinStatus
+		}
+	}
+
+	response := make([]subjectWithRequirements, 0, len(subjects))
+	for _, subject := range subjects {
+		requirements := make([]requirementWithStatus, 0, len(subject.Requirements))
+		for _, req := range subject.Requirements {
+			status := reqStatusBySubject[subject.ID][req.ID]
+			if status == "" {
+				status = models.ReqPassed
+			}
+			requirements = append(requirements, requirementWithStatus{
+				ID:        req.ID,
+				Name:      req.Name,
+				MinStatus: string(status),
+			})
+		}
+		response = append(response, subjectWithRequirements{
+			ID:              subject.ID,
+			Name:            subject.Name,
+			SubjectYear:     subject.SubjectYear,
+			DegreeProgramID: subject.DegreeProgramID,
+			Requirements:    requirements,
+			CreatedAt:       subject.CreatedAt,
+			UpdatedAt:       subject.UpdatedAt,
+		})
+	}
+
+	c.IndentedJSON(http.StatusOK, response)
 }
 
 func CreateSubject(c *gin.Context) {
