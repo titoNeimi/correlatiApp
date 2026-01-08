@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Building2, Info, MapPin, Sparkles } fr
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { apiFetch, getApiErrorMessage } from '@/lib/api'
+import { useUser } from '@/context/UserContext'
 
 type DegreeProgramSubject = {
   id: string
@@ -74,11 +75,13 @@ async function fetchProgramSubjects(id: string): Promise<DegreeProgramSubject[] 
 export default function CareerDetailPage() {
   const params = useParams<{ id: string }>()
   const id = Array.isArray(params.id) ? params.id[0] : params.id
+  const { user, isLoggedIn, isLoading: isLoadingUser } = useUser()
   const [loading, setLoading] = useState(true)
   const [program, setProgram] = useState<DegreeProgramDetail | null>(null)
   const [subjects, setSubjects] = useState<DegreeProgramSubject[]>([])
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) {
@@ -131,6 +134,44 @@ export default function CareerDetailPage() {
     return subjectsByYear[selectedYear] ?? []
   }, [selectedYear, subjectsByYear])
 
+  const loginUrl = useMemo(() => {
+    if (!id) return '/login'
+    return `/login?next=${encodeURIComponent(`/carreras/${id}`)}`
+  }, [id])
+
+  const isEnrolled = useMemo(() => {
+    if (!id) return false
+    if (!Array.isArray(user?.degreeProgramIds)) return false
+    return user.degreeProgramIds.includes(id)
+  }, [id, user?.degreeProgramIds])
+
+  const handleEnrollmentClick = () => {
+    if (isLoadingUser) return
+    if (!isLoggedIn) {
+      setActionMessage('Necesitas iniciar sesion para inscribirte.')
+      return
+    }
+    setActionMessage(null)
+  }
+
+  const handleUnenrollClick = () => {
+    if (isLoadingUser) return
+    if (!isLoggedIn) {
+      setActionMessage('Necesitas iniciar sesion para desinscribirte.')
+      return
+    }
+    setActionMessage(null)
+  }
+
+  const handleFavoriteClick = () => {
+    if (isLoadingUser) return
+    if (!isLoggedIn) {
+      setActionMessage('Necesitas iniciar sesion para guardar favoritos.')
+      return
+    }
+    setActionMessage(null)
+  }
+
   useEffect(() => {
     if (years.length === 0) return
     if (!selectedYear || !years.includes(selectedYear)) {
@@ -180,13 +221,43 @@ export default function CareerDetailPage() {
                 Revisa el plan de estudios, materias por anio y opciones de inscripcion.
               </p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <button className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors">
-                  Inscribirme
-                </button>
-                <button className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-xl text-sm font-semibold border border-slate-200 hover:border-slate-300 transition-colors">
+                {isEnrolled ? (
+                  <button
+                    type="button"
+                    onClick={handleUnenrollClick}
+                    className="inline-flex items-center justify-center gap-2 bg-white text-rose-600 px-6 py-3 rounded-xl text-sm font-semibold border border-rose-200 hover:border-rose-300 transition-colors"
+                    disabled={isLoadingUser}
+                  >
+                    Desinscribirme
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleEnrollmentClick}
+                    className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
+                    disabled={isLoadingUser}
+                  >
+                    Inscribirme
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleFavoriteClick}
+                  className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-xl text-sm font-semibold border border-slate-200 hover:border-slate-300 transition-colors"
+                >
                   Guardar en favoritos
                 </button>
               </div>
+              {actionMessage && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {actionMessage}
+                  {!isLoggedIn && (
+                    <Link href={loginUrl} className="ml-2 font-semibold underline">
+                      Ir a login
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
             <div className="bg-slate-900 text-white rounded-2xl p-6 min-w-[240px]">
               <p className="text-xs uppercase tracking-wide text-slate-300">Resumen</p>

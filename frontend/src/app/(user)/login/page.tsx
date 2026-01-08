@@ -1,5 +1,5 @@
 'use client'
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState } from 'react';
 import { useUser } from '@/context/UserContext'
 
@@ -19,7 +19,15 @@ const LoginPage: React.FC = () => {
   const [authError, setAuthError] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { refresh } = useUser()
+
+  const getRedirectPath = (value: string | null) => {
+    if (!value) return '/'
+    if (!value.startsWith('/')) return '/'
+    if (value.startsWith('//')) return '/'
+    return value
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
@@ -69,7 +77,7 @@ const LoginPage: React.FC = () => {
         return
       }
 
-      router.push('/');
+      router.push(getRedirectPath(searchParams.get('next')));
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
       setAuthError('Usuario o contraseña incorrectos');
