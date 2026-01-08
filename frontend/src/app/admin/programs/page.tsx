@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Card } from "@/components/admin/baseComponents";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DegreeProgram } from "@/types/degreeProgram";
+import { apiFetchJson, getApiErrorMessage } from "@/lib/api";
 
 type ProgramData = {
   count: number
@@ -13,7 +14,6 @@ export default function ProgramsPage() {
   const [error, setError] = useState<null | string>(null)
   const [programs, setPrograms] = useState<DegreeProgram[]>([])
   const [loading, setLoading] = useState<boolean>(true)
-  const apiURL = process.env.NEXT_PUBLIC_APIURL
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat('es-AR', {
     day: 'numeric',
     month: 'short',
@@ -21,29 +21,18 @@ export default function ProgramsPage() {
   }), [])
 
   const fetchPrograms = useCallback(async () => {
-    if (!apiURL) {
-      setError("No existe NEXT_PUBLIC_APIURL en el .env");
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiURL}/degreeProgram`);
-      if(!response.ok){
-        setError("No se pudo obtener la lista de carreras");
-        setLoading(false);
-        return;
-      }
-      const data = (await response.json()) as ProgramData;
+      const data = await apiFetchJson<ProgramData>('/degreeProgram');
       setPrograms(data.data);
       setLoading(false);
     } catch (error) {
       console.log(error);
-      setError(error instanceof Error ? error.message : "Error desconocido");
+      setError(getApiErrorMessage(error, "Error desconocido"));
       setLoading(false);
     }
-  }, [apiURL]);
+  }, []);
 
   useEffect(() => {
     fetchPrograms();

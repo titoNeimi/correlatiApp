@@ -1,6 +1,7 @@
 'use server'
 
 import { DegreeData, CurriculumSubject } from './(types)/types';
+import { ApiError, apiFetch, apiFetchJson } from '@/lib/api';
 
 type fetchDegreeProgramsResponse = {
   count: number,
@@ -8,20 +9,9 @@ type fetchDegreeProgramsResponse = {
 }
 
 export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse> => {
-  const apiUrl = process.env.NEXT_PUBLIC_APIURL
-  if (!apiUrl) {
-    console.log("NEXT_PUBLIC_APIURL no está configurada")
-    return {count:0, data:[]}
-  }
   try {
-    const response = await fetch(`${apiUrl}/universities`)
-
-    if (!response.ok) {
-      console.log("No se pudo obtener las universidades")
-      return {count:0, data:[]}
-    }
-
-    return await response.json()
+    const data = await apiFetchJson<fetchDegreeProgramsResponse>('/universities')
+    return data
   } catch (error) {
     console.log(error)
     return {count:0, data:[]}
@@ -29,13 +19,8 @@ export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse
 }
 
 export const createUniversity = async (name: string): Promise<University | null> => {
-  const apiUrl = process.env.NEXT_PUBLIC_APIURL
-  if (!apiUrl) {
-    console.log("NEXT_PUBLIC_APIURL no está configurada")
-    return null
-  }
   try {
-    const response = await fetch(`${apiUrl}/universities`, {
+    const response = await apiFetch('/universities', {
       method: 'POST',
       headers: {
       'Content-Type': 'application/json',
@@ -64,10 +49,6 @@ type minStatus ='passed' | 'final_pending'
 
 export const confirmCreation = async (payload: { degreeData: DegreeData, subjects: CurriculumSubject[] }) => {
   const {degreeData, subjects} = payload
-  const apiUrl = process.env.NEXT_PUBLIC_APIURL
-  if (!apiUrl) {
-    return { ok: false, message: 'NEXT_PUBLIC_APIURL no está configurada' }
-  }
   const degreeProgram = {
     name: degreeData.degreeName,
     universityID: degreeData.universityId,
@@ -79,18 +60,18 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
     if (createdSubjectIds.length > 0) {
       await Promise.allSettled(
         createdSubjectIds.map((id) =>
-          fetch(`${apiUrl}/subjects/${id}`, { method: 'DELETE' })
+          apiFetch(`/subjects/${id}`, { method: 'DELETE' })
         )
       )
     }
     if (createdProgramId) {
-      await fetch(`${apiUrl}/degreeProgram/${createdProgramId}`, {
+      await apiFetch(`/degreeProgram/${createdProgramId}`, {
         method: 'DELETE',
       })
     }
   }
   try {
-    const response = await fetch(`${apiUrl}/degreeProgram`, {
+    const response = await apiFetch('/degreeProgram', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -111,7 +92,7 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
         subjectYear: subject.year,
         degreeProgramID: createdProgram.id,
       }
-      const subjectResponse = await fetch(`${apiUrl}/subjects`, {
+      const subjectResponse = await apiFetch('/subjects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +133,7 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
         requirements,
       }
 
-      const updateResp = await fetch(`${apiUrl}/subjects/${newSubjectId}`, {
+      const updateResp = await apiFetch(`/subjects/${newSubjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateBody),
@@ -166,6 +147,9 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
 
     return {ok: true, message: 'Carrera creada correctamente'}
   } catch (error) {
+    if (error instanceof ApiError && error.message.includes('NEXT_PUBLIC_APIURL')) {
+      return { ok: false, message: 'NEXT_PUBLIC_APIURL no está configurada' }
+    }
     console.log(error)
     await cleanupCreation()
     return { ok: false, message: 'Ocurrió un error al crear la carrera' }

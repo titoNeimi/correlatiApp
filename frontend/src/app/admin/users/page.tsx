@@ -6,6 +6,7 @@ import DataTable from "@/components/admin/dataTable";
 import { User } from "@/types/user";
 import { UserActions } from "@/components/admin/users/userActions";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiFetch, getApiErrorMessage } from "@/lib/api";
 
 export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -21,7 +22,6 @@ export default function UsersPage() {
     password: "",
     role: "user",
   });
-  const apiURL = process.env.NEXT_PUBLIC_APIURL
 
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat('es-AR', {
     day: 'numeric',
@@ -30,15 +30,10 @@ export default function UsersPage() {
   }), [])
 
   const fetchUsers = useCallback(async () =>  {
-    if (!apiURL) {
-      setError("No existe NEXT_PUBLIC_APIURL en el .env");
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiURL}/users`, { credentials: 'include' });
+      const response = await apiFetch('/users', { credentials: 'include' });
       if(!response.ok){
         setError("No se pudo obtener la lista de usuarios");
         setLoading(false);
@@ -49,10 +44,10 @@ export default function UsersPage() {
       setLoading(false);
     } catch (error) {
       console.log(error);
-      setError(error instanceof Error ? error.message : "Error desconocido");
+      setError(getApiErrorMessage(error, "Error desconocido"));
       setLoading(false);
     }
-  }, [apiURL])
+  }, [])
 
   useEffect(() => {
     fetchUsers()
@@ -65,10 +60,6 @@ export default function UsersPage() {
   };
 
   const handleCreateUser = async () => {
-    if (!apiURL) {
-      setCreateError("No existe NEXT_PUBLIC_APIURL en el .env");
-      return;
-    }
     if (!newUser.email || !newUser.password) {
       setCreateError("Email y contraseña son obligatorios");
       return;
@@ -77,7 +68,7 @@ export default function UsersPage() {
     setCreateError(null);
     setCreateLoading(true);
     try {
-      const response = await fetch(`${apiURL}/users`, {
+      const response = await apiFetch('/users', {
         method: "POST",
         credentials: "include",
         headers: {
@@ -101,7 +92,7 @@ export default function UsersPage() {
       setShowCreateModal(false);
       setCreateFeedback("Usuario creado correctamente");
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Error desconocido al crear el usuario");
+      setCreateError(getApiErrorMessage(err, "Error desconocido al crear el usuario"));
     } finally {
       setCreateLoading(false);
     }

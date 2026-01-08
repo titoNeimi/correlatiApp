@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import StatCard from '@/components/admin/statCard';
 import { Card } from '@/components/admin/baseComponents';
+import { apiFetch, getApiErrorMessage } from '@/lib/api';
 
 type ProgramApi = { id: string; name: string; subjects?: { id: string }[] };
 type DegreeProgramsResponse = { count: number; data: ProgramApi[] };
@@ -16,18 +17,11 @@ export default function DashboardPage() {
   const [subjectCount, setSubjectCount] = useState<number>(0);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_APIURL;
-    if (!apiUrl) {
-      setError('Falta NEXT_PUBLIC_APIURL');
-      setLoading(false);
-      return;
-    }
-
     const fetchData = async () => {
       try {
         const [usersResp, programsResp] = await Promise.all([
-          fetch(`${apiUrl}/users`, { credentials: 'include' }),
-          fetch(`${apiUrl}/degreeProgram`, { credentials: 'include' }),
+          apiFetch('/users', { credentials: 'include' }),
+          apiFetch('/degreeProgram', { credentials: 'include' }),
         ]);
 
         if (!usersResp.ok && usersResp.status !== 401) {
@@ -48,7 +42,7 @@ export default function DashboardPage() {
         }, 0);
         setSubjectCount(subjects || 0);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando datos');
+        setError(getApiErrorMessage(err, 'Error cargando datos'));
       } finally {
         setLoading(false);
       }

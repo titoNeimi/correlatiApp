@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import UserSubjectsGate from '@/components/userSubjectGate'
 import { SubjectStatus, SubjectsFromProgram, SubjectDTO } from '@/types/subjects'
 import { computeAvailability } from '@/lib/subject_status';
+import { apiFetchJson, getApiErrorMessage } from '@/lib/api';
 
 type Subject = {
   id: string
@@ -65,13 +66,10 @@ export default function SubjectsPage() {
       setError(null)
       setSelectedProgramId(programId)
 
-      const res = await fetch(`http://localhost:8080/me/subjects/${programId}`, { 
-        method: 'GET', credentials: 'include' 
+      const data = await apiFetchJson<SubjectsFromProgram>(`/me/subjects/${programId}`, {
+        method: 'GET',
+        credentials: 'include',
       })
-
-      if (!res.ok) throw new Error('No se pudieron cargar las materias')
-
-      const data: SubjectsFromProgram = await res.json()
 
       const subjectWithStatus = computeAvailability(data.subjects ?? [])
       data.subjects = subjectWithStatus
@@ -85,7 +83,7 @@ export default function SubjectsPage() {
       }))
       
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error inesperado')
+      setError(getApiErrorMessage(e, 'Error inesperado'))
     } finally {
       setLoadingSubjects(false)
     }

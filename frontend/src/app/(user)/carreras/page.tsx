@@ -1,6 +1,7 @@
 import React from 'react';
 import { BookOpen, Filter, GraduationCap, Search, Users } from 'lucide-react';
 import Link from 'next/link';
+import { apiFetchJson } from '@/lib/api';
 
 type DegreeProgramDTO = {
   id: string;
@@ -17,24 +18,13 @@ type fetchDegree = {
 const fetchDegreePrograms = async (): Promise<fetchDegree | null> =>  {
   try {
 
-    const apiURL = process.env.NEXT_PUBLIC_APIURL
-
-    if(!apiURL){
-      throw new Error("API URL not defined")
-    }
-    const result = await fetch(`${apiURL}/degreeProgram`)
-    if(!result.ok){
-      return null
-    }
-    const data = await result.json()
+    const data = await apiFetchJson<fetchDegree>('/degreeProgram')
     return data
   } catch (error) {
     console.log(error)
     return null
   }
 }
-
-
 
 async function CareersPage () {
 
@@ -57,14 +47,31 @@ async function CareersPage () {
   const filterRegions = ['CABA', 'Buenos Aires', 'Cordoba', 'Santa Fe']
   const filterAreas = ['Ingenieria', 'Negocios', 'Salud', 'Ciencias', 'Arte']
   const filterModalities = ['Presencial', 'Hibrida', 'Virtual']
-  const filterDurations = ['2-3 anos', '4 anos', '5+ anos']
+  const filterDurations = ['2-3 años', '4 años', '5+ años']
 
   const data = await fetchDegreePrograms()
+  const programs = Array.isArray(data?.data) ? data?.data : null
+  const programCount = typeof data?.count === 'number' ? data.count : programs?.length
 
   if(data == null){
     return(
       <div>
         Error
+      </div>
+    )
+  }
+
+  if(programs == null || programCount === undefined){
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-8 text-center">
+            <h2 className="text-2xl font-bold text-slate-900">No pudimos cargar las carreras</h2>
+            <p className="text-slate-600 mt-3">
+              La API no devolvio la estructura esperada. Intenta nuevamente en unos minutos.
+            </p>
+          </div>
+        </main>
       </div>
     )
   }
@@ -88,15 +95,15 @@ async function CareersPage () {
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
                   <GraduationCap className="w-4 h-4" />
-                  {data?.count} carreras activas
+                  {programCount} carreras activas
                 </div>
                 <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
                   <Users className="w-4 h-4" />
-                  {new Set(data.data.map((program) => program.university?.id).filter(Boolean)).size} universidades
+                  {new Set(programs.map((program) => program.university?.id).filter(Boolean)).size} universidades
                 </div>
                 <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
                   <BookOpen className="w-4 h-4" />
-                  {data.data.reduce((total, program) => total + (program.subjects ? program.subjects.length : 0), 0)} materias
+                  {programs.reduce((total, program) => total + (program.subjects ? program.subjects.length : 0), 0)} materias
                 </div>
               </div>
             </div>
@@ -207,7 +214,7 @@ async function CareersPage () {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {data && data.data.map((program) => (
+              {programs.map((program) => (
                 <article
                   key={program.id}
                   className={`rounded-2xl border border-slate-100 bg-gradient-to-br ${getCardTone(program.id)} p-6 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}
@@ -236,7 +243,13 @@ async function CareersPage () {
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Duracion: Pendiente</span>
-                    <span className="text-sm font-semibold text-slate-900">Ver detalles →</span>
+                    <Link
+                      href={`/carreras/${program.id}`}
+                      prefetch={false}
+                      className="text-sm font-semibold text-slate-900 hover:text-slate-700 transition-colors"
+                    >
+                      Ver detalles →
+                    </Link>
                   </div>
                 </article>
               ))}

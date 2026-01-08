@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { Badge, Card } from "@/components/admin/baseComponents";
 import { User } from "@/types/user";
 import { UserActions } from "@/components/admin/users/userActions";
+import { apiFetch, getApiErrorMessage } from "@/lib/api";
 
 type ActivityEvent = {
   id: string;
@@ -18,7 +19,6 @@ type ActivityEvent = {
 export default function UserDetailPage() {
   const params = useParams();
   const userId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const apiURL = process.env.NEXT_PUBLIC_APIURL;
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -79,11 +79,6 @@ export default function UserDetailPage() {
   ], []);
 
   const fetchUser = useCallback(async () => {
-    if (!apiURL) {
-      setError("No existe NEXT_PUBLIC_APIURL en el .env");
-      setLoading(false);
-      return;
-    }
     if (!userId) {
       setError("No se encontró el usuario solicitado");
       setLoading(false);
@@ -92,7 +87,7 @@ export default function UserDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiURL}/users/${userId}`, { credentials: 'include' });
+      const response = await apiFetch(`/users/${userId}`, { credentials: 'include' });
       if (!response.ok) {
         setError("No se pudo obtener la información del usuario");
         setLoading(false);
@@ -102,10 +97,10 @@ export default function UserDetailPage() {
       setUser(data);
       setLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(getApiErrorMessage(err, "Error desconocido"));
       setLoading(false);
     }
-  }, [apiURL, userId]);
+  }, [userId]);
 
   useEffect(() => {
     fetchUser();

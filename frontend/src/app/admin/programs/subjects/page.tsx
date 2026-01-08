@@ -5,6 +5,7 @@ import DataTable from '@/components/admin/dataTable';
 import { DegreeProgram, DegreeProgramSubject } from '@/types/degreeProgram';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { apiFetchJson, getApiErrorMessage } from '@/lib/api';
 
 type SubjectsResponse = DegreeProgramSubject[];
 
@@ -12,7 +13,6 @@ export default function ProgramSubjectsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const apiURL = process.env.NEXT_PUBLIC_APIURL;
 
   const [programs, setPrograms] = useState<DegreeProgram[]>([]);
   const [selectedProgram, setSelectedProgram] = useState<string>('');
@@ -22,48 +22,31 @@ export default function ProgramSubjectsPage() {
   const [error, setError] = useState<null | string>(null);
 
   const fetchPrograms = useCallback(async () => {
-    if (!apiURL) {
-      setError('No existe NEXT_PUBLIC_APIURL en el .env');
-      setLoading(false);
-      return;
-    }
     setError(null);
     try {
-      const res = await fetch(`${apiURL}/degreeProgram`);
-      if (!res.ok) {
-        setError('No se pudo obtener la lista de carreras');
-        setLoading(false);
-        return;
-      }
-      const data = (await res.json()) as { data: DegreeProgram[]; count: number };
+      const data = await apiFetchJson<{ data: DegreeProgram[]; count: number }>('/degreeProgram');
       setPrograms(data.data);
       const current = searchParams.get('programId') || data.data[0]?.id || '';
       setSelectedProgram(current);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(getApiErrorMessage(err, 'Error desconocido'));
       setLoading(false);
     }
-  }, [apiURL, searchParams]);
+  }, [searchParams]);
 
   const fetchSubjects = useCallback(async (programId: string) => {
-    if (!apiURL || !programId) return;
+    if (!programId) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiURL}/subjects/${programId}`);
-      if (!res.ok) {
-        setError('No se pudo obtener las materias de la carrera seleccionada');
-        setLoading(false);
-        return;
-      }
-      const data = (await res.json()) as SubjectsResponse;
+      const data = await apiFetchJson<SubjectsResponse>(`/subjects/${programId}`);
       setSubjects(data);
       setLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(getApiErrorMessage(err, 'Error desconocido'));
       setLoading(false);
     }
-  }, [apiURL]);
+  }, []);
 
   useEffect(() => {
     fetchPrograms();

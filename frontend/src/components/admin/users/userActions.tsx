@@ -3,6 +3,7 @@
 import { JSX, useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/admin/baseComponents";
 import { User } from "@/types/user";
+import { apiFetch, apiFetchJson, getApiErrorMessage } from "@/lib/api";
 
 type AdminAction = "role" | "password" | "sessions" | "programs" | "export" | null;
 type UserActionVariant = "panel" | "compact" | "menu";
@@ -61,7 +62,6 @@ export function UserActions({
   onRoleChange,
   onProgramsChange,
 }: UserActionsProps) {
-  const apiURL = process.env.NEXT_PUBLIC_APIURL;
   const [actionModal, setActionModal] = useState<AdminAction>(null);
   const [selectedRole, setSelectedRole] = useState<User["role"]>("user");
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
@@ -114,7 +114,7 @@ export function UserActions({
     );
   };
 
-  const openAction = (action: AdminAction) => {
+  const openAction = async (action: AdminAction) => {
     setGeneratedMessage("");
     setTempPassword("");
     setExportFormat("json");
@@ -122,22 +122,21 @@ export function UserActions({
     setActionModal(action);
 
     if (action === "programs" && !programOptions && !programsLoading) {
-      if (!apiURL) {
-        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
-        return;
-      }
       setProgramsLoading(true);
-      fetch(`${apiURL}/degreeProgram`, { credentials: "include" })
-        .then((res) => res.json())
-        .then((data) => {
-          const list: { id: string; label: string }[] =
-            Array.isArray(data?.data) ?
-              data.data.map((p: { id: string; name: string }) => ({ id: p.id, label: p.name })) :
-              [];
-          setProgramOptions(list);
-        })
-        .catch((err) => setActionError(err instanceof Error ? err.message : "Error cargando carreras"))
-        .finally(() => setProgramsLoading(false));
+      try {
+        const data = await apiFetchJson<{ data?: { id: string; name: string }[] }>('/degreeProgram', {
+          credentials: "include",
+        });
+        const list: { id: string; label: string }[] =
+          Array.isArray(data?.data) ?
+            data.data.map((p) => ({ id: p.id, label: p.name })) :
+            [];
+        setProgramOptions(list);
+      } catch (err) {
+        setActionError(getApiErrorMessage(err, "Error cargando carreras"));
+      } finally {
+        setProgramsLoading(false);
+      }
     }
   };
 
@@ -145,15 +144,10 @@ export function UserActions({
     if (!actionModal) return;
 
     if (actionModal === "sessions") {
-      if (!apiURL) {
-        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
-        return;
-      }
-
       setActionError(null);
       setActionLoading(true);
       try {
-        const response = await fetch(`${apiURL}/users/${user.id}/session/revoke`, {
+        const response = await apiFetch(`/users/${user.id}/session/revoke`, {
           method: "POST",
           credentials: "include",
         });
@@ -170,7 +164,7 @@ export function UserActions({
         setGeneratedMessage(feedback);
         setActionModal(null);
       } catch (err) {
-        setActionError(err instanceof Error ? err.message : "Error desconocido al revocar sesiones");
+        setActionError(getApiErrorMessage(err, "Error desconocido al revocar sesiones"));
       } finally {
         setActionLoading(false);
       }
@@ -178,14 +172,10 @@ export function UserActions({
     }
 
     if (actionModal === "role") {
-      if (!apiURL) {
-        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
-        return;
-      }
       setActionError(null);
       setActionLoading(true);
       try {
-        const response = await fetch(`${apiURL}/users/${user.id}`, {
+        const response = await apiFetch(`/users/${user.id}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -201,7 +191,7 @@ export function UserActions({
         setGeneratedMessage(`Rol actualizado a ${selectedRole}`);
         setActionModal(null);
       } catch (err) {
-        setActionError(err instanceof Error ? err.message : "Error desconocido al actualizar rol");
+        setActionError(getApiErrorMessage(err, "Error desconocido al actualizar rol"));
       } finally {
         setActionLoading(false);
       }
@@ -209,14 +199,10 @@ export function UserActions({
     }
 
     if (actionModal === "programs") {
-      if (!apiURL) {
-        setActionError("Falta configurar NEXT_PUBLIC_APIURL");
-        return;
-      }
       setActionError(null);
       setActionLoading(true);
       try {
-        const response = await fetch(`${apiURL}/users/${user.id}`, {
+        const response = await apiFetch(`/users/${user.id}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -233,7 +219,7 @@ export function UserActions({
         setGeneratedMessage(`Carreras actualizadas (${selectedPrograms.length})`);
         setActionModal(null);
       } catch (err) {
-        setActionError(err instanceof Error ? err.message : "Error desconocido al actualizar carreras");
+        setActionError(getApiErrorMessage(err, "Error desconocido al actualizar carreras"));
       } finally {
         setActionLoading(false);
       }
