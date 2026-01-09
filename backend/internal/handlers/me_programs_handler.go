@@ -10,6 +10,42 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type meProgramsResponse struct {
+	EnrolledProgramIds []string `json:"enrolledProgramIds"`
+	FavoriteProgramIds []string `json:"favoriteProgramIds"`
+}
+
+func GetMyPrograms(c *gin.Context) {
+	u, ok := c.Get("user")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+		return
+	}
+	user := u.(models.User)
+
+	var userWithPrograms models.User
+	if err := db.Db.Where("id = ?", user.ID).Preload("DegreePrograms").Preload("FavoritePrograms").First(&userWithPrograms).Error; err != nil {
+		slog.Error("Error loading user favorites", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error loading favorites"})
+		return
+	}
+
+	enrolledIds := make([]string, 0, len(userWithPrograms.DegreePrograms))
+	for _, dp := range userWithPrograms.DegreePrograms {
+		enrolledIds = append(enrolledIds, dp.ID)
+	}
+
+	favoriteIds := make([]string, 0, len(userWithPrograms.FavoritePrograms))
+	for _, dp := range userWithPrograms.FavoritePrograms {
+		favoriteIds = append(favoriteIds, dp.ID)
+	}
+
+	c.IndentedJSON(http.StatusOK, meProgramsResponse{
+		EnrolledProgramIds: enrolledIds,
+		FavoriteProgramIds: favoriteIds,
+	})
+}
+
 func EnrollProgram(c *gin.Context) {
 	id := c.Param("id")
 
@@ -31,15 +67,22 @@ func EnrollProgram(c *gin.Context) {
 	}
 	user := u.(models.User)
 
-	for _, dp := range user.DegreePrograms {
+	var userWithPrograms models.User
+	if err := db.Db.Where("id = ?", user.ID).Preload("DegreePrograms").First(&userWithPrograms).Error; err != nil {
+		slog.Error("Error loading user programs", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error loading user programs"})
+		return
+	}
+
+	for _, dp := range userWithPrograms.DegreePrograms {
 		if dp.ID == id {
 			c.IndentedJSON(http.StatusConflict, gin.H{"ok": false, "error": "Already enrolled"})
 			return
 		}
 	}
 
-	degreeProgramIDs := make([]string, 0, len(user.DegreePrograms)+1)
-	for _, dp := range user.DegreePrograms {
+	degreeProgramIDs := make([]string, 0, len(userWithPrograms.DegreePrograms)+1)
+	for _, dp := range userWithPrograms.DegreePrograms {
 		degreeProgramIDs = append(degreeProgramIDs, dp.ID)
 	}
 	degreeProgramIDs = append(degreeProgramIDs, id)
@@ -73,9 +116,16 @@ func UnenrollProgram(c *gin.Context) {
 	}
 	user := u.(models.User)
 
-	remainingProgramIDs := make([]string, 0, len(user.DegreePrograms))
+	var userWithPrograms models.User
+	if err := db.Db.Where("id = ?", user.ID).Preload("DegreePrograms").First(&userWithPrograms).Error; err != nil {
+		slog.Error("Error loading user programs", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error loading user programs"})
+		return
+	}
+
+	remainingProgramIDs := make([]string, 0, len(userWithPrograms.DegreePrograms))
 	wasEnrolled := false
-	for _, dp := range user.DegreePrograms {
+	for _, dp := range userWithPrograms.DegreePrograms {
 		if dp.ID == id {
 			wasEnrolled = true
 			continue
@@ -92,6 +142,91 @@ func UnenrollProgram(c *gin.Context) {
 	if _, err := services.UpdateUser(user.ID, dto); err != nil {
 		slog.Error("Error unenrolling user from program", slog.Any("error", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error unenrolling user"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func FavoriteProgram(c *gin.Context) {
+	id := c.Param("id")
+
+	var degreeProgram models.DegreeProgram
+	if err := db.Db.Where("id = ?", id).First(&degreeProgram).Error; err != nil {
+		slog.Error("Program not found", slog.Any("error: ", err))
+		c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Program not found"})
+		return
+	}
+
+	u, ok := c.Get("user")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+		return
+	}
+	user := u.(models.User)
+
+	var userWithFavorites models.User
+	if err := db.Db.Where("id = ?", user.ID).Preload("FavoritePrograms").First(&userWithFavorites).Error; err != nil {
+		slog.Error("Error loading user favorites", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error loading favorites"})
+		return
+	}
+
+	for _, dp := range userWithFavorites.FavoritePrograms {
+		if dp.ID == id {
+			c.IndentedJSON(http.StatusConflict, gin.H{"ok": false, "error": "Already favorited"})
+			return
+		}
+	}
+
+	if err := db.Db.Model(&userWithFavorites).Association("FavoritePrograms").Append(&degreeProgram); err != nil {
+		slog.Error("Error favoriting program", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error favoriting program"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func UnfavoriteProgram(c *gin.Context) {
+	id := c.Param("id")
+
+	var degreeProgram models.DegreeProgram
+	if err := db.Db.Where("id = ?", id).First(&degreeProgram).Error; err != nil {
+		slog.Error("Program not found", slog.Any("error: ", err))
+		c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Program not found"})
+		return
+	}
+
+	u, ok := c.Get("user")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+		return
+	}
+	user := u.(models.User)
+
+	var userWithFavorites models.User
+	if err := db.Db.Where("id = ?", user.ID).Preload("FavoritePrograms").First(&userWithFavorites).Error; err != nil {
+		slog.Error("Error loading user favorites", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error loading favorites"})
+		return
+	}
+
+	found := false
+	for _, dp := range userWithFavorites.FavoritePrograms {
+		if dp.ID == id {
+			found = true
+			break
+		}
+	}
+	if !found {
+		c.IndentedJSON(http.StatusConflict, gin.H{"ok": false, "error": "Not favorited"})
+		return
+	}
+
+	if err := db.Db.Model(&userWithFavorites).Association("FavoritePrograms").Delete(&degreeProgram); err != nil {
+		slog.Error("Error removing favorite", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error removing favorite"})
 		return
 	}
 

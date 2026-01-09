@@ -82,11 +82,11 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		me.GET("/subjects/:programId", handlers.GetMySubjectsFromProgram)
 		program := me.Group("/programs")
 		{
-			program.GET("", middleware.AuthRequired(db, sessSvc, cookies))
-			program.POST("/:id/enroll", middleware.AuthRequired(db, sessSvc, cookies), handlers.EnrollProgram)
-			program.DELETE("/:id/enroll", middleware.AuthRequired(db, sessSvc, cookies), handlers.UnenrollProgram)
-			program.POST("/:id/favorite", middleware.AuthRequired(db, sessSvc, cookies), )
-			program.DELETE("/:id/favorite", middleware.AuthRequired(db, sessSvc, cookies), )
+			program.GET("", handlers.GetMyPrograms)
+			program.POST("/:id/enroll", handlers.EnrollProgram)
+			program.DELETE("/:id/enroll", handlers.UnenrollProgram)
+			program.POST("/:id/favorite", handlers.FavoriteProgram)
+			program.DELETE("/:id/favorite", handlers.UnfavoriteProgram)
 		}
 	}
 }

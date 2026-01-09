@@ -29,17 +29,23 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 		return
 	}
 
+	var userWithPrograms models.User
+	if err := db.Db.Preload("DegreePrograms").First(&userWithPrograms, "id = ?", u.ID).Error; err != nil {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
 	programId := c.Param("programId")
 	if programId == "" {
-		if len(u.DegreePrograms) == 0 {
+		if len(userWithPrograms.DegreePrograms) == 0 {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "User has no degree programs"})
 			return
 		}
-		programId = u.DegreePrograms[0].ID
+		programId = userWithPrograms.DegreePrograms[0].ID
 	}
 
 	registered := false
-	for _, dp := range u.DegreePrograms {
+	for _, dp := range userWithPrograms.DegreePrograms {
 		if dp.ID == programId {
 			registered = true
 			break

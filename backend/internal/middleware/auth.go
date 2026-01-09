@@ -25,7 +25,7 @@ func AuthRequired(db *gorm.DB, sessions *services.Service, cookies httpx.CookieC
 		}
 
 		var user models.User
-		if err := db.Model(&user).Preload("DegreePrograms").First(&user, "id = ?", sess.UserID).Error; err != nil {
+		if err := db.Model(&user).First(&user, "id = ?", sess.UserID).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "usuario no encontrado"})
 			return
 		}
