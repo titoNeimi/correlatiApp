@@ -230,7 +230,7 @@ export default function SubjectsPage() {
           </div>
         </div>
       )}
-        <UserSubjectsGate user={user ? { id: user.id, degreeProgramIds: user.degreeProgramIds } : null} isLoading={isLoadingUser} fetchUserSubjects={fetchUserSubjects}/>
+        <UserSubjectsGate user={user ? { id: user.id } : null} isLoading={isLoadingUser} fetchUserSubjects={fetchUserSubjects}/>
     </div>
   )
 }

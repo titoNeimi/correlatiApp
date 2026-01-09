@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiFetch } from "@/lib/api";
 
 type Props = {
-  user: { id: string; degreeProgramIds?: string[] } | null;
+  user: { id: string } | null;
   isLoading: boolean;
   fetchUserSubjects: (programId: string) => Promise<void> | void;
 };
@@ -16,24 +17,45 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects }:
 
   useEffect(() => {
     if (isLoading) return;
-
-    const degreeProgramIds = user?.degreeProgramIds ?? [];
-
-    if (!user || degreeProgramIds.length === 0) {
+    if (!user) {
       setIds([]);
       setStatus("no-program");
       return;
     }
 
-    if (degreeProgramIds.length === 1) {
-    setIds(degreeProgramIds);
-      setSelectedId(degreeProgramIds[0]);
-      setStatus("ready");
-      return;
-    }
+    const loadPrograms = async () => {
+      try {
+        const response = await apiFetch("/me/programs", { credentials: "include" });
+        if (!response.ok) {
+          setIds([]);
+          setStatus("no-program");
+          return;
+        }
+        const data = (await response.json()) as { enrolledProgramIds?: string[] };
+        const degreeProgramIds = data.enrolledProgramIds ?? [];
 
-    setIds(degreeProgramIds);
-    setStatus("pick-program");
+        if (degreeProgramIds.length === 0) {
+          setIds([]);
+          setStatus("no-program");
+          return;
+        }
+
+        if (degreeProgramIds.length === 1) {
+          setIds(degreeProgramIds);
+          setSelectedId(degreeProgramIds[0]);
+          setStatus("ready");
+          return;
+        }
+
+        setIds(degreeProgramIds);
+        setStatus("pick-program");
+      } catch {
+        setIds([]);
+        setStatus("no-program");
+      }
+    };
+
+    loadPrograms();
   }, [user, isLoading]);
 
   const handleLoadSubjects = async (programId?: string) => {

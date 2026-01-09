@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, Building2, Info, MapPin, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -83,6 +83,9 @@ export default function CareerDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<'enroll' | 'unenroll' | 'favorite' | null>(null)
+  const [favoriteProgramIds, setFavoriteProgramIds] = useState<string[]>([])
+  const [enrolledProgramIds, setEnrolledProgramIds] = useState<string[]>([])
+  const [programsLoading, setProgramsLoading] = useState(false)
 
   useEffect(() => {
     if (!id) {
@@ -140,11 +143,44 @@ export default function CareerDetailPage() {
     return `/login?next=${encodeURIComponent(`/carreras/${id}`)}`
   }, [id])
 
+  const loadPrograms = useCallback(async () => {
+    try {
+      setProgramsLoading(true)
+      const response = await apiFetch('/me/programs', { credentials: 'include' })
+      if (!response.ok) return
+      const data = (await response.json()) as {
+        favoriteProgramIds?: string[]
+        enrolledProgramIds?: string[]
+      }
+      setFavoriteProgramIds(data.favoriteProgramIds ?? [])
+      setEnrolledProgramIds(data.enrolledProgramIds ?? [])
+    } catch {
+      setFavoriteProgramIds([])
+      setEnrolledProgramIds([])
+    } finally {
+      setProgramsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setFavoriteProgramIds([])
+      setEnrolledProgramIds([])
+      setProgramsLoading(false)
+      return
+    }
+    loadPrograms()
+  }, [isLoggedIn, id, loadPrograms])
+
   const isEnrolled = useMemo(() => {
     if (!id) return false
-    if (!Array.isArray(user?.degreeProgramIds)) return false
-    return user.degreeProgramIds.includes(id)
-  }, [id, user?.degreeProgramIds])
+    return enrolledProgramIds.includes(id)
+  }, [enrolledProgramIds, id])
+
+  const isFavorite = useMemo(() => {
+    if (!id) return false
+    return favoriteProgramIds.includes(id)
+  }, [favoriteProgramIds, id])
 
   const handleEnrollmentClick = async () => {
     if (isLoadingUser || actionLoading || !id) return
@@ -165,12 +201,14 @@ export default function CareerDetailPage() {
       }
       if (response.status === 409) {
         setActionMessage('Ya estas inscripto en esta carrera.')
+        await loadPrograms()
         return
       }
       if (!response.ok) {
         setActionMessage('No se pudo completar la inscripcion.')
         return
       }
+      setEnrolledProgramIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
       await refresh()
     } catch (err) {
       setActionMessage(getApiErrorMessage(err, 'Error inesperado'))
@@ -198,12 +236,14 @@ export default function CareerDetailPage() {
       }
       if (response.status === 409) {
         setActionMessage('No estas inscripto en esta carrera.')
+        await loadPrograms()
         return
       }
       if (!response.ok) {
         setActionMessage('No se pudo completar la desinscripcion.')
         return
       }
+      setEnrolledProgramIds((prev) => prev.filter((programId) => programId !== id))
       await refresh()
     } catch (err) {
       setActionMessage(getApiErrorMessage(err, 'Error inesperado'))
@@ -222,17 +262,32 @@ export default function CareerDetailPage() {
     setActionLoading('favorite')
     try {
       const response = await apiFetch(`/me/programs/${id}/favorite`, {
-        method: 'POST',
+        method: isFavorite ? 'DELETE' : 'POST',
         credentials: 'include'
       })
       if (response.status === 401) {
         setActionMessage('Necesitas iniciar sesion para guardar favoritos.')
         return
       }
-      if (!response.ok) {
-        setActionMessage('No se pudo guardar en favoritos.')
+      if (response.status === 409) {
+        setActionMessage(isFavorite ? 'No esta en favoritos.' : 'Ya esta en favoritos.')
         return
       }
+      if (response.status === 404) {
+        setActionMessage('No se encontro la carrera.')
+        return
+      }
+      if (!response.ok) {
+        setActionMessage('No se pudo actualizar favoritos.')
+        return
+      }
+      setFavoriteProgramIds((prev) => {
+        if (isFavorite) {
+          return prev.filter((programId) => programId !== id)
+        }
+        if (prev.includes(id)) return prev
+        return [...prev, id]
+      })
     } catch (err) {
       setActionMessage(getApiErrorMessage(err, 'Error inesperado'))
     } finally {
@@ -247,8 +302,76 @@ export default function CareerDetailPage() {
     }
   }, [years, selectedYear])
 
-  if (loading) {
-    return <h2 className="text-2xl">Cargando...</h2>
+  const isPageLoading = loading || isLoadingUser || (isLoggedIn && programsLoading)
+
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 bg-white/80 backdrop-blur-sm">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1 space-y-4">
+                <div className="h-4 w-28 rounded-full bg-slate-200 animate-pulse" />
+                <div className="h-8 w-2/3 rounded-xl bg-slate-200 animate-pulse" />
+                <div className="flex gap-3">
+                  <div className="h-4 w-40 rounded-full bg-slate-200 animate-pulse" />
+                  <div className="h-4 w-32 rounded-full bg-slate-200 animate-pulse" />
+                </div>
+                <div className="h-4 w-3/4 rounded-full bg-slate-200 animate-pulse" />
+                <div className="flex gap-3">
+                  <div className="h-10 w-32 rounded-xl bg-slate-200 animate-pulse" />
+                  <div className="h-10 w-48 rounded-xl bg-slate-200 animate-pulse" />
+                </div>
+              </div>
+              <div className="bg-slate-900 text-white rounded-2xl p-6 min-w-[240px]">
+                <div className="h-3 w-16 rounded-full bg-slate-700 animate-pulse" />
+                <div className="mt-4 space-y-3">
+                  <div className="h-4 w-full rounded-full bg-slate-700 animate-pulse" />
+                  <div className="h-4 w-3/4 rounded-full bg-slate-700 animate-pulse" />
+                  <div className="h-4 w-2/3 rounded-full bg-slate-700 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] mt-10">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="space-y-2">
+                  <div className="h-5 w-40 rounded-full bg-slate-200 animate-pulse" />
+                  <div className="h-4 w-52 rounded-full bg-slate-200 animate-pulse" />
+                </div>
+                <div className="h-8 w-24 rounded-xl bg-slate-200 animate-pulse" />
+              </div>
+              <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+                <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4 h-fit space-y-3">
+                  <div className="h-3 w-16 rounded-full bg-slate-200 animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-10 rounded-xl bg-slate-200 animate-pulse" />
+                    <div className="h-10 rounded-xl bg-slate-200 animate-pulse" />
+                    <div className="h-10 rounded-xl bg-slate-200 animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="h-5 w-40 rounded-full bg-slate-200 animate-pulse" />
+                  <div className="h-20 rounded-xl bg-slate-200 animate-pulse" />
+                  <div className="h-20 rounded-xl bg-slate-200 animate-pulse" />
+                  <div className="h-20 rounded-xl bg-slate-200 animate-pulse" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
+              <div className="h-5 w-32 rounded-full bg-slate-200 animate-pulse" />
+              <div className="mt-4 space-y-3">
+                <div className="h-16 rounded-xl bg-slate-200 animate-pulse" />
+                <div className="h-16 rounded-xl bg-slate-200 animate-pulse" />
+                <div className="h-16 rounded-xl bg-slate-200 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (!program || error) {
@@ -314,7 +437,11 @@ export default function CareerDetailPage() {
                   className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-xl text-sm font-semibold border border-slate-200 hover:border-slate-300 transition-colors"
                   disabled={isLoadingUser || actionLoading === 'favorite'}
                 >
-                  {actionLoading === 'favorite' ? 'Guardando...' : 'Guardar en favoritos'}
+                  {actionLoading === 'favorite'
+                    ? 'Actualizando...'
+                    : isFavorite
+                      ? 'Quitar de favoritos'
+                      : 'Guardar en favoritos'}
                 </button>
               </div>
               {actionMessage && (

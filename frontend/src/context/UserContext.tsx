@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
-type User = { id: string; email: string, degreeProgramIds: [string], role: string } | null
+type User = { id: string; email: string; role: string } | null
 
 type Context = {
 	user: User
@@ -27,7 +27,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return
       }
       const data = await res.json()
-      setUser({ id: data.id, email: data.email, degreeProgramIds: data.degreeProgramIds, role: data.role })
+      setUser({ id: data.id, email: data.email, role: data.role })
     } catch {
       setUser(null)
     } finally {
