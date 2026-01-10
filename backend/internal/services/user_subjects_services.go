@@ -5,14 +5,15 @@ import (
 	"correlatiApp/internal/models"
 )
 
-func GetAllUserSubjects (userId string, subjectId string) ([]models.UserSubject, error){
+func GetAllUserSubjects(userId string, programId string) ([]models.UserSubject, error) {
 	var userSubjects []models.UserSubject
 
 	tx := db.Db.Model(&models.UserSubject{}).
-		Where("user_id = ?", userId)
+		Joins("JOIN subjects ON subjects.id = user_subjects.subject_id").
+		Where("user_subjects.user_id = ?", userId)
 
-	if subjectId != "" {
-		tx = tx.Where("subject_id = ?", subjectId)
+	if programId != "" {
+		tx = tx.Where("subjects.degree_program_id = ?", programId)
 	}
 
 	if err := tx.Find(&userSubjects).Error; err != nil {
