@@ -33,14 +33,7 @@ export function computeAvailability(subjects: SubjectDTO[]): SubjectDTO[] {
   return subjects.map((subject) => {
     const updated = { ...subject };
 
-    if (STRONG_STATUSES.has(updated.status)) return updated;
-
     const reqs = (updated.requirements ?? []) as unknown as SubjectRequirementDTO[];
-
-    if (reqs.length === 0) {
-      updated.status = "available";
-      return updated;
-    }
 
     const meetsRequirement = (req: SubjectRequirementDTO): boolean => {
       const reqStatus = statusById.get(req.id);
@@ -55,9 +48,18 @@ export function computeAvailability(subjects: SubjectDTO[]): SubjectDTO[] {
       return APPROVED_STATUSES.has(reqStatus);
     };
 
-    const allSatisfied = reqs.every(meetsRequirement);
+    const allSatisfied = reqs.length === 0 ? true : reqs.every(meetsRequirement);
 
-    updated.status = allSatisfied ? "available" : "not_available";
+    if (!allSatisfied) {
+      if (!APPROVED_STATUSES.has(updated.status)) {
+        updated.status = "not_available";
+      }
+      return updated;
+    }
+
+    if (STRONG_STATUSES.has(updated.status)) return updated;
+
+    updated.status = "available";
     return updated;
   });
 }

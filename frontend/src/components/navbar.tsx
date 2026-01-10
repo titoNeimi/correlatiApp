@@ -72,6 +72,14 @@ export function Navbar(){
                     
                     <div className="py-2">
                       <Link
+                        href="/mis-carreras"
+                        className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <GraduationCap className="w-4 h-4" />
+                        <span>Mis carreras</span>
+                      </Link>
+                      <Link
                         href="/perfil"
                         className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setDropdownOpen(false)}
