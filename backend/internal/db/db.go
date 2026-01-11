@@ -42,6 +42,10 @@ func Connect() {
 		slog.Error("SetupJoinTable user_subjects failed", slog.Any("error", err))
 		panic(err)
 	}
+	if err := Db.SetupJoinTable(&models.Subject{}, "ElectivePools", &models.ElectivePoolSubject{}); err != nil {
+		slog.Error("SetupJoinTable elective_pool_subjects failed", slog.Any("error", err))
+		panic(err)
+	}
 
 	if Db.Migrator().HasColumn(&models.DegreeProgram{}, "university") {
 		_ = Db.Migrator().DropColumn(&models.DegreeProgram{}, "university")
@@ -61,6 +65,9 @@ func Connect() {
 		&models.Subject{},
 		&models.UserSubject{},
 		&models.SubjectRequirement{},
+		&models.ElectivePool{},
+		&models.ElectivePoolSubject{},
+		&models.ElectiveRule{},
 		&models.Session{},
 	); err != nil {
 		slog.Error("automigrate failed", slog.Any("error", err))

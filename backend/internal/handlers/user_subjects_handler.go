@@ -129,7 +129,7 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 		out = append(out, gin.H{
 			"id":              s.ID,
 			"name":            s.Name,
-			"subjectYear":     s.SubjectYear,
+			"year":            s.Year,
 			"degreeProgramID": s.DegreeProgramID,
 			"status":          st,
 			"requirements":    reqRulesBySubject[s.ID], // [{id, minStatus}]

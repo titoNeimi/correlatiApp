@@ -19,14 +19,14 @@ type requirementInput struct {
 
 type createSubjectDTO struct {
 	Name            string             `json:"name" binding:"required"`
-	SubjectYear     int                `json:"subjectYear" binding:"required"`
+	Year            *int               `json:"year,omitempty"`
 	DegreeProgramID string             `json:"degreeProgramID" binding:"required"`
 	Requirements    []requirementInput `json:"requirements"`
 }
 
 type updateSubjectDTO struct {
 	Name            *string             `json:"name,omitempty"`
-	SubjectYear     *int                `json:"subjectYear,omitempty"`
+	Year            *int                `json:"year,omitempty"`
 	DegreeProgramID *string             `json:"degreeProgramID,omitempty"`
 	Requirements    *[]requirementInput `json:"requirements,omitempty"`
 }
@@ -50,7 +50,7 @@ func GetAllSubjectsFromProgram(c *gin.Context) {
 	type subjectWithRequirements struct {
 		ID              string                  `json:"id"`
 		Name            string                  `json:"name"`
-		SubjectYear     int                     `json:"subjectYear"`
+		Year            *int                    `json:"year,omitempty"`
 		DegreeProgramID string                  `json:"degreeProgramID"`
 		Requirements    []requirementWithStatus `json:"requirements"`
 		CreatedAt       time.Time               `json:"created_at"`
@@ -94,7 +94,7 @@ func GetAllSubjectsFromProgram(c *gin.Context) {
 		response = append(response, subjectWithRequirements{
 			ID:              subject.ID,
 			Name:            subject.Name,
-			SubjectYear:     subject.SubjectYear,
+			Year:            subject.Year,
 			DegreeProgramID: subject.DegreeProgramID,
 			Requirements:    requirements,
 			CreatedAt:       subject.CreatedAt,
@@ -122,7 +122,7 @@ func CreateSubject(c *gin.Context) {
 	subject := models.Subject{
 		ID:              uuid.New().String(),
 		Name:            dto.Name,
-		SubjectYear:     dto.SubjectYear,
+		Year:            dto.Year,
 		DegreeProgramID: dto.DegreeProgramID,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
@@ -211,8 +211,8 @@ func UpdateSubject(c *gin.Context) {
 		if dto.Name != nil {
 			updates["name"] = *dto.Name
 		}
-		if dto.SubjectYear != nil {
-			updates["subject_year"] = *dto.SubjectYear
+		if dto.Year != nil {
+			updates["year"] = *dto.Year
 		}
 		if dto.DegreeProgramID != nil {
 			if *dto.DegreeProgramID == "" {

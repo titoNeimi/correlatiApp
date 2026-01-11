@@ -49,8 +49,6 @@ func GetMyPrograms(c *gin.Context) {
 func EnrollProgram(c *gin.Context) {
 	id := c.Param("id")
 
-	slog.Info(id)
-
 	var degreeProgram models.DegreeProgram
 
 	err := db.Db.Where("id = ?", id).First(&degreeProgram).Error
