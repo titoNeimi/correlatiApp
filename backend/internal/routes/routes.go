@@ -61,6 +61,11 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		degreeProgram.POST("/:id/electivePools/:poolId/subjects", middleware.AuthRequired(db, sessSvc, cookies), handlers.AddSubjectToElectivePool)
 		degreeProgram.DELETE("/:id/electivePools/:poolId/subjects/:subjectId", middleware.AuthRequired(db, sessSvc, cookies), handlers.RemoveSubjectFromElectivePool)
 
+		degreeProgram.POST("/:id/electiveRules", middleware.AuthRequired(db, sessSvc, cookies), handlers.CreateElectiveRule)
+		degreeProgram.GET("/:id/electiveRules", handlers.GetElectiveRulesByProgram)
+		degreeProgram.GET("/:id/electiveRules/:ruleId", handlers.GetElectiveRuleByID)
+		degreeProgram.PUT("/:id/electiveRules/:ruleId", middleware.AuthRequired(db, sessSvc, cookies), handlers.UpdateElectiveRule)
+		degreeProgram.DELETE("/:id/electiveRules/:ruleId", middleware.AuthRequired(db, sessSvc, cookies), handlers.DeleteElectiveRule)
 	}
 	subjects := r.Group("/subjects")
 	{
