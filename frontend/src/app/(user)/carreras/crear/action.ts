@@ -89,6 +89,7 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
     for (const subject of subjects) {
       const subjectData = {
         name: subject.name,
+        year: subject.year,
         subjectYear: subject.year,
         degreeProgramID: createdProgram.id,
       }

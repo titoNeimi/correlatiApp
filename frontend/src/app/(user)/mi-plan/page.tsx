@@ -7,7 +7,8 @@ import UserSubjectsGate from '@/components/userSubjectGate'
 import { SubjectStatus, SubjectsFromProgram, SubjectDTO } from '@/types/subjects'
 import { computeAvailability } from '@/lib/subject_status'
 import { apiFetch, apiFetchJson, getApiErrorMessage } from '@/lib/api'
-import { BookOpen, CheckCircle2, ClipboardList, Info, Sparkles } from 'lucide-react'
+import { ElectivePool, ElectiveRequirementType, ElectiveRule } from '@/types/electives'
+import { BookOpen, } from 'lucide-react'
 
 type Subject = {
   id: string
@@ -69,8 +70,41 @@ export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<SubjectDTO[]>([])
   const [loadingSubjects, setLoadingSubjects] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [electivePools, setElectivePools] = useState<ElectivePool[]>([])
+  const [electiveRules, setElectiveRules] = useState<ElectiveRule[]>([])
+  const [loadingElectives, setLoadingElectives] = useState(false)
+  const [electiveError, setElectiveError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+
+  const normalizeSubjectYear = (subject: SubjectDTO & { year?: number | null }) => {
+    const raw = typeof subject.subjectYear === 'number' ? subject.subjectYear : subject.year ?? 0
+    return Number.isFinite(raw) ? raw : 0
+  }
+
+  const fetchElectives = useCallback(async (programId: string) => {
+    if (!programId) {
+      setElectivePools([])
+      setElectiveRules([])
+      return
+    }
+    try {
+      setLoadingElectives(true)
+      setElectiveError(null)
+      const [pools, rules] = await Promise.all([
+        apiFetchJson<ElectivePool[]>(`/degreeProgram/${programId}/electivePools`, { credentials: 'include' }),
+        apiFetchJson<ElectiveRule[]>(`/degreeProgram/${programId}/electiveRules`, { credentials: 'include' })
+      ])
+      setElectivePools(pools ?? [])
+      setElectiveRules(rules ?? [])
+    } catch (e) {
+      setElectivePools([])
+      setElectiveRules([])
+      setElectiveError(getApiErrorMessage(e, 'No se pudieron cargar las electivas'))
+    } finally {
+      setLoadingElectives(false)
+    }
+  }, [])
 
   const fetchUserSubjects = useCallback(async (programId: string) => {
     if (!programId) return
@@ -78,6 +112,7 @@ export default function SubjectsPage() {
       setLoadingSubjects(true)
       setError(null)
       setSelectedProgramId(programId)
+      void fetchElectives(programId)
 
       const data = await apiFetchJson<SubjectsFromProgram>(`/me/subjects/${programId}`, {
         method: 'GET',
@@ -98,7 +133,11 @@ export default function SubjectsPage() {
         return override ? { ...subject, status: override } : subject
       })
 
-      data.subjects = computeAvailability(mergedSubjects)
+      const computedSubjects = computeAvailability(mergedSubjects)
+      data.subjects = computedSubjects.map((subject) => ({
+        ...subject,
+        subjectYear: normalizeSubjectYear(subject as SubjectDTO & { year?: number | null })
+      }))
 
       setSubjectsData(data)
       setSubjects(data.subjects)
@@ -109,14 +148,30 @@ export default function SubjectsPage() {
     }
   }, [])
 
+  const electiveIds = useMemo(() => {
+    const ids = new Set<string>()
+    electivePools.forEach((pool) => {
+      pool.subjects?.forEach((subject) => ids.add(subject.id))
+    })
+    return ids
+  }, [electivePools])
+
+  const nonElectiveSubjects = useMemo(() => {
+    return subjects.filter((subject) => !subject.is_elective && !electiveIds.has(subject.id))
+  }, [subjects, electiveIds])
+
   const subjectsByYear = useMemo(() => {
-    return subjects.reduce<Record<number, Subject[]>>((acc, s) => {
+    return nonElectiveSubjects.reduce<Record<number, Subject[]>>((acc, s) => {
       ;(acc[s.subjectYear] ||= []).push(s)
       return acc
     }, {})
-  }, [subjects])
+  }, [nonElectiveSubjects])
 
   const years = useMemo(() => Object.keys(subjectsByYear).map(Number).sort((a, b) => a - b), [subjectsByYear])
+
+  const statusBySubjectId = useMemo(() => {
+    return new Map(subjects.map((subject) => [subject.id, subject.status]))
+  }, [subjects])
 
   const statusCounts = useMemo(() => {
     return subjects.reduce<Record<SubjectStatus, number>>((acc, subject) => {
@@ -134,12 +189,83 @@ export default function SubjectsPage() {
 
   const [includeFinalPending, setIncludeFinalPending] = useState(false)
 
-  const completedCount = statusCounts.passed + statusCounts.passed_with_distinction
-  const totalCount = subjects.length || 1
+  const completedCount = nonElectiveSubjects.reduce((acc, subject) => {
+    if (subject.status === 'passed' || subject.status === 'passed_with_distinction') {
+      return acc + 1
+    }
+    return acc
+  }, 0)
+  const finalPendingCount = nonElectiveSubjects.reduce((acc, subject) => {
+    if (subject.status === 'final_pending') {
+      return acc + 1
+    }
+    return acc
+  }, 0)
+  const totalCount = nonElectiveSubjects.length || 1
   const progressNumerator = includeFinalPending
-    ? completedCount + statusCounts.final_pending
+    ? completedCount + finalPendingCount
     : completedCount
   const progressPercent = Math.min(100, Math.round((progressNumerator / totalCount) * 100))
+
+  const requirementTypeLabels: Record<ElectiveRequirementType, string> = {
+    hours: 'horas',
+    credits: 'créditos',
+    subject_count: 'materias'
+  }
+
+  const formatRuleScope = (rule: ElectiveRule) => {
+    if (rule.applies_to_year) {
+      if (rule.applies_from_year === rule.applies_to_year) {
+        return `${rule.applies_from_year}° año`
+      }
+      return `${rule.applies_from_year}° a ${rule.applies_to_year}° año`
+    }
+    return `${rule.applies_from_year}° año en adelante`
+  }
+
+  const formatMinimumValue = (value: number) => {
+    return Number.isInteger(value) ? `${value}` : value.toString()
+  }
+
+  const getElectiveProgress = (rule: ElectiveRule) => {
+    const poolSubjects = electivePools.find((pool) => pool.id === rule.pool_id)?.subjects ?? []
+    const completedStatuses = includeFinalPending
+      ? new Set<SubjectStatus>(['passed', 'passed_with_distinction', 'final_pending'])
+      : new Set<SubjectStatus>(['passed', 'passed_with_distinction'])
+    const completedSubjects = poolSubjects.filter((subject) => {
+      const status = statusBySubjectId.get(subject.id)
+      return status ? completedStatuses.has(status) : false
+    })
+
+    let achieved = 0
+    let target = rule.minimum_value
+    let displayLabel = requirementTypeLabels[rule.requirement_type]
+    switch (rule.requirement_type) {
+      case 'hours':
+        achieved = completedSubjects.reduce((acc, subject) => acc + (subject.hours ?? 0), 0)
+        break
+      case 'credits':
+        achieved = completedSubjects.reduce((acc, subject) => acc + (subject.credits ?? 0), 0)
+        break
+      case 'subject_count':
+        achieved = completedSubjects.length
+        target = rule.minimum_value
+        break
+      default:
+        achieved = 0
+    }
+
+    const percent = target > 0
+      ? Math.min(100, Math.round((achieved / target) * 100))
+      : 0
+
+    return { achieved, percent, target, displayLabel }
+  }
+
+  const formatYearLabel = (year: number) => {
+    if (year === 0) return 'Sin año'
+    return `${year}° Año`
+  }
 
   const handleRightClick = (e: React.MouseEvent, subjectId: string) => {
     e.preventDefault()
@@ -349,12 +475,12 @@ export default function SubjectsPage() {
               {years.map((year) => (
                 <div key={year} className="bg-white rounded-2xl border border-slate-100 shadow-lg overflow-hidden">
                   <div className="bg-slate-900 text-white p-4 text-center">
-                    <h3 className="text-xl font-bold">{year}° Año</h3>
-                    <p className="text-sm opacity-75">{subjectsByYear[year].length} materias</p>
+                    <h3 className="text-xl font-bold">{formatYearLabel(year)}</h3>
+                    <p className="text-sm opacity-75">{subjectsByYear[year]?.length ?? 0} materias</p>
                   </div>
 
                   <div className="p-4 space-y-3">
-                    {subjectsByYear[year].map((subject) => (
+                    {(subjectsByYear[year] ?? []).map((subject) => (
                       <div
                         key={subject.id}
                         onContextMenu={(event) => handleRightClick(event, subject.id)}
@@ -388,6 +514,130 @@ export default function SubjectsPage() {
                 ))}
               </div>
             </div>
+
+            {(loadingElectives || electiveError || electivePools.length > 0 || electiveRules.length > 0) && (
+              <section className="mb-10">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Electivas</h3>
+                    <p className="text-sm text-slate-500">
+                      Pools y reglas vigentes para tu plan de estudios.
+                    </p>
+                  </div>
+                  {loadingElectives && (
+                    <span className="text-xs text-slate-500">Cargando electivas...</span>
+                  )}
+                </div>
+                {electiveError && (
+                  <div className="mb-4 text-sm text-red-600">{electiveError}</div>
+                )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-md p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-base font-semibold text-slate-900">Pools</h4>
+                      <span className="text-xs text-slate-500">{electivePools.length} pools</span>
+                    </div>
+                    {electivePools.length === 0 && (
+                      <p className="text-sm text-slate-500">No hay pools configurados.</p>
+                    )}
+                    <div className="space-y-4">
+                      {electivePools.map((pool) => (
+                        <details
+                          key={pool.id}
+                          className="rounded-xl border border-slate-100 bg-slate-50/40 p-4"
+                        >
+                          <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <h5 className="text-sm font-semibold text-slate-900">{pool.name}</h5>
+                              <span className="mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                Electivas
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-500">
+                              {(pool.subjects?.length ?? 0)} materias
+                            </span>
+                          </summary>
+                          {pool.description && (
+                            <p className="text-xs text-slate-500 mt-2">{pool.description}</p>
+                          )}
+                          {pool.subjects && pool.subjects.length > 0 ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {pool.subjects.map((subject) => {
+                                const status = statusBySubjectId.get(subject.id) ?? 'not_available'
+                                return (
+                                  <span
+                                    key={subject.id}
+                                    onContextMenu={(event) => handleRightClick(event, subject.id)}
+                                    className="inline-flex flex-wrap items-center gap-2 rounded-full bg-white px-3 py-1 text-xs text-slate-600 border border-slate-200 cursor-pointer select-none"
+                                  >
+                                    <span className="text-amber-700 font-semibold">Electiva</span>
+                                    {subject.name}
+                                    {subject.year ? <span className="text-slate-400">{subject.year}°</span> : null}
+                                    <span className={`rounded-full border px-2 py-0.5 text-[11px] ${statusConfig[status].classes}`}>
+                                      {statusConfig[status].label}
+                                    </span>
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <p className="mt-3 text-xs text-slate-500">Sin materias asociadas.</p>
+                          )}
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-md p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-base font-semibold text-slate-900">Reglas</h4>
+                      <span className="text-xs text-slate-500">{electiveRules.length} reglas</span>
+                    </div>
+                    {electiveRules.length === 0 && (
+                      <p className="text-sm text-slate-500">No hay reglas configuradas.</p>
+                    )}
+                    <div className="space-y-3">
+                      {electiveRules.map((rule) => {
+                        const progress = getElectiveProgress(rule)
+                        const requirementLabel = requirementTypeLabels[rule.requirement_type]
+                        return (
+                          <div key={rule.id} className="rounded-xl border border-slate-100 bg-slate-50/40 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {rule.pool?.name ?? 'Pool sin nombre'}
+                                </p>
+                                <p className="text-xs text-slate-500">{formatRuleScope(rule)}</p>
+                              </div>
+                              <span className="text-xs text-slate-500 uppercase tracking-wide">
+                                {requirementLabel}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm text-slate-700">
+                              Requiere {formatMinimumValue(rule.minimum_value)} {requirementLabel}
+                            </p>
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between text-xs text-slate-500">
+                                <span>
+                                  {formatMinimumValue(progress.achieved)} / {formatMinimumValue(progress.target)} {progress.displayLabel}
+                                </span>
+                                <span>{progress.percent}%</span>
+                              </div>
+                              <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+                                <div
+                                  className="h-2 rounded-full bg-emerald-500 transition-all duration-300"
+                                  style={{ width: `${progress.percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
           </section>
         )}
 

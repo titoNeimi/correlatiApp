@@ -5,6 +5,7 @@ type SubjectDTO = {
   name: string
   subjectYear: number
   degreeProgramID: string
+  is_elective?: boolean
   status: SubjectStatus
   requirements: string[]
 }
