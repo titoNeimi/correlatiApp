@@ -106,69 +106,106 @@ func Seed(gdb *gorm.DB) error {
 			return err
 		}
 
-		// 2) Universities
-		utn := models.University{
-			ID:       uuid.NewString(),
-			Name:     "UTN",
-			Location: "Argentina",
-			Website:  "https://utn.edu.ar",
+		// 2) University
+		utnFrba := models.University{
+			ID:   "utn-frba",
+			Name: "Universidad Tecnológica Nacional - Facultad Regional Buenos Aires",
 		}
-		uba := models.University{
-			ID:       uuid.NewString(),
-			Name:     "UBA",
-			Location: "Argentina",
-			Website:  "https://uba.ar",
-		}
-		if err := tx.Create(&[]models.University{utn, uba}).Error; err != nil {
+		if err := tx.Create(&utnFrba).Error; err != nil {
 			return err
 		}
 
-		// 3) Degree Programs
-		dpSistemas := models.DegreeProgram{
-			ID:           uuid.NewString(),
+		// 3) Degree Program
+		dpISI := models.DegreeProgram{
+			ID:           "utnfrba-isi-plan2023",
 			Name:         "Ingeniería en Sistemas de Información",
-			UniversityID: utn.ID,
+			UniversityID: utnFrba.ID,
 		}
-		dpAnalista := models.DegreeProgram{
-			ID:           uuid.NewString(),
-			Name:         "Analista de Sistemas",
-			UniversityID: utn.ID,
-		}
-		if err := tx.Create(&[]models.DegreeProgram{dpSistemas, dpAnalista}).Error; err != nil {
+		if err := tx.Create(&dpISI).Error; err != nil {
 			return err
 		}
 
-		// 4) Subjects (por programa) + correlativas (Requirements many2many)
-		// --- Sistemas (ejemplo razonable)
-		ams := newSubject("Análisis Matemático I", 1, dpSistemas.ID)
-		algebra := newSubject("Álgebra y Geometría Analítica", 1, dpSistemas.ID)
-		logica := newSubject("Lógica y Estructuras Discretas", 1, dpSistemas.ID)
-		algo1 := newSubject("Algoritmos y Estructuras de Datos", 1, dpSistemas.ID)
-		nego := newSubject("Sistemas y procesos de Negocios", 1, dpSistemas.ID)
-		arq := newSubject("Arquitectura de Computadoras", 1, dpSistemas.ID)
-		fi1 := newSubject("Física I", 1, dpSistemas.ID)
-
-		fi2 := newSubject("Física II", 2, dpSistemas.ID)
-		am2 := newSubject("Análisis Matemático II", 2, dpSistemas.ID)
-		proba := newSubject("Probabilidad y Estadística", 2, dpSistemas.ID)
-		sintaxis := newSubject("Sintaxis y Semántica de los Lenguajes", 2, dpSistemas.ID)
-		so := newSubject("Sistemas Operativos", 2, dpSistemas.ID)
-		asi := newSubject("Análisis de Sistemas de Información", 2, dpSistemas.ID)
-		para := newSubject("Paradigmas de Programación", 2, dpSistemas.ID)
-
-		bd := newSubject("Bases de Datos", 3, dpSistemas.ID)
-		ingsoft := newSubject("Diseño de Sistemas de Información", 3, dpSistemas.ID)
-		desa := newSubject("Desarrollo de Software", 3, dpSistemas.ID)
-
-		sisSubjects := []*models.Subject{
-			ams, algebra, logica, algo1, am2, proba, arq, sintaxis, so, bd, ingsoft, nego, fi1, fi2, asi, para, desa,
+		type seedSubject struct {
+			Number     int
+			ID         string
+			Name       string
+			Year       int
+			Hours      float64
+			Credits    float64
+			IsElective bool
 		}
-		if err := tx.Create(&sisSubjects).Error; err != nil {
+
+		seedSubjects := []seedSubject{
+			{Number: 1, ID: "utnfrba-isi-plan2023-sub-01", Name: "Análisis Matemático I", Year: 1, Hours: 120, Credits: 10, IsElective: false},
+			{Number: 2, ID: "utnfrba-isi-plan2023-sub-02", Name: "Álgebra y Geometría Analítica", Year: 1, Hours: 120, Credits: 10, IsElective: false},
+			{Number: 3, ID: "utnfrba-isi-plan2023-sub-03", Name: "Física I", Year: 1, Hours: 120, Credits: 10, IsElective: false},
+			{Number: 4, ID: "utnfrba-isi-plan2023-sub-04", Name: "Inglés I", Year: 1, Hours: 48, Credits: 3, IsElective: false},
+			{Number: 5, ID: "utnfrba-isi-plan2023-sub-05", Name: "Lógica y Estructuras Discretas", Year: 1, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 6, ID: "utnfrba-isi-plan2023-sub-06", Name: "Algoritmos y Estructuras de Datos", Year: 1, Hours: 120, Credits: 10, IsElective: false},
+			{Number: 7, ID: "utnfrba-isi-plan2023-sub-07", Name: "Arquitectura de Computadoras", Year: 1, Hours: 96, Credits: 6, IsElective: false},
+			{Number: 8, ID: "utnfrba-isi-plan2023-sub-08", Name: "Sistemas y Procesos de Negocio", Year: 1, Hours: 72, Credits: 5, IsElective: false},
+
+			{Number: 9, ID: "utnfrba-isi-plan2023-sub-09", Name: "Análisis Matemático II", Year: 2, Hours: 120, Credits: 10, IsElective: false},
+			{Number: 10, ID: "utnfrba-isi-plan2023-sub-10", Name: "Física II", Year: 2, Hours: 120, Credits: 10, IsElective: false},
+			{Number: 11, ID: "utnfrba-isi-plan2023-sub-11", Name: "Ingeniería y Sociedad", Year: 2, Hours: 48, Credits: 3, IsElective: false},
+			{Number: 12, ID: "utnfrba-isi-plan2023-sub-12", Name: "Inglés II", Year: 2, Hours: 48, Credits: 3, IsElective: false},
+			{Number: 13, ID: "utnfrba-isi-plan2023-sub-13", Name: "Sintaxis y Semántica de los Lenguajes", Year: 2, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 14, ID: "utnfrba-isi-plan2023-sub-14", Name: "Paradigmas de Programación", Year: 2, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 15, ID: "utnfrba-isi-plan2023-sub-15", Name: "Sistemas Operativos", Year: 2, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 16, ID: "utnfrba-isi-plan2023-sub-16", Name: "Análisis de Sistemas de Información (integradora)", Year: 2, Hours: 144, Credits: 10, IsElective: false},
+
+			{Number: 17, ID: "utnfrba-isi-plan2023-sub-17", Name: "Probabilidad y Estadística", Year: 3, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 18, ID: "utnfrba-isi-plan2023-sub-18", Name: "Economía", Year: 3, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 19, ID: "utnfrba-isi-plan2023-sub-19", Name: "Bases de Datos", Year: 3, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 20, ID: "utnfrba-isi-plan2023-sub-20", Name: "Desarrollo de Software", Year: 3, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 21, ID: "utnfrba-isi-plan2023-sub-21", Name: "Comunicación de Datos", Year: 3, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 22, ID: "utnfrba-isi-plan2023-sub-22", Name: "Análisis Numérico", Year: 3, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 23, ID: "utnfrba-isi-plan2023-sub-23", Name: "Diseño de Sistemas de Información (integradora)", Year: 3, Hours: 144, Credits: 10, IsElective: false},
+
+			{Number: 24, ID: "utnfrba-isi-plan2023-sub-24", Name: "Legislación", Year: 4, Hours: 48, Credits: 3, IsElective: false},
+			{Number: 25, ID: "utnfrba-isi-plan2023-sub-25", Name: "Ingeniería y Calidad de Software", Year: 4, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 26, ID: "utnfrba-isi-plan2023-sub-26", Name: "Redes de Datos", Year: 4, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 27, ID: "utnfrba-isi-plan2023-sub-27", Name: "Investigación Operativa", Year: 4, Hours: 96, Credits: 6, IsElective: false},
+			{Number: 28, ID: "utnfrba-isi-plan2023-sub-28", Name: "Simulación", Year: 4, Hours: 72, Credits: 5, IsElective: false},
+			{Number: 29, ID: "utnfrba-isi-plan2023-sub-29", Name: "Tecnologías para la automatización", Year: 4, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 30, ID: "utnfrba-isi-plan2023-sub-30", Name: "Administración de Sistemas de Información (integradora)", Year: 4, Hours: 144, Credits: 10, IsElective: false},
+
+			{Number: 31, ID: "utnfrba-isi-plan2023-sub-31", Name: "Inteligencia Artificial", Year: 5, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 32, ID: "utnfrba-isi-plan2023-sub-32", Name: "Ciencia de Datos", Year: 5, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 33, ID: "utnfrba-isi-plan2023-sub-33", Name: "Sistemas de Gestión", Year: 5, Hours: 96, Credits: 8, IsElective: false},
+			{Number: 34, ID: "utnfrba-isi-plan2023-sub-34", Name: "Gestión Gerencial", Year: 5, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 35, ID: "utnfrba-isi-plan2023-sub-35", Name: "Seguridad en los Sistemas de Información", Year: 5, Hours: 72, Credits: 6, IsElective: false},
+			{Number: 36, ID: "utnfrba-isi-plan2023-sub-36", Name: "Proyecto Final (integradora)", Year: 5, Hours: 144, Credits: 15, IsElective: false},
+		}
+
+		subjects := make([]*models.Subject, 0, len(seedSubjects))
+		subjectIDsByNumber := make(map[int]string, len(seedSubjects))
+		for _, s := range seedSubjects {
+			year := s.Year
+			subjects = append(subjects, &models.Subject{
+				ID:              s.ID,
+				Name:            s.Name,
+				Year:            &year,
+				DegreeProgramID: dpISI.ID,
+				Credits:         s.Credits,
+				Hours:           s.Hours,
+				IsElective:      s.IsElective,
+			})
+			subjectIDsByNumber[s.Number] = s.ID
+		}
+		if err := tx.Create(&subjects).Error; err != nil {
 			return err
 		}
 
-		// Helper para insertar requirements con MinStatus
-		addReq := func(subjectID, requirementID string, min models.RequirementMinStatus) error {
+		addReq := func(subjectNumber, requirementNumber int, min models.RequirementMinStatus) error {
+			subjectID, ok := subjectIDsByNumber[subjectNumber]
+			if !ok {
+				return fmt.Errorf("subject number %d not found", subjectNumber)
+			}
+			requirementID, ok := subjectIDsByNumber[requirementNumber]
+			if !ok {
+				return fmt.Errorf("requirement number %d not found", requirementNumber)
+			}
 			return tx.Create(&models.SubjectRequirement{
 				SubjectID:     subjectID,
 				RequirementID: requirementID,
@@ -176,97 +213,213 @@ func Seed(gdb *gorm.DB) error {
 			}).Error
 		}
 
-		if err := addReq(fi2.ID, fi1.ID, models.ReqFinalPending); err != nil {
+		requirements := []struct {
+			SubjectNumber     int
+			RequirementNumber int
+			MinStatus         models.RequirementMinStatus
+		}{
+			{9, 1, models.ReqFinalPending},
+			{9, 2, models.ReqFinalPending},
+			{10, 1, models.ReqFinalPending},
+			{10, 3, models.ReqFinalPending},
+			{12, 4, models.ReqFinalPending},
+			{13, 5, models.ReqFinalPending},
+			{13, 6, models.ReqFinalPending},
+			{14, 5, models.ReqFinalPending},
+			{14, 6, models.ReqFinalPending},
+			{15, 7, models.ReqFinalPending},
+			{16, 6, models.ReqFinalPending},
+			{16, 8, models.ReqFinalPending},
+			{17, 1, models.ReqFinalPending},
+			{17, 2, models.ReqFinalPending},
+			{18, 1, models.ReqPassed},
+			{18, 2, models.ReqPassed},
+			{19, 13, models.ReqFinalPending},
+			{19, 16, models.ReqFinalPending},
+			{19, 5, models.ReqPassed},
+			{19, 6, models.ReqPassed},
+			{20, 14, models.ReqFinalPending},
+			{20, 16, models.ReqFinalPending},
+			{20, 5, models.ReqPassed},
+			{20, 6, models.ReqPassed},
+			{21, 3, models.ReqPassed},
+			{21, 7, models.ReqPassed},
+			{22, 9, models.ReqFinalPending},
+			{22, 1, models.ReqPassed},
+			{22, 2, models.ReqPassed},
+			{23, 14, models.ReqFinalPending},
+			{23, 16, models.ReqFinalPending},
+			{23, 4, models.ReqPassed},
+			{23, 6, models.ReqPassed},
+			{23, 8, models.ReqPassed},
+			{24, 11, models.ReqFinalPending},
+			{25, 19, models.ReqFinalPending},
+			{25, 20, models.ReqFinalPending},
+			{25, 23, models.ReqFinalPending},
+			{25, 13, models.ReqPassed},
+			{25, 14, models.ReqPassed},
+			{26, 15, models.ReqFinalPending},
+			{26, 21, models.ReqFinalPending},
+			{27, 17, models.ReqFinalPending},
+			{27, 22, models.ReqFinalPending},
+			{28, 17, models.ReqFinalPending},
+			{28, 9, models.ReqPassed},
+			{29, 10, models.ReqFinalPending},
+			{29, 22, models.ReqFinalPending},
+			{29, 9, models.ReqPassed},
+			{30, 18, models.ReqFinalPending},
+			{30, 23, models.ReqFinalPending},
+			{30, 16, models.ReqPassed},
+			{31, 28, models.ReqFinalPending},
+			{31, 17, models.ReqPassed},
+			{31, 22, models.ReqPassed},
+			{32, 28, models.ReqFinalPending},
+			{32, 17, models.ReqPassed},
+			{32, 19, models.ReqPassed},
+			{33, 18, models.ReqFinalPending},
+			{33, 27, models.ReqFinalPending},
+			{33, 23, models.ReqPassed},
+			{34, 24, models.ReqFinalPending},
+			{34, 30, models.ReqFinalPending},
+			{34, 18, models.ReqPassed},
+			{35, 26, models.ReqFinalPending},
+			{35, 30, models.ReqFinalPending},
+			{35, 20, models.ReqPassed},
+			{35, 21, models.ReqPassed},
+			{36, 25, models.ReqFinalPending},
+			{36, 26, models.ReqFinalPending},
+			{36, 30, models.ReqFinalPending},
+			{36, 12, models.ReqPassed},
+			{36, 20, models.ReqPassed},
+			{36, 23, models.ReqPassed},
+		}
+		for _, req := range requirements {
+			if err := addReq(req.SubjectNumber, req.RequirementNumber, req.MinStatus); err != nil {
+				return err
+			}
+		}
+
+		pools := []models.ElectivePool{
+			{
+				ID:              "utnfrba-isi-plan2023-pool-electivas-y3",
+				DegreeProgramID: dpISI.ID,
+				Name:            "Electivas 3º nivel",
+				Description:     "Espacio de materias electivas del 3º nivel (plan 2023). (Materias electivas específicas no listadas en los PDFs provistos).",
+			},
+			{
+				ID:              "utnfrba-isi-plan2023-pool-electivas-y4",
+				DegreeProgramID: dpISI.ID,
+				Name:            "Electivas 4º nivel",
+				Description:     "Espacio de materias electivas del 4º nivel (plan 2023). (Materias electivas específicas no listadas en los PDFs provistos).",
+			},
+			{
+				ID:              "utnfrba-isi-plan2023-pool-electivas-y5",
+				DegreeProgramID: dpISI.ID,
+				Name:            "Electivas 5º nivel",
+				Description:     "Espacio de materias electivas del 5º nivel (plan 2023). (Materias electivas específicas no listadas en los PDFs provistos).",
+			},
+		}
+		if err := tx.Create(&pools).Error; err != nil {
 			return err
 		}
 
-		if err := addReq(asi.ID, nego.ID, models.ReqFinalPending); err != nil {
-			return err
+		electiveSubjects := []struct {
+			ID      string
+			Name    string
+			Level   int
+			Hours   float64
+			Credits float64
+		}{
+			{ID: "utnfrba-isi2023-elect-adm-capital-humano", Name: "Administración Estratégica del Capital Humano", Level: 3, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-ciberseguridad", Name: "Ciberseguridad", Level: 3, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-com-grav", Name: "Comunicación Gráfica y Visual", Level: 3, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-creatividad", Name: "Creatividad e Innovación", Level: 3, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-criptografia", Name: "Criptografía", Level: 3, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-ux", Name: "Experiencia de Usuario y Accesibilidad", Level: 4, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-ger-proy-sis", Name: "Gerenciamiento de Proyectos de Sistemas de Información", Level: 4, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-gest-talento", Name: "Gestión del Talento Humano", Level: 4, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-ing-req", Name: "Ingeniería de Requisitos", Level: 4, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-met-invest-cy-t", Name: "Metodología de Investigación Científico-Tecnológica", Level: 4, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-met-condu-equip", Name: "Metodología de la Conducción de Equipos de Trabajo", Level: 4, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-patrones-algo", Name: "Patrones Algorítmicos", Level: 5, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-pln", Name: "Procesamiento del Lenguaje Natural", Level: 5, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-quim-ambi", Name: "Química Ambiental", Level: 5, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-tec-avanz-prog", Name: "Técnicas Avanzadas de Programación", Level: 5, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-tec-graph-comp", Name: "Técnicas de Gráficos por Computadora", Level: 5, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-tec-avanz-soft", Name: "Tecnologías Avanzadas en la Construcción de Software", Level: 5, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-tend-escenarios", Name: "Tendencias y Escenarios Tecnológicos", Level: 5, Hours: 48, Credits: 3},
+			{ID: "utnfrba-isi2023-elect-transform-dig", Name: "Transformación Digital", Level: 5, Hours: 48, Credits: 3},
 		}
 
-		if err := addReq(am2.ID, ams.ID, models.ReqFinalPending); err != nil {
-			return err
+		poolByLevel := map[int]string{
+			3: "utnfrba-isi-plan2023-pool-electivas-y3",
+			4: "utnfrba-isi-plan2023-pool-electivas-y4",
+			5: "utnfrba-isi-plan2023-pool-electivas-y5",
 		}
 
-		if err := addReq(proba.ID, ams.ID, models.ReqFinalPending); err != nil {
-			return err
-		}
-		if err := addReq(proba.ID, algebra.ID, models.ReqFinalPending); err != nil {
-			return err
-		}
-
-		if err := addReq(sintaxis.ID, algo1.ID, models.ReqFinalPending); err != nil {
-			return err
-		}
-		if err := addReq(sintaxis.ID, logica.ID, models.ReqFinalPending); err != nil {
-			return err
-		}
-
-		if err := addReq(para.ID, algo1.ID, models.ReqFinalPending); err != nil {
-			return err
-		}
-		if err := addReq(para.ID, logica.ID, models.ReqFinalPending); err != nil {
-			return err
-		}
-
-		if err := addReq(so.ID, arq.ID, models.ReqFinalPending); err != nil {
-			return err
+		electiveModels := make([]*models.Subject, 0, len(electiveSubjects))
+		electivePoolSubjects := make([]models.ElectivePoolSubject, 0, len(electiveSubjects))
+		for _, subject := range electiveSubjects {
+			year := subject.Level
+			electiveModels = append(electiveModels, &models.Subject{
+				ID:              subject.ID,
+				Name:            subject.Name,
+				Year:            &year,
+				DegreeProgramID: dpISI.ID,
+				Hours:           subject.Hours,
+				Credits:         subject.Credits,
+				IsElective:      true,
+			})
+			if poolID, ok := poolByLevel[subject.Level]; ok {
+				electivePoolSubjects = append(electivePoolSubjects, models.ElectivePoolSubject{
+					ElectivePoolID: poolID,
+					SubjectID:      subject.ID,
+				})
+			}
 		}
 
-		// 3ro: BD requiere (1ro passed) + (2do final_pending)
-		if err := addReq(bd.ID, algo1.ID, models.ReqPassed); err != nil {
+		if err := tx.Create(&electiveModels).Error; err != nil {
 			return err
 		}
-		if err := addReq(bd.ID, logica.ID, models.ReqPassed); err != nil {
-			return err
-		}
-		if err := addReq(bd.ID, sintaxis.ID, models.ReqFinalPending); err != nil {
-			return err
-		}
-		if err := addReq(bd.ID, asi.ID, models.ReqFinalPending); err != nil {
-			return err
+		if len(electivePoolSubjects) > 0 {
+			if err := tx.Create(&electivePoolSubjects).Error; err != nil {
+				return err
+			}
 		}
 
-		if err := addReq(desa.ID, algo1.ID, models.ReqPassed); err != nil { // 1ro
-			return err
+		year3 := 3
+		year4 := 4
+		year5 := 5
+		rules := []models.ElectiveRule{
+			{
+				ID:              "utnfrba-isi-plan2023-pool-electivas-y3-rule-hours",
+				DegreeProgramID: dpISI.ID,
+				PoolID:          "utnfrba-isi-plan2023-pool-electivas-y3",
+				AppliesFromYear: 3,
+				AppliesToYear:   &year3,
+				RequirementType: models.RequirementHours,
+				MinimumValue:    96,
+			},
+			{
+				ID:              "utnfrba-isi-plan2023-pool-electivas-y4-rule-hours",
+				DegreeProgramID: dpISI.ID,
+				PoolID:          "utnfrba-isi-plan2023-pool-electivas-y4",
+				AppliesFromYear: 4,
+				AppliesToYear:   &year4,
+				RequirementType: models.RequirementHours,
+				MinimumValue:    144,
+			},
+			{
+				ID:              "utnfrba-isi-plan2023-pool-electivas-y5-rule-hours",
+				DegreeProgramID: dpISI.ID,
+				PoolID:          "utnfrba-isi-plan2023-pool-electivas-y5",
+				AppliesFromYear: 5,
+				AppliesToYear:   &year5,
+				RequirementType: models.RequirementHours,
+				MinimumValue:    240,
+			},
 		}
-		if err := addReq(desa.ID, logica.ID, models.ReqPassed); err != nil { // 2do
-			return err
-		}
-		if err := addReq(desa.ID, para.ID, models.ReqFinalPending); err != nil { // 2do
-			return err
-		}
-		if err := addReq(desa.ID, asi.ID, models.ReqFinalPending); err != nil { // 2do
-			return err
-		}
-
-		if err := addReq(ingsoft.ID, algo1.ID, models.ReqPassed); err != nil { // 1ro
-			return err
-		}
-		if err := addReq(ingsoft.ID, nego.ID, models.ReqPassed); err != nil { // 2do
-			return err
-		}
-		if err := addReq(ingsoft.ID, para.ID, models.ReqFinalPending); err != nil { // 2do
-			return err
-		}
-		if err := addReq(ingsoft.ID, asi.ID, models.ReqFinalPending); err != nil { // 2do
-			return err
-		}
-
-		// --- Analista (más cortito, pero consistente)
-		intro := newSubject("Introducción a la Programación", 1, dpAnalista.ID)
-		algoA := newSubject("Algoritmos I", 1, dpAnalista.ID)
-		bdA := newSubject("Bases de Datos I", 2, dpAnalista.ID)
-		webA := newSubject("Desarrollo Web", 2, dpAnalista.ID)
-
-		anaSubjects := []*models.Subject{intro, algoA, bdA, webA}
-		if err := tx.Create(&anaSubjects).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(bdA).Association("Requirements").Replace([]*models.Subject{algoA}); err != nil {
-			return err
-		}
-		if err := tx.Model(webA).Association("Requirements").Replace([]*models.Subject{intro}); err != nil {
+		if err := tx.Create(&rules).Error; err != nil {
 			return err
 		}
 
@@ -300,13 +453,13 @@ func Seed(gdb *gorm.DB) error {
 		}
 
 		// user_degree_programs (many2many)
-		if err := tx.Model(&admin).Association("DegreePrograms").Replace([]*models.DegreeProgram{&dpSistemas, &dpAnalista}); err != nil {
+		if err := tx.Model(&admin).Association("DegreePrograms").Replace([]*models.DegreeProgram{&dpISI}); err != nil {
 			return err
 		}
-		if err := tx.Model(&alumno).Association("DegreePrograms").Replace([]*models.DegreeProgram{&dpSistemas}); err != nil {
+		if err := tx.Model(&alumno).Association("DegreePrograms").Replace([]*models.DegreeProgram{&dpISI}); err != nil {
 			return err
 		}
-		if err := tx.Model(&staff).Association("DegreePrograms").Replace([]*models.DegreeProgram{&dpAnalista}); err != nil {
+		if err := tx.Model(&staff).Association("DegreePrograms").Replace([]*models.DegreeProgram{&dpISI}); err != nil {
 			return err
 		}
 
@@ -315,16 +468,16 @@ func Seed(gdb *gorm.DB) error {
 		now := time.Now().UTC()
 
 		entries := []models.UserSubject{
-			{UserID: alumno.ID, SubjectID: ams.ID, Status: models.StatusPassed, UpdatedAt: now},
-			{UserID: alumno.ID, SubjectID: algebra.ID, Status: models.StatusPassed, UpdatedAt: now},
-			{UserID: alumno.ID, SubjectID: algo1.ID, Status: models.StatusInProgress, UpdatedAt: now},
-			{UserID: alumno.ID, SubjectID: proba.ID, Status: models.StatusFinalPending, UpdatedAt: now},
-			{UserID: alumno.ID, SubjectID: sintaxis.ID, Status: models.StatusAvailable, UpdatedAt: now},
-			{UserID: alumno.ID, SubjectID: so.ID, Status: models.StatusAvailable, UpdatedAt: now},
+			{UserID: alumno.ID, SubjectID: subjectIDsByNumber[1], Status: models.StatusPassed, UpdatedAt: now},
+			{UserID: alumno.ID, SubjectID: subjectIDsByNumber[2], Status: models.StatusPassed, UpdatedAt: now},
+			{UserID: alumno.ID, SubjectID: subjectIDsByNumber[6], Status: models.StatusInProgress, UpdatedAt: now},
+			{UserID: alumno.ID, SubjectID: subjectIDsByNumber[17], Status: models.StatusFinalPending, UpdatedAt: now},
+			{UserID: alumno.ID, SubjectID: subjectIDsByNumber[13], Status: models.StatusAvailable, UpdatedAt: now},
+			{UserID: alumno.ID, SubjectID: subjectIDsByNumber[15], Status: models.StatusAvailable, UpdatedAt: now},
 
-			{UserID: admin.ID, SubjectID: ams.ID, Status: models.StatusPassedWithDist, UpdatedAt: now},
-			{UserID: staff.ID, SubjectID: intro.ID, Status: models.StatusInProgress, UpdatedAt: now},
-			{UserID: staff.ID, SubjectID: webA.ID, Status: models.StatusAvailable, UpdatedAt: now},
+			{UserID: admin.ID, SubjectID: subjectIDsByNumber[1], Status: models.StatusPassedWithDist, UpdatedAt: now},
+			{UserID: staff.ID, SubjectID: subjectIDsByNumber[4], Status: models.StatusInProgress, UpdatedAt: now},
+			{UserID: staff.ID, SubjectID: subjectIDsByNumber[8], Status: models.StatusAvailable, UpdatedAt: now},
 		}
 
 		// Insert directo a la tabla join (porque tiene Status y UpdatedAt)
@@ -355,15 +508,6 @@ func Seed(gdb *gorm.DB) error {
 	})
 }
 
-func newSubject(name string, year int, programID string) *models.Subject {
-	return &models.Subject{
-		ID:              uuid.NewString(),
-		Name:            name,
-		Year:            &year,
-		DegreeProgramID: programID,
-	}
-}
-
 // resetAll intenta ser agnóstico del motor.
 // - Para Postgres usa TRUNCATE ... RESTART IDENTITY CASCADE.
 // - Para MySQL/MariaDB hace DELETE + limpia tablas intermedias.
@@ -376,8 +520,12 @@ func resetAll(tx *gorm.DB) error {
 		sql := `
 		TRUNCATE TABLE
 			subject_requirements,
+			elective_pool_subjects,
+			elective_rules,
+			elective_pools,
 			user_subjects,
 			user_degree_programs,
+			user_favorite_programs,
 			sessions,
 			subjects,
 			degree_programs,
@@ -390,8 +538,12 @@ func resetAll(tx *gorm.DB) error {
 		// Orden: primero joins / dependientes
 		tables := []string{
 			"subject_requirements",
+			"elective_pool_subjects",
+			"elective_rules",
+			"elective_pools",
 			"user_subjects",
 			"user_degree_programs",
+			"user_favorite_programs",
 			"sessions",
 			"subjects",
 			"degree_programs",
