@@ -209,7 +209,7 @@ func AddSubjectToElectivePool(c *gin.Context) {
 	}
 
 	var link models.ElectivePoolSubject
-	if err := db.Db.Where("pool_id = ? AND subject_id = ?", pool.ID, subject.ID).First(&link).Error; err == nil {
+	if err := db.Db.Where("elective_pool_id = ? AND subject_id = ?", pool.ID, subject.ID).First(&link).Error; err == nil {
 		c.IndentedJSON(http.StatusConflict, gin.H{"ok": false, "error": "Subject ya está en el pool"})
 		return
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -219,8 +219,8 @@ func AddSubjectToElectivePool(c *gin.Context) {
 	}
 
 	newLink := models.ElectivePoolSubject{
-		PoolID:    pool.ID,
-		SubjectID: subject.ID,
+		ElectivePoolID: pool.ID,
+		SubjectID:      subject.ID,
 	}
 	if err := db.Db.Create(&newLink).Error; err != nil {
 		slog.Error("Error adding subject to pool", slog.Any("error: ", err))
@@ -248,7 +248,7 @@ func RemoveSubjectFromElectivePool(c *gin.Context) {
 	}
 
 	var link models.ElectivePoolSubject
-	if err := db.Db.Where("pool_id = ? AND subject_id = ?", pool.ID, subjectID).First(&link).Error; err != nil {
+	if err := db.Db.Where("elective_pool_id = ? AND subject_id = ?", pool.ID, subjectID).First(&link).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Subject no está en el pool"})
 			return

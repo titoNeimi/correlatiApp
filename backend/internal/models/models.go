@@ -62,12 +62,12 @@ type DegreeProgram struct {
 type Subject struct {
 	ID              string         `json:"id" gorm:"primaryKey;size:191"`
 	Name            string         `json:"name" gorm:"not null;size:191"`
-	Year            *int           `json:"year,omitempty"`
+	Year            *int           `json:"year,omitempty" gorm:"column:subject_year"`
 	Requirements    []*Subject     `json:"requirements" gorm:"many2many:subject_requirements;joinForeignKey:SubjectID;joinReferences:RequirementID"`
 	DegreeProgramID string         `json:"degreeProgramID" gorm:"not null;size:191;index"`
 	Credits         float64        `json:"credits,omitempty"`
 	Hours           float64        `json:"hours,omitempty"`
-	IsElective      bool           `json:"is_elective" gorm:"default:'false'"`
+	IsElective      bool           `json:"is_elective" gorm:"default:false"`
 	ElectivePools   []ElectivePool `json:"electivePools,omitempty" gorm:"many2many:elective_pool_subjects"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
@@ -116,9 +116,9 @@ type ElectivePool struct {
 }
 
 type ElectivePoolSubject struct {
-	PoolID    string       `json:"pool_id" gorm:"primaryKey;size:191;index:uniq_pool_subject,unique"`
+	ElectivePoolID string       `json:"pool_id" gorm:"primaryKey;size:191;index:uniq_pool_subject,unique"`
 	SubjectID string       `json:"subject_id" gorm:"primaryKey;size:191;index:uniq_pool_subject,unique"`
-	Pool      ElectivePool `json:"pool,omitempty" gorm:"foreignKey:PoolID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	Pool      ElectivePool `json:"pool,omitempty" gorm:"foreignKey:ElectivePoolID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
 	Subject   Subject      `json:"subject,omitempty" gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
 }
 

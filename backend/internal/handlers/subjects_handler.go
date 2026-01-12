@@ -20,6 +20,7 @@ type requirementInput struct {
 type createSubjectDTO struct {
 	Name            string             `json:"name" binding:"required"`
 	Year            *int               `json:"year,omitempty"`
+	SubjectYear     *int               `json:"subjectYear,omitempty"`
 	DegreeProgramID string             `json:"degreeProgramID" binding:"required"`
 	Requirements    []requirementInput `json:"requirements"`
 }
@@ -27,6 +28,7 @@ type createSubjectDTO struct {
 type updateSubjectDTO struct {
 	Name            *string             `json:"name,omitempty"`
 	Year            *int                `json:"year,omitempty"`
+	SubjectYear     *int                `json:"subjectYear,omitempty"`
 	DegreeProgramID *string             `json:"degreeProgramID,omitempty"`
 	Requirements    *[]requirementInput `json:"requirements,omitempty"`
 }
@@ -51,6 +53,7 @@ func GetAllSubjectsFromProgram(c *gin.Context) {
 		ID              string                  `json:"id"`
 		Name            string                  `json:"name"`
 		Year            *int                    `json:"year,omitempty"`
+		SubjectYear     *int                    `json:"subjectYear,omitempty"`
 		DegreeProgramID string                  `json:"degreeProgramID"`
 		Requirements    []requirementWithStatus `json:"requirements"`
 		CreatedAt       time.Time               `json:"created_at"`
@@ -95,6 +98,7 @@ func GetAllSubjectsFromProgram(c *gin.Context) {
 			ID:              subject.ID,
 			Name:            subject.Name,
 			Year:            subject.Year,
+			SubjectYear:     subject.Year,
 			DegreeProgramID: subject.DegreeProgramID,
 			Requirements:    requirements,
 			CreatedAt:       subject.CreatedAt,
@@ -119,10 +123,15 @@ func CreateSubject(c *gin.Context) {
 		return
 	}
 
+	year := dto.Year
+	if year == nil {
+		year = dto.SubjectYear
+	}
+
 	subject := models.Subject{
 		ID:              uuid.New().String(),
 		Name:            dto.Name,
-		Year:            dto.Year,
+		Year:            year,
 		DegreeProgramID: dto.DegreeProgramID,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
@@ -213,6 +222,8 @@ func UpdateSubject(c *gin.Context) {
 		}
 		if dto.Year != nil {
 			updates["year"] = *dto.Year
+		} else if dto.SubjectYear != nil {
+			updates["year"] = *dto.SubjectYear
 		}
 		if dto.DegreeProgramID != nil {
 			if *dto.DegreeProgramID == "" {

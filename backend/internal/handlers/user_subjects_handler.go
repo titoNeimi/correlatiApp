@@ -130,7 +130,9 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 			"id":              s.ID,
 			"name":            s.Name,
 			"year":            s.Year,
+			"subjectYear":     s.Year,
 			"degreeProgramID": s.DegreeProgramID,
+			"is_elective":     s.IsElective,
 			"status":          st,
 			"requirements":    reqRulesBySubject[s.ID], // [{id, minStatus}]
 		})
