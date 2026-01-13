@@ -170,7 +170,7 @@ const UniversityStep: React.FC<{
                 id="universityName"
                 {...register('universityName')}
                 placeholder="Ej: Universidad Nacional de..."
-                error={!!errors.universityName}
+                aria-invalid={!!errors.universityName}
                 disabled={creating}
               />
               {creating && <Spinner />}
@@ -225,7 +225,7 @@ const DegreeStep: React.FC<{
           id="degreeName"
           {...register('degreeName')}
           placeholder="Ej: Licenciatura en Ciencias de la Computación"
-          error={!!errors.degreeName}
+          aria-invalid={!!errors.degreeName}
         />
         {errors.degreeName && (
           <p className="text-sm text-red-600 mt-1">{errors.degreeName.message}</p>
@@ -297,7 +297,7 @@ const StructureStep: React.FC<{
           min={1}
           max={80}
           {...register('subjects', { valueAsNumber: true })}
-          error={!!errors.subjects}
+          aria-invalid={!!errors.subjects}
         />
         {errors.subjects && (
           <p className="text-sm text-red-600 mt-1">{errors.subjects.message}</p>

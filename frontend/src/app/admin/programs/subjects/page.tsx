@@ -2,6 +2,7 @@
 
 import { Badge, Card } from '@/components/admin/baseComponents';
 import DataTable from '@/components/admin/dataTable';
+import { NativeSelect } from '@/components/ui/native-select';
 import { DegreeProgram, DegreeProgramSubject } from '@/types/degreeProgram';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -87,7 +88,11 @@ export default function ProgramSubjectsPage() {
     };
 
     return subjects
-      .filter(subject => yearFilter === 'all' || subject.subjectYear.toString() === yearFilter)
+      .filter(subject => {
+        if (yearFilter === 'all') return true;
+        if (typeof subject.year !== 'number') return false;
+        return subject.year.toString() === yearFilter;
+      })
       .map(subject => {
         const requirementLabels = (subject.requirements || [])
           .map(toRequirementLabel)
@@ -95,7 +100,7 @@ export default function ProgramSubjectsPage() {
 
         return {
           name: subject.name,
-          year: `${subject.subjectYear}°`,
+          year: typeof subject.year === 'number' ? `${subject.year}°` : '—',
           requirements: requirementLabels.length ? (
             <div className="flex flex-wrap gap-1">
               {requirementLabels.map((req, idx) => (
@@ -111,7 +116,14 @@ export default function ProgramSubjectsPage() {
   }, [subjects, yearFilter]);
 
   const years = useMemo(() => {
-    const uniqueYears = Array.from(new Set(subjects.map(s => s.subjectYear.toString())));
+    const uniqueYears = Array.from(
+      new Set(
+        subjects
+          .map((subject) => subject.year)
+          .filter((year): year is number => typeof year === 'number' && Number.isFinite(year))
+          .map((year) => year.toString())
+      )
+    );
     return ['all', ...uniqueYears.sort((a, b) => Number(a) - Number(b))];
   }, [subjects]);
 
@@ -158,7 +170,7 @@ export default function ProgramSubjectsPage() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Carrera</span>
-            <select
+            <NativeSelect
               value={selectedProgram}
               onChange={(e) => setSelectedProgram(e.target.value)}
               className="w-full md:w-72 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -166,7 +178,7 @@ export default function ProgramSubjectsPage() {
               {programs.map(program => (
                 <option key={program.id} value={program.id}>{program.name}</option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="flex flex-wrap gap-2">
             {years.map(year => (

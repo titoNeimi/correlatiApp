@@ -1,7 +1,7 @@
-import { Button } from "@/app/(user)/carreras/crear/(components)/button";
-import { Input } from "@/app/(user)/carreras/crear/(components)/input";
-import { Label } from "@/app/(user)/carreras/crear/(components)/label";
-import { Select } from "@/app/(user)/carreras/crear/(components)/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect as Select } from "@/components/ui/native-select";
 import { CurriculumSubject, PrerequisiteType } from "../(types)/types";
 import { useDegree } from "../degree-context";
 
@@ -330,7 +330,6 @@ const UnassignedPool: React.FC<{
   subjects,
   onDelete,
   onAdd,
-  onAddElective,
   onContextMenu,
   editingSubjectId,
   editingName,
@@ -369,14 +368,6 @@ const UnassignedPool: React.FC<{
               />
             ))}
             <AddSubjectButton onAdd={onAdd} label="Agregar materia" />
-            {/* {onAddElective && (
-              <AddSubjectButton
-                onAdd={onAddElective}
-                label="Agregar electiva"
-                helperText="Sin año asignado"
-                accentClassName="hover:border-amber-400"
-              />
-            )} */}
           </div>
         </SortableContext>
       </div>

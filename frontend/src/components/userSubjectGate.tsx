@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch, apiFetchJson } from "@/lib/api";
+import { NativeSelect } from "@/components/ui/native-select";
 
 type Props = {
   user: { id: string } | null;
@@ -117,7 +118,7 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <select
+          <NativeSelect
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:outline-none"
             value={selectedId}
             onChange={(event) => setSelectedId(event.target.value)}
@@ -127,7 +128,7 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
                 {program.name}
               </option>
             ))}
-          </select>
+          </NativeSelect>
           <button
             onClick={() => handleLoadSubjects()}
             disabled={!selectedId || loadingSubjects}
