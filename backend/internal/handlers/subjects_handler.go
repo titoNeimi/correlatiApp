@@ -22,6 +22,7 @@ type createSubjectDTO struct {
 	Year            *int               `json:"year,omitempty"`
 	SubjectYear     *int               `json:"subjectYear,omitempty"`
 	DegreeProgramID string             `json:"degreeProgramID" binding:"required"`
+	IsElective      *bool              `json:"is_elective,omitempty"`
 	Requirements    []requirementInput `json:"requirements"`
 }
 
@@ -133,6 +134,7 @@ func CreateSubject(c *gin.Context) {
 		Name:            dto.Name,
 		Year:            year,
 		DegreeProgramID: dto.DegreeProgramID,
+		IsElective:      dto.IsElective != nil && *dto.IsElective,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 	}

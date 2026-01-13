@@ -1,7 +1,13 @@
 'use server'
 
-import { DegreeData, CurriculumSubject } from './(types)/types';
+import {
+  DegreeData,
+  CurriculumSubject,
+  ElectivePoolDraft,
+  ElectiveRuleDraft,
+} from './(types)/types';
 import { ApiError, apiFetch, apiFetchJson } from '@/lib/api';
+import { cookies } from 'next/headers';
 
 type fetchDegreeProgramsResponse = {
   count: number,
@@ -47,26 +53,52 @@ type subjectRequirement = {
 
 type minStatus ='passed' | 'final_pending'
 
-export const confirmCreation = async (payload: { degreeData: DegreeData, subjects: CurriculumSubject[] }) => {
-  const {degreeData, subjects} = payload
+export const confirmCreation = async (payload: {
+  degreeData: DegreeData;
+  subjects: CurriculumSubject[];
+  electivePools: ElectivePoolDraft[];
+  electiveRules: ElectiveRuleDraft[];
+}) => {
+  const { degreeData, subjects, electivePools, electiveRules } = payload
+  const cookieStore = cookies()
+  const cookieHeader = cookieStore.toString()
+  const authHeaders: Record<string, string> = cookieHeader ? { Cookie: cookieHeader } : {}
   const degreeProgram = {
     name: degreeData.degreeName,
     universityID: degreeData.universityId,
   }
   const createdSubjectIds: string[] = []
   let createdProgramId: string | null = null
+  const createdPoolIds: string[] = []
 
   const cleanupCreation = async () => {
     if (createdSubjectIds.length > 0) {
       await Promise.allSettled(
         createdSubjectIds.map((id) =>
-          apiFetch(`/subjects/${id}`, { method: 'DELETE' })
+          apiFetch(`/subjects/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: authHeaders,
+          })
+        )
+      )
+    }
+    if (createdPoolIds.length > 0 && createdProgramId) {
+      await Promise.allSettled(
+        createdPoolIds.map((id) =>
+          apiFetch(`/degreeProgram/${createdProgramId}/electivePools/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: authHeaders,
+          })
         )
       )
     }
     if (createdProgramId) {
       await apiFetch(`/degreeProgram/${createdProgramId}`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: authHeaders,
       })
     }
   }
@@ -75,8 +107,10 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
       },
-      body: JSON.stringify(degreeProgram)
+      body: JSON.stringify(degreeProgram),
+      credentials: 'include',
     })
     if(!response.ok){
       return {ok:false, message: 'No se pudo crear la carrera'}
@@ -92,13 +126,16 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
         year: subject.year,
         subjectYear: subject.year,
         degreeProgramID: createdProgram.id,
+        is_elective: subject.isElective ?? false,
       }
       const subjectResponse = await apiFetch('/subjects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...authHeaders,
         },
-        body: JSON.stringify(subjectData)
+        body: JSON.stringify(subjectData),
+        credentials: 'include',
       })
       if(!subjectResponse.ok){
         await cleanupCreation()
@@ -136,13 +173,85 @@ export const confirmCreation = async (payload: { degreeData: DegreeData, subject
 
       const updateResp = await apiFetch(`/subjects/${newSubjectId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify(updateBody),
+        credentials: 'include',
       })
       if (!updateResp.ok) {
         console.log('No se pudo actualizar requirements de subject', newSubjectId)
         await cleanupCreation()
         return { ok: false, message: 'No se pudieron actualizar los requisitos' }
+      }
+    }
+
+    const poolIdMap = new Map<string, string>() // localPoolId -> createdPoolId
+    for (const pool of electivePools) {
+      const poolResponse = await apiFetch(`/degreeProgram/${createdProgram.id}/electivePools`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        body: JSON.stringify({
+          name: pool.name,
+          description: pool.description,
+        }),
+        credentials: 'include',
+      })
+      if (!poolResponse.ok) {
+        const errorBody = await poolResponse.text().catch(() => '')
+        console.log('Pool create failed', poolResponse.status, errorBody)
+        await cleanupCreation()
+        return { ok: false, message: 'No se pudieron crear los pools de electivas' }
+      }
+      const createdPool = await poolResponse.json()
+      createdPoolIds.push(createdPool.id)
+      poolIdMap.set(pool.id, createdPool.id)
+
+      for (const subjectId of pool.subjectIds) {
+        const newSubjectId = idMap.get(subjectId)
+        if (!newSubjectId) {
+          await cleanupCreation()
+          return { ok: false, message: 'No se pudieron asignar electivas a pools' }
+        }
+        const linkResp = await apiFetch(
+          `/degreeProgram/${createdProgram.id}/electivePools/${createdPool.id}/subjects`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders },
+            body: JSON.stringify({ subject_id: newSubjectId }),
+            credentials: 'include',
+          }
+        )
+        if (!linkResp.ok) {
+          const errorBody = await linkResp.text().catch(() => '')
+          console.log('Pool subject link failed', linkResp.status, errorBody)
+          await cleanupCreation()
+          return { ok: false, message: 'No se pudieron asignar electivas a pools' }
+        }
+      }
+    }
+
+    for (const rule of electiveRules) {
+      const createdPoolId = poolIdMap.get(rule.poolId)
+      if (!createdPoolId) {
+        await cleanupCreation()
+        return { ok: false, message: 'No se pudieron crear las reglas de electivas' }
+      }
+      const ruleResp = await apiFetch(`/degreeProgram/${createdProgram.id}/electiveRules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        body: JSON.stringify({
+          pool_id: createdPoolId,
+          applies_from_year: rule.appliesFromYear,
+          applies_to_year: rule.appliesToYear ?? null,
+          requirement_type: rule.requirementType,
+          minimum_value: rule.minimumValue,
+        }),
+        credentials: 'include',
+      })
+      if (!ruleResp.ok) {
+        const errorBody = await ruleResp.text().catch(() => '')
+        console.log('Rule create failed', ruleResp.status, errorBody)
+        await cleanupCreation()
+        return { ok: false, message: 'No se pudieron crear las reglas de electivas' }
       }
     }
 

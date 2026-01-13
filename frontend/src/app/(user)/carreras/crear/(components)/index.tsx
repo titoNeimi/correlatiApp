@@ -144,13 +144,24 @@ const SortableSubject: React.FC<{
   );
 };
 
-const AddSubjectButton: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
+const AddSubjectButton: React.FC<{
+  onAdd: () => void;
+  label: string;
+  helperText?: string;
+  accentClassName?: string;
+}> = ({ onAdd, label, helperText, accentClassName = "hover:border-green-400" }) => {
   return (
-    <div onClick={onAdd} className={`bg-white border-2 border-dashed border-gray-200 rounded-lg p-3 shadow-sm  hover:border-green-400 cursor-pointer`}>
+    <div
+      onClick={onAdd}
+      className={`bg-white border-2 border-dashed border-gray-200 rounded-lg p-3 shadow-sm cursor-pointer ${accentClassName}`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2 flex-1">
           <PlusCircleIcon className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-          <span className="text-sm font-medium text-gray-900">Agregar materias</span>
+          <div>
+            <span className="text-sm font-medium text-gray-900">{label}</span>
+            {helperText && <p className="text-xs text-gray-500">{helperText}</p>}
+          </div>
         </div>
       </div>  
     </div>
@@ -243,8 +254,13 @@ const SubjectCard: React.FC<{
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-medium text-gray-900">{subject.name}</span>
+              {subject.isElective && (
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
+                  Electiva
+                </span>
+              )}
               <div
                 className="relative group"
                 onPointerDown={(e) => e.stopPropagation()}
@@ -303,6 +319,7 @@ const UnassignedPool: React.FC<{
   subjects: CurriculumSubject[];
   onDelete: (id: string) => void;
   onAdd: () => void;
+  onAddElective?: () => void;
   onContextMenu?: (subjectId: string, event: React.MouseEvent) => void;
   editingSubjectId?: string | null;
   editingName?: string;
@@ -313,6 +330,7 @@ const UnassignedPool: React.FC<{
   subjects,
   onDelete,
   onAdd,
+  onAddElective,
   onContextMenu,
   editingSubjectId,
   editingName,
@@ -350,7 +368,15 @@ const UnassignedPool: React.FC<{
                 onRenameCancel={onRenameCancel}
               />
             ))}
-            <AddSubjectButton onAdd={onAdd}/>
+            <AddSubjectButton onAdd={onAdd} label="Agregar materia" />
+            {/* {onAddElective && (
+              <AddSubjectButton
+                onAdd={onAddElective}
+                label="Agregar electiva"
+                helperText="Sin año asignado"
+                accentClassName="hover:border-amber-400"
+              />
+            )} */}
           </div>
         </SortableContext>
       </div>

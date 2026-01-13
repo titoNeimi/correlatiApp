@@ -334,7 +334,7 @@ const StructureStep: React.FC<{
 
 const CreateDegreeWizard: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
-  const { setDegreeData, setSubjects } = useDegree();
+  const { setDegreeData, setSubjects, setElectivePools, setElectiveRules } = useDegree();
   const [formData, setFormData] = useState<Partial<DegreeData>>({});
 
   const handleUniversityNext = (data: z.infer<typeof universitySchema>) => {
@@ -354,11 +354,14 @@ const CreateDegreeWizard: React.FC<{ onComplete: () => void }> = ({ onComplete }
       name: `Materia ${idx + 1}`,
       year: null,
       prerequisites: [],
+      isElective: false,
     }));
 
     await new Promise((r) => setTimeout(r, 500));
 
     setSubjects(initialSubjects);
+    setElectivePools([]);
+    setElectiveRules([]);
     setDegreeData(finalData);
     localStorage.setItem('degreeData', JSON.stringify(finalData));
     localStorage.setItem('degreeSubjects', JSON.stringify(initialSubjects));

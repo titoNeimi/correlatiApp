@@ -1,6 +1,12 @@
 'use client'
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { DegreeContextType, DegreeData, CurriculumSubject } from './(types)/types';
+import {
+  DegreeContextType,
+  DegreeData,
+  CurriculumSubject,
+  ElectivePoolDraft,
+  ElectiveRuleDraft,
+} from './(types)/types';
 import { MOCK_SUBJECTS } from '@/lib/mocks';
 
 const DegreeContext = createContext<DegreeContextType | undefined>(undefined);
@@ -9,11 +15,16 @@ const DegreeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
   // estados iniciales iguales en SSR/cliente; luego se rellenan en useEffect
   const [degreeData, setDegreeData] = useState<DegreeData | null>(null);
   const [subjects, setSubjects] = useState<CurriculumSubject[]>([]);
+  const [electivePools, setElectivePools] = useState<ElectivePoolDraft[]>([]);
+  const [electiveRules, setElectiveRules] = useState<ElectiveRuleDraft[]>([]);
 
   useEffect(() => {
     try {
+      let hasStoredSubjects = false;
       const storedDegree = localStorage.getItem('degreeData');
       const storedSubjects = localStorage.getItem('degreeSubjects');
+      const storedPools = localStorage.getItem('degreeElectivePools');
+      const storedRules = localStorage.getItem('degreeElectiveRules');
 
       if (storedDegree) {
         const parsed = JSON.parse(storedDegree) as DegreeData;
@@ -24,9 +35,27 @@ const DegreeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
         const parsed = JSON.parse(storedSubjects) as CurriculumSubject[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           setSubjects(parsed);
-          return;
+          hasStoredSubjects = true;
         }
       }
+
+      if (storedPools) {
+        const parsedPools = JSON.parse(storedPools) as ElectivePoolDraft[];
+        if (Array.isArray(parsedPools)) {
+          setElectivePools(parsedPools);
+        }
+      }
+
+      if (storedRules) {
+        const parsedRules = JSON.parse(storedRules) as ElectiveRuleDraft[];
+        if (Array.isArray(parsedRules)) {
+          setElectiveRules(parsedRules);
+        }
+      }
+      if (!hasStoredSubjects) {
+        setSubjects(MOCK_SUBJECTS.map((s) => ({ ...s, year: null })));
+      }
+      return;
     } catch {
       // ignore parse errors and fallback to mocks
     }
@@ -51,8 +80,35 @@ const DegreeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     }
   }, [subjects]);
 
+  useEffect(() => {
+    if (electivePools.length > 0) {
+      localStorage.setItem('degreeElectivePools', JSON.stringify(electivePools));
+    } else {
+      localStorage.removeItem('degreeElectivePools');
+    }
+  }, [electivePools]);
+
+  useEffect(() => {
+    if (electiveRules.length > 0) {
+      localStorage.setItem('degreeElectiveRules', JSON.stringify(electiveRules));
+    } else {
+      localStorage.removeItem('degreeElectiveRules');
+    }
+  }, [electiveRules]);
+
   return (
-    <DegreeContext.Provider value={{ degreeData, setDegreeData, subjects, setSubjects }}>
+    <DegreeContext.Provider
+      value={{
+        degreeData,
+        setDegreeData,
+        subjects,
+        setSubjects,
+        electivePools,
+        setElectivePools,
+        electiveRules,
+        setElectiveRules,
+      }}
+    >
       {children}
     </DegreeContext.Provider>
   );

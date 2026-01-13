@@ -11,6 +11,25 @@ interface CurriculumSubject {
   name: string;
   year: number | null;
   prerequisites: Prerequisite[];
+  isElective?: boolean;
+}
+
+type ElectiveRequirementType = 'hours' | 'credits' | 'subject_count';
+
+interface ElectivePoolDraft {
+  id: string;
+  name: string;
+  description?: string;
+  subjectIds: string[];
+}
+
+interface ElectiveRuleDraft {
+  id: string;
+  poolId: string;
+  appliesFromYear: number;
+  appliesToYear?: number | null;
+  requirementType: ElectiveRequirementType;
+  minimumValue: number;
 }
 
 interface DegreeContextType {
@@ -18,6 +37,10 @@ interface DegreeContextType {
   setDegreeData: (data: DegreeData | null) => void;
   subjects: CurriculumSubject[];
   setSubjects: (subjects: CurriculumSubject[]) => void;
+  electivePools: ElectivePoolDraft[];
+  setElectivePools: (pools: ElectivePoolDraft[]) => void;
+  electiveRules: ElectiveRuleDraft[];
+  setElectiveRules: (rules: ElectiveRuleDraft[]) => void;
 }
 
 interface Prerequisite {
@@ -27,4 +50,13 @@ interface Prerequisite {
 
 type PrerequisiteType = 'passed' | 'pending_final';
 
-export type { DegreeContextType, DegreeData, CurriculumSubject, PrerequisiteType, Prerequisite }
+export type {
+  DegreeContextType,
+  DegreeData,
+  CurriculumSubject,
+  PrerequisiteType,
+  Prerequisite,
+  ElectivePoolDraft,
+  ElectiveRuleDraft,
+  ElectiveRequirementType,
+}
