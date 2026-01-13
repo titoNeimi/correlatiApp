@@ -4,6 +4,7 @@ import { ArrowRight, Building2, Globe, GraduationCap, MapPin, Sparkles } from 'l
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch, getApiErrorMessage } from '@/lib/api'
+import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 // Placeholder sections to connect once the backend exposes these fields.
 const universityHighlightPool: Array<{ tone: string; focus: string; tag: string }> = [
@@ -90,23 +91,34 @@ export default function UniversityDetailPage() {
   }, [id])
 
   if (loading) {
-    return <h2 className="text-2xl">Cargando...</h2>
+    return (
+      <ClientPageShell mainClassName="max-w-3xl py-12">
+        <h2 className="text-2xl text-slate-900">Cargando...</h2>
+      </ClientPageShell>
+    )
   }
 
   if (notFoundState) {
-    return <h2 className="text-2xl">Universidad no encontrada.</h2>
+    return (
+      <ClientPageShell mainClassName="max-w-3xl py-12">
+        <h2 className="text-2xl text-slate-900">Universidad no encontrada.</h2>
+      </ClientPageShell>
+    )
   }
 
   if (!university || error) {
-    return <h2 className="text-2xl">{error ?? 'No se pudo cargar la universidad.'}</h2>
+    return (
+      <ClientPageShell mainClassName="max-w-3xl py-12">
+        <h2 className="text-2xl text-slate-900">{error ?? 'No se pudo cargar la universidad.'}</h2>
+      </ClientPageShell>
+    )
   }
 
   const highlight = getUniversityHighlight(university.id)
   const programs = university.degreePrograms ?? []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <ClientPageShell mainClassName="max-w-6xl py-10">
         <section className={`rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 bg-gradient-to-br ${highlight.tone}`}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -239,7 +251,6 @@ export default function UniversityDetailPage() {
             </div>
           </aside>
         </section>
-      </main>
-    </div>
+      </ClientPageShell>
   )
 }

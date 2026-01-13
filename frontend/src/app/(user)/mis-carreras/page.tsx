@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { BookOpen, GraduationCap, Heart, MapPin, Sparkles } from 'lucide-react'
 import { apiFetch, apiFetchJson, getApiErrorMessage } from '@/lib/api'
 import { useUser } from '@/context/UserContext'
+import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 type DegreeProgramDTO = {
   id: string
@@ -85,96 +86,89 @@ export default function MyProgramsPage() {
 
   if (isLoadingUser || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white/80 rounded-3xl border border-slate-100 shadow-xl p-8">
-            <div className="h-4 w-32 rounded-full bg-slate-200 animate-pulse" />
-            <div className="mt-4 h-8 w-2/3 rounded-xl bg-slate-200 animate-pulse" />
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[0, 1, 2].map((item) => (
-                <div key={item} className="h-40 rounded-2xl bg-slate-200 animate-pulse" />
-              ))}
-            </div>
+      <ClientPageShell mainClassName="max-w-6xl py-12">
+        <div className="bg-white/80 rounded-3xl border border-slate-100 shadow-xl p-8">
+          <div className="h-4 w-32 rounded-full bg-slate-200 animate-pulse" />
+          <div className="mt-4 h-8 w-2/3 rounded-xl bg-slate-200 animate-pulse" />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="h-40 rounded-2xl bg-slate-200 animate-pulse" />
+            ))}
           </div>
-        </main>
-      </div>
+        </div>
+      </ClientPageShell>
     )
   }
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 text-center">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 mt-6">Inicia sesion para ver tus carreras</h2>
-            <p className="text-slate-600 mt-3">
-              Tus carreras inscriptas se muestran en este espacio personalizado.
-            </p>
-            <div className="mt-6">
-              <Link
-                href="/login?next=%2Fmis-carreras"
-                className="inline-flex items-center justify-center bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800 transition-colors"
-              >
-                Iniciar sesion
-              </Link>
-            </div>
+      <ClientPageShell mainClassName="max-w-4xl py-12">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 text-center">
+          <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
+            <GraduationCap className="w-6 h-6" />
           </div>
-        </main>
-      </div>
+          <h2 className="text-2xl font-bold text-slate-900 mt-6">Inicia sesion para ver tus carreras</h2>
+          <p className="text-slate-600 mt-3">
+            Tus carreras inscriptas se muestran en este espacio personalizado.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/login?next=%2Fmis-carreras"
+              className="inline-flex items-center justify-center bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800 transition-colors"
+            >
+              Iniciar sesion
+            </Link>
+          </div>
+        </div>
+      </ClientPageShell>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 text-center">
-            <h2 className="text-2xl font-bold text-slate-900">Ocurrio un problema</h2>
-            <p className="text-slate-600 mt-3">{error}</p>
-            <div className="mt-6">
-              <Link
-                href="/carreras"
-                className="inline-flex items-center justify-center bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800 transition-colors"
-              >
-                Explorar carreras
-              </Link>
-            </div>
+      <ClientPageShell mainClassName="max-w-4xl py-12">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-slate-900">Ocurrio un problema</h2>
+          <p className="text-slate-600 mt-3">{error}</p>
+          <div className="mt-6">
+            <Link
+              href="/carreras"
+              className="inline-flex items-center justify-center bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800 transition-colors"
+            >
+              Explorar carreras
+            </Link>
           </div>
-        </main>
-      </div>
+        </div>
+      </ClientPageShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <section className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 mb-10">
-          <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
-                <Sparkles className="w-4 h-4" />
-                Mis carreras
+    <ClientPageShell>
+      <section className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 mb-10">
+        <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
+              <Sparkles className="w-4 h-4" />
+              Mis carreras
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
+              Tu recorrido academico, en un solo lugar
+            </h2>
+            <p className="text-slate-600 mt-3 max-w-2xl">
+              Accede rapido a las carreras en las que estas inscripto y continua tu plan desde aca.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                <GraduationCap className="w-4 h-4" />
+                {enrolledPrograms.length} carreras activas
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
-                Tu recorrido academico, en un solo lugar
-              </h2>
-              <p className="text-slate-600 mt-3 max-w-2xl">
-                Accede rapido a las carreras en las que estas inscripto y continua tu plan desde aca.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
-                  <GraduationCap className="w-4 h-4" />
-                  {enrolledPrograms.length} carreras activas
-                </div>
-                <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
-                  <Heart className="w-4 h-4" />
-                  {favoriteIds.length} favoritas
-                </div>
+              <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                <Heart className="w-4 h-4" />
+                {favoriteIds.length} favoritas
               </div>
             </div>
+          </div>
 
             <div className="bg-slate-900 text-white rounded-2xl p-6">
               <p className="text-sm uppercase tracking-wide text-slate-200">Acciones rapidas</p>
@@ -342,7 +336,6 @@ export default function MyProgramsPage() {
             )}
           </section>
         )}
-      </main>
-    </div>
+      </ClientPageShell>
   )
 }

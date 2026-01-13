@@ -9,6 +9,7 @@ import { computeAvailability } from '@/lib/subject_status'
 import { apiFetch, apiFetchJson, getApiErrorMessage } from '@/lib/api'
 import { ElectivePool, ElectiveRequirementType, ElectiveRule } from '@/types/electives'
 import { BookOpen, } from 'lucide-react'
+import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 type Subject = {
   id: string
@@ -390,8 +391,7 @@ export default function SubjectsPage() {
   }, [fetchUserSubjects, programIdParam, selectedProgramId, subjectsData])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+    <ClientPageShell mainClassName="max-w-7xl py-2">
 
         {loadingSubjects && (
           <div className="mt-6 text-sm text-slate-600">Cargando materias...</div>
@@ -661,7 +661,6 @@ export default function SubjectsPage() {
             initialProgramId={programIdParam}
           />
         </div>
-      </main>
-    </div>
+      </ClientPageShell>
   )
 }

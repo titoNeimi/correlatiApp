@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Building2, Filter, Globe, GraduationCap, MapPin, Search, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { apiFetchJson, getApiErrorMessage } from '@/lib/api'
+import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 type UniversityResponse = {
   data: University[],
@@ -101,87 +102,94 @@ export default function UniversitiesPage() {
   }, [])
 
   if (loading){
-    return (<h1 className='text-2xl'>Cargando</h1>)
+    return (
+      <ClientPageShell mainClassName="max-w-3xl py-12">
+        <h1 className="text-2xl text-slate-900">Cargando</h1>
+      </ClientPageShell>
+    )
   }
   if (!loading && error){
-    return (<h1 className='text-2xl'>{error}</h1>)
+    return (
+      <ClientPageShell mainClassName="max-w-3xl py-12">
+        <h1 className="text-2xl text-slate-900">{error}</h1>
+      </ClientPageShell>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <section className="mb-10">
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] p-6 sm:p-8">
-              <div>
-                <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
-                  <Sparkles className="w-4 h-4" />
-                  Directorio academico
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
-                  Encuentra la universidad ideal para tu camino
-                </h1>
-                <p className="text-slate-600 mt-3 leading-relaxed">
-                  Explora instituciones y prepara tu proximo paso.
-                  Los filtros y etiquetas avanzadas quedan listos para conectar mas adelante.
-                </p>
-                <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                  <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
-                    <GraduationCap className="w-4 h-4" />
-                    {universities.length} universidades activas
-                  </div>
-                  <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
-                    <Building2 className="w-4 h-4" />
-                    {totalPrograms} carreras destacadas
-                  </div>
-                  <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
-                    <MapPin className="w-4 h-4" />
-                    {uniqueLocations} ciudades
-                  </div>
-                </div>
+    <ClientPageShell>
+      <section className="mb-10">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] p-6 sm:p-8">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
+                <Sparkles className="w-4 h-4" />
+                Directorio academico
               </div>
-
-              <div className="bg-gradient-to-br from-slate-900 to-slate-700 text-white rounded-2xl p-6">
-                <div className="flex items-center gap-2 text-sm uppercase tracking-wide text-slate-200">
-                  <Filter className="w-4 h-4" />
-                  Busqueda rapida
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
+                Encuentra la universidad ideal para tu camino
+              </h1>
+              <p className="text-slate-600 mt-3 leading-relaxed">
+                Explora instituciones y prepara tu proximo paso.
+                Los filtros y etiquetas avanzadas quedan listos para conectar mas adelante.
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                  <GraduationCap className="w-4 h-4" />
+                  {universities.length} universidades activas
                 </div>
-                <div className="mt-4 space-y-3">
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
-                    <Search className="w-4 h-4 text-white/70" />
-                    <input
-                      type="text"
-                      placeholder="Buscar universidad, ciudad o carrera"
-                      className="bg-transparent text-sm text-white placeholder:text-white/60 outline-none flex-1"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    {/* TODO: hook real filters once the data exists */}
-                    <div className="bg-white/10 rounded-xl px-4 py-3">
-                      <p className="text-white/70 text-xs">Tipo</p>
-                      <p className="font-semibold">Pendiente</p>
-                    </div>
-                    <div className="bg-white/10 rounded-xl px-4 py-3">
-                      <p className="text-white/70 text-xs">Modalidad</p>
-                      <p className="font-semibold">Pendiente</p>
-                    </div>
-                    <div className="bg-white/10 rounded-xl px-4 py-3">
-                      <p className="text-white/70 text-xs">Rango</p>
-                      <p className="font-semibold">Pendiente</p>
-                    </div>
-                    <div className="bg-white/10 rounded-xl px-4 py-3">
-                      <p className="text-white/70 text-xs">Ranking</p>
-                      <p className="font-semibold">Pendiente</p>
-                    </div>
-                  </div>
-                  <button className="w-full bg-white text-slate-900 font-semibold py-3 rounded-xl hover:bg-slate-100 transition-colors">
-                    Aplicar filtros
-                  </button>
+                <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                  <Building2 className="w-4 h-4" />
+                  {totalPrograms} carreras destacadas
+                </div>
+                <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                  <MapPin className="w-4 h-4" />
+                  {uniqueLocations} ciudades
                 </div>
               </div>
             </div>
+
+            <div className="bg-gradient-to-br from-slate-900 to-slate-700 text-white rounded-2xl p-6">
+              <div className="flex items-center gap-2 text-sm uppercase tracking-wide text-slate-200">
+                <Filter className="w-4 h-4" />
+                Busqueda rapida
+              </div>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
+                  <Search className="w-4 h-4 text-white/70" />
+                  <input
+                    type="text"
+                    placeholder="Buscar universidad, ciudad o carrera"
+                    className="bg-transparent text-sm text-white placeholder:text-white/60 outline-none flex-1"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {/* TODO: hook real filters once the data exists */}
+                  <div className="bg-white/10 rounded-xl px-4 py-3">
+                    <p className="text-white/70 text-xs">Tipo</p>
+                    <p className="font-semibold">Pendiente</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl px-4 py-3">
+                    <p className="text-white/70 text-xs">Modalidad</p>
+                    <p className="font-semibold">Pendiente</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl px-4 py-3">
+                    <p className="text-white/70 text-xs">Rango</p>
+                    <p className="font-semibold">Pendiente</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl px-4 py-3">
+                    <p className="text-white/70 text-xs">Ranking</p>
+                    <p className="font-semibold">Pendiente</p>
+                  </div>
+                </div>
+                <button className="w-full bg-white text-slate-900 font-semibold py-3 rounded-xl hover:bg-slate-100 transition-colors">
+                  Aplicar filtros
+                </button>
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
         <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6 h-fit">
@@ -325,7 +333,6 @@ export default function UniversitiesPage() {
             </div>
           </div>
         </section>
-      </main>
-    </div>
+      </ClientPageShell>
   )
 }

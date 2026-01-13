@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { apiFetch, getApiErrorMessage } from '@/lib/api'
 import { useUser } from '@/context/UserContext'
 import { ElectivePool } from '@/types/electives'
+import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 type DegreeProgramSubject = {
   id: string
@@ -379,8 +380,7 @@ export default function CareerDetailPage() {
 
   if (isPageLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <ClientPageShell mainClassName="max-w-6xl py-10">
           <div className="rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 bg-white/80 backdrop-blur-sm">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex-1 space-y-4">
@@ -442,18 +442,20 @@ export default function CareerDetailPage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
+      </ClientPageShell>
     )
   }
 
   if (!program || error) {
-    return <h2 className="text-2xl">{error ?? 'No se pudo cargar la carrera.'}</h2>
+    return (
+      <ClientPageShell mainClassName="max-w-3xl py-12">
+        <h2 className="text-2xl text-slate-900">{error ?? 'No se pudo cargar la carrera.'}</h2>
+      </ClientPageShell>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <ClientPageShell mainClassName="max-w-6xl py-10">
         <section className="rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 bg-white/80 backdrop-blur-sm">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -678,7 +680,6 @@ export default function CareerDetailPage() {
             </div>
           </aside>
         </section>
-      </main>
-    </div>
+      </ClientPageShell>
   )
 }

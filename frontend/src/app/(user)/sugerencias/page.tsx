@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Bug, Building2, GraduationCap, Lightbulb, MessageSquare, Send, Sparkles } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
+import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 const suggestionTypes = [
   {
@@ -67,27 +68,26 @@ export default function SuggestionsPage() {
   }, [typeByParam])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <section className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 mb-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
-                <Sparkles className="w-4 h-4" />
-                Sugerencias y reportes
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
-                Ayudanos a mejorar el catalogo
-              </h1>
-              <p className="text-slate-600 mt-3 max-w-2xl">
-                Dejanos tu propuesta para nuevas carreras, universidades o mejoras.
-                Esta pagina es solo estetica: los formularios se conectan mas adelante.
-              </p>
+    <ClientPageShell>
+      <section className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 mb-10">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
+              <Sparkles className="w-4 h-4" />
+              Sugerencias y reportes
             </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
+              Ayudanos a mejorar el catalogo
+            </h1>
+            <p className="text-slate-600 mt-3 max-w-2xl">
+              Dejanos tu propuesta para nuevas carreras, universidades o mejoras.
+              Esta pagina es solo estetica: los formularios se conectan mas adelante.
+            </p>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="grid gap-6 lg:grid-cols-[320px_1fr]">
+      <section className="grid gap-6 lg:grid-cols-[320px_1fr]">
           <aside className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Categorias</h2>
@@ -144,9 +144,6 @@ export default function SuggestionsPage() {
                   <h2 className="text-2xl font-bold text-slate-900">Formulario de sugerencias</h2>
                   <p className="text-slate-600">Completa los datos principales. Guardamos la info para despues.</p>
                 </div>
-                <span className="text-xs uppercase tracking-wide text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                  Solo UI
-                </span>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -234,7 +231,6 @@ export default function SuggestionsPage() {
             </div>
           </div>
         </section>
-      </main>
-    </div>
+      </ClientPageShell>
   )
 }
