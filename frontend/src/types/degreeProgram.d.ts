@@ -12,7 +12,7 @@ export type DegreeProgram = {
 export type DegreeProgramSubject = {
   id: string;
   name: string;
-  subjectYear: number;
+  year: number;
   requirements?: string[];
   status?: SubjectStatus;
   degreeProgramID: string;
