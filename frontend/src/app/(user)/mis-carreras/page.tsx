@@ -17,6 +17,8 @@ type DegreeProgramDTO = {
 type MeProgramsResponse = {
   enrolledProgramIds?: string[]
   favoriteProgramIds?: string[]
+  enrolledPrograms?: DegreeProgramDTO[]
+  favoritePrograms?: DegreeProgramDTO[]
 }
 
 type DegreeProgramResponse = {
@@ -65,6 +67,12 @@ export default function MyProgramsPage() {
           setEnrolledPrograms([])
           setFavoritePrograms([])
           setLoading(false)
+          return
+        }
+
+        if (meData.enrolledPrograms || meData.favoritePrograms) {
+          setEnrolledPrograms(meData.enrolledPrograms ?? [])
+          setFavoritePrograms(meData.favoritePrograms ?? [])
           return
         }
 

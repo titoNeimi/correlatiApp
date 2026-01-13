@@ -5,6 +5,8 @@ export type DegreeProgram = {
   universityID: string;
   subjects?: DegreeProgramSubject[];
   users?: { id: string; email?: string; role?: string }[];
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  publicRequested?: boolean;
   created_at: string;
   updated_at: string;
 };

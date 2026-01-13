@@ -7,7 +7,7 @@ import {
   ElectiveRuleDraft,
 } from './(types)/types';
 import { ApiError, apiFetch, apiFetchJson } from '@/lib/api';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 type fetchDegreeProgramsResponse = {
   count: number,
@@ -26,10 +26,12 @@ export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse
 
 export const createUniversity = async (name: string): Promise<University | null> => {
   try {
+    const originHeader = getOriginHeader();
     const response = await apiFetch('/universities', {
       method: 'POST',
       headers: {
       'Content-Type': 'application/json',
+      ...(originHeader ? { Origin: originHeader } : {}),
       },
       body: JSON.stringify({ name }),
     })
@@ -62,10 +64,13 @@ export const confirmCreation = async (payload: {
   const { degreeData, subjects, electivePools, electiveRules } = payload
   const cookieStore = cookies()
   const cookieHeader = cookieStore.toString()
+  const originHeader = getOriginHeader()
   const authHeaders: Record<string, string> = cookieHeader ? { Cookie: cookieHeader } : {}
+  const csrfHeaders: Record<string, string> = originHeader ? { Origin: originHeader } : {}
   const degreeProgram = {
     name: degreeData.degreeName,
     universityID: degreeData.universityId,
+    publicRequested: degreeData.publicRequested,
   }
   const createdSubjectIds: string[] = []
   let createdProgramId: string | null = null
@@ -78,7 +83,7 @@ export const confirmCreation = async (payload: {
           apiFetch(`/subjects/${id}`, {
             method: 'DELETE',
             credentials: 'include',
-            headers: authHeaders,
+            headers: { ...authHeaders, ...csrfHeaders },
           })
         )
       )
@@ -89,7 +94,7 @@ export const confirmCreation = async (payload: {
           apiFetch(`/degreeProgram/${createdProgramId}/electivePools/${id}`, {
             method: 'DELETE',
             credentials: 'include',
-            headers: authHeaders,
+            headers: { ...authHeaders, ...csrfHeaders },
           })
         )
       )
@@ -98,7 +103,7 @@ export const confirmCreation = async (payload: {
       await apiFetch(`/degreeProgram/${createdProgramId}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: authHeaders,
+        headers: { ...authHeaders, ...csrfHeaders },
       })
     }
   }
@@ -108,6 +113,7 @@ export const confirmCreation = async (payload: {
       headers: {
         'Content-Type': 'application/json',
         ...authHeaders,
+        ...csrfHeaders,
       },
       body: JSON.stringify(degreeProgram),
       credentials: 'include',
@@ -133,6 +139,7 @@ export const confirmCreation = async (payload: {
         headers: {
           'Content-Type': 'application/json',
           ...authHeaders,
+          ...csrfHeaders,
         },
         body: JSON.stringify(subjectData),
         credentials: 'include',
@@ -173,7 +180,7 @@ export const confirmCreation = async (payload: {
 
       const updateResp = await apiFetch(`/subjects/${newSubjectId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        headers: { 'Content-Type': 'application/json', ...authHeaders, ...csrfHeaders },
         body: JSON.stringify(updateBody),
         credentials: 'include',
       })
@@ -188,7 +195,7 @@ export const confirmCreation = async (payload: {
     for (const pool of electivePools) {
       const poolResponse = await apiFetch(`/degreeProgram/${createdProgram.id}/electivePools`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        headers: { 'Content-Type': 'application/json', ...authHeaders, ...csrfHeaders },
         body: JSON.stringify({
           name: pool.name,
           description: pool.description,
@@ -215,7 +222,7 @@ export const confirmCreation = async (payload: {
           `/degreeProgram/${createdProgram.id}/electivePools/${createdPool.id}/subjects`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...authHeaders },
+            headers: { 'Content-Type': 'application/json', ...authHeaders, ...csrfHeaders },
             body: JSON.stringify({ subject_id: newSubjectId }),
             credentials: 'include',
           }
@@ -237,7 +244,7 @@ export const confirmCreation = async (payload: {
       }
       const ruleResp = await apiFetch(`/degreeProgram/${createdProgram.id}/electiveRules`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        headers: { 'Content-Type': 'application/json', ...authHeaders, ...csrfHeaders },
         body: JSON.stringify({
           pool_id: createdPoolId,
           applies_from_year: rule.appliesFromYear,
@@ -264,4 +271,14 @@ export const confirmCreation = async (payload: {
     await cleanupCreation()
     return { ok: false, message: 'Ocurrió un error al crear la carrera' }
   }
+}
+
+const getOriginHeader = () => {
+  const headerList = headers()
+  const origin = headerList.get('origin')
+  if (origin) return origin
+  const proto = headerList.get('x-forwarded-proto') || 'http'
+  const host = headerList.get('host')
+  if (!host) return null
+  return `${proto}://${host}`
 }

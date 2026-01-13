@@ -11,8 +11,10 @@ import (
 )
 
 type meProgramsResponse struct {
-	EnrolledProgramIds []string `json:"enrolledProgramIds"`
-	FavoriteProgramIds []string `json:"favoriteProgramIds"`
+	EnrolledProgramIds []string               `json:"enrolledProgramIds"`
+	FavoriteProgramIds []string               `json:"favoriteProgramIds"`
+	EnrolledPrograms   []models.DegreeProgram `json:"enrolledPrograms"`
+	FavoritePrograms   []models.DegreeProgram `json:"favoritePrograms"`
 }
 
 func GetMyPrograms(c *gin.Context) {
@@ -24,25 +26,34 @@ func GetMyPrograms(c *gin.Context) {
 	user := u.(models.User)
 
 	var userWithPrograms models.User
-	if err := db.Db.Where("id = ?", user.ID).Preload("DegreePrograms").Preload("FavoritePrograms").First(&userWithPrograms).Error; err != nil {
+	if err := db.Db.Where("id = ?", user.ID).
+		Preload("DegreePrograms.University").
+		Preload("FavoritePrograms.University").
+		First(&userWithPrograms).Error; err != nil {
 		slog.Error("Error loading user favorites", slog.Any("error", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "Error loading favorites"})
 		return
 	}
 
 	enrolledIds := make([]string, 0, len(userWithPrograms.DegreePrograms))
+	enrolledPrograms := make([]models.DegreeProgram, 0, len(userWithPrograms.DegreePrograms))
 	for _, dp := range userWithPrograms.DegreePrograms {
 		enrolledIds = append(enrolledIds, dp.ID)
+		enrolledPrograms = append(enrolledPrograms, *dp)
 	}
 
 	favoriteIds := make([]string, 0, len(userWithPrograms.FavoritePrograms))
+	favoritePrograms := make([]models.DegreeProgram, 0, len(userWithPrograms.FavoritePrograms))
 	for _, dp := range userWithPrograms.FavoritePrograms {
 		favoriteIds = append(favoriteIds, dp.ID)
+		favoritePrograms = append(favoritePrograms, *dp)
 	}
 
 	c.IndentedJSON(http.StatusOK, meProgramsResponse{
 		EnrolledProgramIds: enrolledIds,
 		FavoriteProgramIds: favoriteIds,
+		EnrolledPrograms:   enrolledPrograms,
+		FavoritePrograms:   favoritePrograms,
 	})
 }
 

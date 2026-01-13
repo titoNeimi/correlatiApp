@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Card } from "@/components/admin/baseComponents";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DegreeProgram } from "@/types/degreeProgram";
-import { apiFetchJson, getApiErrorMessage } from "@/lib/api";
+import { apiFetch, apiFetchJson, getApiErrorMessage } from "@/lib/api";
 
 type ProgramData = {
   count: number
@@ -14,6 +14,11 @@ export default function ProgramsPage() {
   const [error, setError] = useState<null | string>(null)
   const [programs, setPrograms] = useState<DegreeProgram[]>([])
   const [loading, setLoading] = useState<boolean>(true)
+  const [search, setSearch] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [publicFilter, setPublicFilter] = useState<'all' | 'public' | 'private'>('all')
+  const [page, setPage] = useState<number>(1)
+  const [perPage, setPerPage] = useState<number>(12)
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat('es-AR', {
     day: 'numeric',
     month: 'short',
@@ -24,7 +29,7 @@ export default function ProgramsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetchJson<ProgramData>('/degreeProgram');
+      const data = await apiFetchJson<ProgramData>('/degreeProgram', { credentials: 'include' });
       setPrograms(data.data);
       setLoading(false);
     } catch (error) {
@@ -37,6 +42,118 @@ export default function ProgramsPage() {
   useEffect(() => {
     fetchPrograms();
   }, [fetchPrograms]);
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, statusFilter, publicFilter, perPage])
+
+  const handleApprove = useCallback(async (programId: string) => {
+    try {
+      const response = await apiFetch(`/degreeProgram/${programId}/approve`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        throw new Error(`Error aprobando carrera (${response.status})`)
+      }
+      await fetchPrograms()
+    } catch (error) {
+      console.log(error)
+      setError(getApiErrorMessage(error, 'No se pudo aprobar la carrera'))
+    }
+  }, [fetchPrograms])
+
+  const handleUnapprove = useCallback(async (programId: string) => {
+    try {
+      const response = await apiFetch(`/degreeProgram/${programId}/unapprove`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        throw new Error(`Error desaprobando carrera (${response.status})`)
+      }
+      await fetchPrograms()
+    } catch (error) {
+      console.log(error)
+      setError(getApiErrorMessage(error, 'No se pudo desaprobar la carrera'))
+    }
+  }, [fetchPrograms])
+
+  const handlePublish = useCallback(async (programId: string) => {
+    try {
+      const response = await apiFetch(`/degreeProgram/${programId}/publish`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        throw new Error(`Error publicando carrera (${response.status})`)
+      }
+      await fetchPrograms()
+    } catch (error) {
+      console.log(error)
+      setError(getApiErrorMessage(error, 'No se pudo publicar la carrera'))
+    }
+  }, [fetchPrograms])
+
+  const handleUnpublish = useCallback(async (programId: string) => {
+    try {
+      const response = await apiFetch(`/degreeProgram/${programId}/unpublish`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        throw new Error(`Error despublicando carrera (${response.status})`)
+      }
+      await fetchPrograms()
+    } catch (error) {
+      console.log(error)
+      setError(getApiErrorMessage(error, 'No se pudo despublicar la carrera'))
+    }
+  }, [fetchPrograms])
+
+  const handleDelete = useCallback(async (programId: string) => {
+    if (!window.confirm('¿Seguro que querés eliminar esta carrera? Esta acción no se puede deshacer.')) {
+      return
+    }
+    try {
+      const response = await apiFetch(`/degreeProgram/${programId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        throw new Error(`Error eliminando carrera (${response.status})`)
+      }
+      await fetchPrograms()
+    } catch (error) {
+      console.log(error)
+      setError(getApiErrorMessage(error, 'No se pudo eliminar la carrera'))
+    }
+  }, [fetchPrograms])
+
+  const filteredPrograms = useMemo(() => {
+    const normalized = search.trim().toLowerCase()
+    return programs.filter((program) => {
+      if (statusFilter !== 'all' && program.approvalStatus !== statusFilter) {
+        return false
+      }
+      if (publicFilter === 'public' && !program.publicRequested) {
+        return false
+      }
+      if (publicFilter === 'private' && program.publicRequested) {
+        return false
+      }
+      if (!normalized) return true
+      const haystack = `${program.name} ${program.university?.name ?? ''}`.toLowerCase()
+      return haystack.includes(normalized)
+    })
+  }, [programs, search, statusFilter, publicFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredPrograms.length / perPage))
+  const pageSafe = Math.min(page, totalPages)
+  const pagedPrograms = useMemo(() => {
+    const start = (pageSafe - 1) * perPage
+    return filteredPrograms.slice(start, start + perPage)
+  }, [filteredPrograms, pageSafe, perPage])
 
   if(loading){
     return (
@@ -109,36 +226,150 @@ export default function ProgramsPage() {
         </div>
       </div>
 
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col sm:flex-row gap-3">
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar por carrera o universidad"
+            className="w-full sm:w-72 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+          />
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
+            className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="pending">Pendientes</option>
+            <option value="approved">Aprobadas</option>
+            <option value="rejected">Rechazadas</option>
+          </select>
+          <select
+            value={publicFilter}
+            onChange={(event) => setPublicFilter(event.target.value as typeof publicFilter)}
+            className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+          >
+            <option value="all">Todas</option>
+            <option value="public">Publicas</option>
+            <option value="private">Privadas</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+          <span>{filteredPrograms.length} resultados</span>
+          <select
+            value={perPage}
+            onChange={(event) => setPerPage(Number(event.target.value))}
+            className="px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+          >
+            <option value={8}>8 por pagina</option>
+            <option value={12}>12 por pagina</option>
+            <option value={24}>24 por pagina</option>
+          </select>
+        </div>
+      </div>
+
       {/* Grid de cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {programs.map((program, idx) => (
-          <Card key={idx} className="p-6 hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pagedPrograms.map((program, idx) => (
+          <Card key={idx} className="p-4 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                 {program.name.charAt(0)}
               </div>
-              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200">
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-              </button>
+              <div className="flex gap-2">
+                {program.approvalStatus === 'approved' && (
+                  <button
+                    onClick={() => handleUnapprove(program.id)}
+                    className="px-2 py-1 text-[11px] font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors duration-200"
+                  >
+                    Desaprobar
+                  </button>
+                )}
+                {program.approvalStatus === 'pending' && (
+                  <button
+                    onClick={() => handleApprove(program.id)}
+                    className="px-2 py-1 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors duration-200"
+                  >
+                    Aprobar
+                  </button>
+                )}
+                {program.approvalStatus === 'approved' && !program.publicRequested && (
+                  <button
+                    onClick={() => handlePublish(program.id)}
+                    className="px-2 py-1 text-[11px] font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200"
+                  >
+                    Publicar
+                  </button>
+                )}
+                {program.approvalStatus === 'approved' && program.publicRequested && (
+                  <button
+                    onClick={() => handleUnpublish(program.id)}
+                    className="px-2 py-1 text-[11px] font-semibold bg-slate-600 hover:bg-slate-700 text-white rounded-md transition-colors duration-200"
+                  >
+                    Despublicar
+                  </button>
+                )}
+              </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{program.name}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{program.university.name}</p>
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Materias</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{program.subjects ? program.subjects.length : 0}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Actualizado</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {program.updated_at ? dateFormatter.format(new Date(program.updated_at)) : '—'}
-                </p>
-              </div>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{program.name}</h3>
+              {program.approvalStatus === 'pending' && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">
+                  Pendiente
+                </span>
+              )}
+              {program.approvalStatus === 'approved' && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                  Aprobada
+                </span>
+              )}
+              {program.publicRequested ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700">
+                  Publica
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">
+                  Privada
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{program.university.name}</p>
+            <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+              <span>{program.subjects ? program.subjects.length : 0} materias</span>
+              <span>{program.updated_at ? dateFormatter.format(new Date(program.updated_at)) : '—'}</span>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={() => handleDelete(program.id)}
+                className="px-2 py-1 text-[11px] font-semibold text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 rounded-md transition-colors duration-200"
+              >
+                Eliminar
+              </button>
             </div>
           </Card>
         ))}
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Pagina {pageSafe} de {totalPages}
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            disabled={pageSafe === 1}
+            className="px-3 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50"
+          >
+            Anterior
+          </button>
+          <button
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={pageSafe >= totalPages}
+            className="px-3 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50"
+          >
+            Siguiente
+          </button>
+        </div>
       </div>
     </div>
   );

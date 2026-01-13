@@ -25,7 +25,9 @@ export default function ProgramSubjectsPage() {
   const fetchPrograms = useCallback(async () => {
     setError(null);
     try {
-      const data = await apiFetchJson<{ data: DegreeProgram[]; count: number }>('/degreeProgram');
+      const data = await apiFetchJson<{ data: DegreeProgram[]; count: number }>('/degreeProgram', {
+        credentials: 'include',
+      });
       setPrograms(data.data);
       const current = searchParams.get('programId') || data.data[0]?.id || '';
       setSelectedProgram(current);

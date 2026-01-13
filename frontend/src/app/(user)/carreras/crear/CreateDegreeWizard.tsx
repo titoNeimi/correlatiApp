@@ -32,6 +32,7 @@ const universitySchema = z
 
 const degreeSchema = z.object({
   degreeName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  publicRequested: z.boolean().default(false),
 });
 
 const structureSchema = z
@@ -206,6 +207,9 @@ const DegreeStep: React.FC<{
     formState: { errors },
   } = useForm<z.infer<typeof degreeSchema>>({
     resolver: zodResolver(degreeSchema),
+    defaultValues: {
+      publicRequested: false,
+    },
   });
 
   const onSubmit = (data: z.infer<typeof degreeSchema>) => {
@@ -230,6 +234,18 @@ const DegreeStep: React.FC<{
         {errors.degreeName && (
           <p className="text-sm text-red-600 mt-1">{errors.degreeName.message}</p>
         )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <input
+          id="publicRequested"
+          type="checkbox"
+          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          {...register('publicRequested')}
+        />
+        <Label htmlFor="publicRequested">
+          Quiero que esta carrera sea visible públicamente cuando sea aprobada
+        </Label>
       </div>
 
       <div className="flex justify-between">

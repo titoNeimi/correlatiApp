@@ -320,7 +320,22 @@ func DeleteSubject(c *gin.Context) {
 		return
 	}
 
-	if err := db.Db.Delete(&subject).Error; err != nil {
+	err := db.Db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("subject_id = ? OR requirement_id = ?", id, id).Delete(&models.SubjectRequirement{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("subject_id = ?", id).Delete(&models.ElectivePoolSubject{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("subject_id = ?", id).Delete(&models.UserSubject{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&subject).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "An error has ocurred while deleting the subject"})
 		slog.Error("An error has ocurred while deleting the subject, ID: ", id, slog.Any("Error: ", err))
 		return

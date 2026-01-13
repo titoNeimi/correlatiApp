@@ -2,6 +2,7 @@ interface DegreeData {
   universityId?: string;
   universityName?: string;
   degreeName: string;
+  publicRequested: boolean;
   years: number;
   subjects: number;
 }

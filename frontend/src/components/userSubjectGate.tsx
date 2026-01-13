@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { apiFetch, apiFetchJson } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { NativeSelect } from "@/components/ui/native-select";
 
 type Props = {
@@ -34,7 +34,10 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
           setStatus("no-program");
           return;
         }
-        const data = (await response.json()) as { enrolledProgramIds?: string[] };
+        const data = (await response.json()) as {
+          enrolledProgramIds?: string[];
+          enrolledPrograms?: { id: string; name: string }[];
+        };
         const degreeProgramIds = data.enrolledProgramIds ?? [];
 
         if (degreeProgramIds.length === 0) {
@@ -44,15 +47,11 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
         }
 
         let programOptions = degreeProgramIds.map((id) => ({ id, name: `Programa ${id}` }));
-        try {
-          const programsResponse = await apiFetchJson<{ data?: { id: string; name: string }[] }>("/degreeProgram");
-          const allPrograms = Array.isArray(programsResponse.data) ? programsResponse.data : [];
-          programOptions = allPrograms.filter((program) => degreeProgramIds.includes(program.id));
-          if (programOptions.length === 0) {
-            programOptions = degreeProgramIds.map((id) => ({ id, name: `Programa ${id}` }));
-          }
-        } catch {
-          programOptions = degreeProgramIds.map((id) => ({ id, name: `Programa ${id}` }));
+        if (data.enrolledPrograms?.length) {
+          programOptions = data.enrolledPrograms.map((program) => ({
+            id: program.id,
+            name: program.name,
+          }));
         }
 
         setPrograms(programOptions);

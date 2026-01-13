@@ -1,13 +1,13 @@
 package middleware
 
 import (
-	"slices"
 	"correlatiApp/internal/http"
 	"correlatiApp/internal/models"
 	"correlatiApp/internal/services"
-	"net/http"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"net/http"
+	"slices"
 )
 
 func AuthRequired(db *gorm.DB, sessions *services.Service, cookies httpx.CookieCfg) gin.HandlerFunc {
@@ -35,16 +35,49 @@ func AuthRequired(db *gorm.DB, sessions *services.Service, cookies httpx.CookieC
 	}
 }
 
+func OptionalAuth(db *gorm.DB, sessions *services.Service, cookies httpx.CookieCfg) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cookie, err := c.Request.Cookie(cookies.Name)
+		if err != nil || cookie.Value == "" {
+			c.Next()
+			return
+		}
+
+		sess, err := sessions.FindActive(cookie.Value)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		var user models.User
+		if err := db.Model(&user).First(&user, "id = ?", sess.UserID).Error; err != nil {
+			c.Next()
+			return
+		}
+
+		c.Set("user", user)
+		c.Next()
+	}
+}
+
 func RoleRequired(roles ...string) gin.HandlerFunc {
-  return func(c *gin.Context) {
-    user, _ := c.Get("user")
-    u := user.(models.User)
+	return func(c *gin.Context) {
+		user, ok := c.Get("user")
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+			return
+		}
+		u, ok := user.(models.User)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+			return
+		}
 
-    if slices.Contains(roles, u.Role) {
-      c.Next()
-      return
-    }
+		if slices.Contains(roles, u.Role) {
+			c.Next()
+			return
+		}
 
-    c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
-  }
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+	}
 }

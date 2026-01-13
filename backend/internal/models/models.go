@@ -16,6 +16,14 @@ const (
 	StatusPassed         SubjectStatus = "passed"
 )
 
+type DegreeProgramApprovalStatus string
+
+const (
+	DegreeProgramPending  DegreeProgramApprovalStatus = "pending"
+	DegreeProgramApproved DegreeProgramApprovalStatus = "approved"
+	DegreeProgramRejected DegreeProgramApprovalStatus = "rejected"
+)
+
 type RequirementMinStatus string
 
 const (
@@ -46,17 +54,19 @@ type University struct {
 }
 
 type DegreeProgram struct {
-	ID            string         `json:"id" gorm:"primaryKey;size:191"`
-	Name          string         `json:"name" gorm:"not null;size:191"`
-	UniversityID  string         `json:"universityID" gorm:"not null;size:191;index"`
-	University    University     `json:"university" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Subjects      []Subject      `json:"subjects" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
-	ElectiveRules []ElectiveRule `json:"electiveRules,omitempty" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
-	ElectivePools []ElectivePool `json:"electivePools,omitempty" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
-	Users         []*User        `json:"users" gorm:"many2many:user_degree_programs"`
-	FavoritedBy   []*User        `json:"favoritedBy,omitempty" gorm:"many2many:user_favorite_programs"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
+	ID              string                      `json:"id" gorm:"primaryKey;size:191"`
+	Name            string                      `json:"name" gorm:"not null;size:191"`
+	UniversityID    string                      `json:"universityID" gorm:"not null;size:191;index"`
+	University      University                  `json:"university" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Subjects        []Subject                   `json:"subjects" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
+	ElectiveRules   []ElectiveRule              `json:"electiveRules,omitempty" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
+	ElectivePools   []ElectivePool              `json:"electivePools,omitempty" gorm:"foreignKey:DegreeProgramID;constraint:OnDelete:CASCADE"`
+	Users           []*User                     `json:"users" gorm:"many2many:user_degree_programs"`
+	FavoritedBy     []*User                     `json:"favoritedBy,omitempty" gorm:"many2many:user_favorite_programs"`
+	ApprovalStatus  DegreeProgramApprovalStatus `json:"approvalStatus" gorm:"type:enum('pending','approved','rejected');default:'pending'"`
+	PublicRequested bool                        `json:"publicRequested" gorm:"default:false"`
+	CreatedAt       time.Time                   `json:"created_at"`
+	UpdatedAt       time.Time                   `json:"updated_at"`
 }
 
 type Subject struct {
@@ -117,9 +127,9 @@ type ElectivePool struct {
 
 type ElectivePoolSubject struct {
 	ElectivePoolID string       `json:"pool_id" gorm:"primaryKey;size:191;index:uniq_pool_subject,unique"`
-	SubjectID string       `json:"subject_id" gorm:"primaryKey;size:191;index:uniq_pool_subject,unique"`
-	Pool      ElectivePool `json:"pool,omitempty" gorm:"foreignKey:ElectivePoolID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	Subject   Subject      `json:"subject,omitempty" gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	SubjectID      string       `json:"subject_id" gorm:"primaryKey;size:191;index:uniq_pool_subject,unique"`
+	Pool           ElectivePool `json:"pool,omitempty" gorm:"foreignKey:ElectivePoolID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	Subject        Subject      `json:"subject,omitempty" gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
 }
 
 func (ElectivePoolSubject) TableName() string { return "elective_pool_subjects" }

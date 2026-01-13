@@ -9,30 +9,39 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"os"
 	"time"
 )
 
 func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 
+	allowedOrigins := []string{
+		"http://localhost:3000",
+		"http://127.0.0.1:3000",
+	}
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:3000",
-			"http://127.0.0.1:3000",
-		},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
+	r.Use(middleware.CSRFMiddleware(middleware.CSRFCfg{
+		AllowedOrigins: allowedOrigins,
+		ExemptPaths:    []string{"/auth/login", "/auth/register"},
+	}))
 
 	sessSvc := services.New(db, 7*24*time.Hour)
 
+	cookieSecure := os.Getenv("COOKIE_SECURE")
+	secure := cookieSecure != "false"
 	cookies := httpx.CookieCfg{
 		Name:     "session_id",
 		Domain:   "",
 		Path:     "/",
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
 	}
 	authHandlers := &handlers.AuthHandlers{DB: db, Sessions: sessSvc, Cookies: cookies}
 
@@ -47,11 +56,15 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	}
 	degreeProgram := r.Group("/degreeProgram")
 	{
-		degreeProgram.GET("", handlers.GetAllDegreeProgramsWithSubjects)
-		degreeProgram.POST("", handlers.CreateProgram)
-		degreeProgram.GET("/:id", handlers.GetProgramById)
+		degreeProgram.GET("", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetAllDegreeProgramsWithSubjects)
+		degreeProgram.POST("", middleware.OptionalAuth(db, sessSvc, cookies), handlers.CreateProgram)
+		degreeProgram.GET("/:id", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetProgramById)
 		degreeProgram.PUT("/:id", handlers.UpdateProgram)
 		degreeProgram.DELETE("/:id", handlers.DeleteProgram)
+		degreeProgram.POST("/:id/approve", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.ApproveProgram)
+		degreeProgram.POST("/:id/publish", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.PublishProgram)
+		degreeProgram.POST("/:id/unapprove", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.UnapproveProgram)
+		degreeProgram.POST("/:id/unpublish", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.UnpublishProgram)
 
 		degreeProgram.POST("/:id/electivePools", middleware.AuthRequired(db, sessSvc, cookies), handlers.CreateElectivePool)
 		degreeProgram.GET("/:id/electivePools", handlers.GetElectivePoolsByProgram)
@@ -76,9 +89,9 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	}
 	universities := r.Group("/universities")
 	{
-		universities.GET("", handlers.GetAllUniversities)
+		universities.GET("", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetAllUniversities)
 		universities.POST("", handlers.CreateUniversity)
-		universities.GET("/:id", handlers.GetUniversityByID)
+		universities.GET("/:id", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetUniversityByID)
 		universities.PUT("/:id", handlers.UpdateUniversity)
 		universities.DELETE("/:id", handlers.DeleteUniversity)
 	}
@@ -86,7 +99,7 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	auth := r.Group("/auth")
 	{
 		auth.GET("/me", middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Me)
-		auth.POST("/login", authHandlers.LoginHandler)
+		auth.POST("/login", middleware.RateLimit(8, time.Minute), authHandlers.LoginHandler)
 		auth.POST("/logout", middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Logout)
 		auth.POST("/register", authHandlers.Register)
 	}

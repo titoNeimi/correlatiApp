@@ -92,6 +92,17 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       ),
     },
     {
+      id: 'user-mode',
+      label: 'Modo usuario',
+      href: '/',
+      icon: (
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12a4 4 0 100-8 4 4 0 000 8z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 20a8 8 0 0116 0" />
+        </svg>
+      ),
+    },
+    {
       id: 'users',
       label: 'Usuarios',
       href: '/admin/users',

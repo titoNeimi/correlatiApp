@@ -62,6 +62,11 @@ func GetAllUniversities(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error loading universities"})
 		return
 	}
+	if !isAdminOrStaffForUniversities(c) {
+		for i := range universities {
+			universities[i].DegreePrograms = filterPublicPrograms(universities[i].DegreePrograms)
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"count": len(universities), "data": universities})
 }
 
@@ -71,6 +76,9 @@ func GetUniversityByID(c *gin.Context) {
 	if err := db.Db.Preload("DegreePrograms").First(&university, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "university not found"})
 		return
+	}
+	if !isAdminOrStaffForUniversities(c) {
+		university.DegreePrograms = filterPublicPrograms(university.DegreePrograms)
 	}
 	c.JSON(http.StatusOK, university)
 }
@@ -138,4 +146,26 @@ func DeleteUniversity(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"deleted": true})
+}
+
+func isAdminOrStaffForUniversities(c *gin.Context) bool {
+	u, ok := c.Get("user")
+	if !ok {
+		return false
+	}
+	user, ok := u.(models.User)
+	if !ok {
+		return false
+	}
+	return user.Role == "admin" || user.Role == "staff"
+}
+
+func filterPublicPrograms(programs []models.DegreeProgram) []models.DegreeProgram {
+	filtered := make([]models.DegreeProgram, 0, len(programs))
+	for _, program := range programs {
+		if program.ApprovalStatus == models.DegreeProgramApproved && program.PublicRequested {
+			filtered = append(filtered, program)
+		}
+	}
+	return filtered
 }
