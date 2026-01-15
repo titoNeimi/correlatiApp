@@ -27,6 +27,10 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
+	r.Use(middleware.RequestID())
+	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.RateLimit(120, time.Minute))
+	r.Use(middleware.ErrorLogger())
 	r.Use(middleware.CSRFMiddleware(middleware.CSRFCfg{
 		AllowedOrigins: allowedOrigins,
 		ExemptPaths:    []string{"/auth/login", "/auth/register"},

@@ -25,7 +25,6 @@ func CreateToken (user models.User) (string, error) {
 		slog.Error("Error creando el token", slog.Any("Error: ", err))
 		return "", err
 	}
-	slog.Info(tokenString)
 	return tokenString, nil
 }
 

@@ -38,13 +38,21 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 		return
 	}
 
-	programId := strings.TrimSpace(c.Param("programId"))
-	if programId == "" {
+	rawProgramID := c.Param("programId")
+	programId := rawProgramID
+	if strings.TrimSpace(rawProgramID) == "" {
 		if len(userWithPrograms.DegreePrograms) == 0 {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "User has no degree programs"})
 			return
 		}
 		programId = userWithPrograms.DegreePrograms[0].ID
+	} else {
+		var err error
+		programId, err = validateID(rawProgramID, "program_id")
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	registered := false
@@ -178,9 +186,9 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 		return
 	}
 
-	programId := strings.TrimSpace(c.Param("programId"))
-	if programId == "" {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Program ID is required"})
+	programId, err := validateID(c.Param("programId"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -216,6 +224,10 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
 		return
 	}
+	if len(payload.Subjects) > maxSubjectsPayload {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Demasiadas materias en el payload"})
+		return
+	}
 
 	allowedStatus := map[models.SubjectStatus]struct{}{
 		models.StatusAvailable:      {},
@@ -230,10 +242,12 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 	payloadIDSet := make(map[string]struct{}, len(payload.Subjects))
 
 	for _, item := range payload.Subjects {
-		if item.ID == "" {
-			continue
+		subjectID, err := validateID(item.ID, "subject_id")
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
-		if _, ok := subjectIDSet[item.ID]; !ok {
+		if _, ok := subjectIDSet[subjectID]; !ok {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Subject not in program"})
 			return
 		}
@@ -241,11 +255,11 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid subject status"})
 			return
 		}
-		payloadIDs = append(payloadIDs, item.ID)
-		payloadIDSet[item.ID] = struct{}{}
+		payloadIDs = append(payloadIDs, subjectID)
+		payloadIDSet[subjectID] = struct{}{}
 		records = append(records, models.UserSubject{
 			UserID:    u.ID,
-			SubjectID: item.ID,
+			SubjectID: subjectID,
 			Status:    item.Status,
 		})
 	}

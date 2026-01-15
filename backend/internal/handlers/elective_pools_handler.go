@@ -27,7 +27,11 @@ type PoolSubjectDTO struct {
 }
 
 func CreateElectivePool(c *gin.Context) {
-	programID := c.Param("id")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var degreeProgram models.DegreeProgram
 	if err := db.Db.Where("id = ?", programID).First(&degreeProgram).Error; err != nil {
@@ -41,18 +45,24 @@ func CreateElectivePool(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "parámetros inválidos"})
 		return
 	}
-	if req.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "name es requerido"})
+	name, err := validateRequiredString(req.Name, "name", maxNameLen)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	description, err := validateOptionalString(req.Description, "description", maxDescriptionLen)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	pool := models.ElectivePool{
 		ID:              uuid.NewString(),
 		DegreeProgramID: degreeProgram.ID,
-		Name:            req.Name,
+		Name:            name,
 	}
-	if req.Description != nil {
-		pool.Description = *req.Description
+	if description != nil {
+		pool.Description = *description
 	}
 
 	if err := db.Db.Create(&pool).Error; err != nil {
@@ -65,7 +75,11 @@ func CreateElectivePool(c *gin.Context) {
 }
 
 func GetElectivePoolsByProgram(c *gin.Context) {
-	programID := c.Param("id")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var degreeProgram models.DegreeProgram
 	if err := db.Db.Where("id = ?", programID).First(&degreeProgram).Error; err != nil {
@@ -85,8 +99,16 @@ func GetElectivePoolsByProgram(c *gin.Context) {
 }
 
 func GetElectivePoolByID(c *gin.Context) {
-	programID := c.Param("id")
-	poolID := c.Param("poolId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	poolID, err := validateID(c.Param("poolId"), "pool_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var pool models.ElectivePool
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", poolID, programID).Preload("Subjects").First(&pool).Error; err != nil {
@@ -103,8 +125,16 @@ func GetElectivePoolByID(c *gin.Context) {
 }
 
 func UpdateElectivePool(c *gin.Context) {
-	programID := c.Param("id")
-	poolID := c.Param("poolId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	poolID, err := validateID(c.Param("poolId"), "pool_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var pool models.ElectivePool
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", poolID, programID).First(&pool).Error; err != nil {
@@ -122,17 +152,22 @@ func UpdateElectivePool(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "parámetros inválidos"})
 		return
 	}
-
-	if req.Name != nil && *req.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "name no puede ser vacío"})
+	name, err := validateOptionalString(req.Name, "name", maxNameLen)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	description, err := validateOptionalString(req.Description, "description", maxDescriptionLen)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if req.Name != nil {
-		pool.Name = *req.Name
+	if name != nil {
+		pool.Name = *name
 	}
-	if req.Description != nil {
-		pool.Description = *req.Description
+	if description != nil {
+		pool.Description = *description
 	}
 
 	if err := db.Db.Save(&pool).Error; err != nil {
@@ -145,8 +180,16 @@ func UpdateElectivePool(c *gin.Context) {
 }
 
 func DeleteElectivePool(c *gin.Context) {
-	programID := c.Param("id")
-	poolID := c.Param("poolId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	poolID, err := validateID(c.Param("poolId"), "pool_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var pool models.ElectivePool
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", poolID, programID).First(&pool).Error; err != nil {
@@ -169,8 +212,16 @@ func DeleteElectivePool(c *gin.Context) {
 }
 
 func AddSubjectToElectivePool(c *gin.Context) {
-	programID := c.Param("id")
-	poolID := c.Param("poolId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	poolID, err := validateID(c.Param("poolId"), "pool_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var pool models.ElectivePool
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", poolID, programID).First(&pool).Error; err != nil {
@@ -188,13 +239,14 @@ func AddSubjectToElectivePool(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "parámetros inválidos"})
 		return
 	}
-	if req.SubjectID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "subject_id es requerido"})
+	subjectID, err := validateID(req.SubjectID, "subject_id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	var subject models.Subject
-	if err := db.Db.Where("id = ?", req.SubjectID).First(&subject).Error; err != nil {
+	if err := db.Db.Where("id = ?", subjectID).First(&subject).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Subject not found"})
 			return
@@ -232,9 +284,21 @@ func AddSubjectToElectivePool(c *gin.Context) {
 }
 
 func RemoveSubjectFromElectivePool(c *gin.Context) {
-	programID := c.Param("id")
-	poolID := c.Param("poolId")
-	subjectID := c.Param("subjectId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	poolID, err := validateID(c.Param("poolId"), "pool_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	subjectID, err := validateID(c.Param("subjectId"), "subject_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var pool models.ElectivePool
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", poolID, programID).First(&pool).Error; err != nil {

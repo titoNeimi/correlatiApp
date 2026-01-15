@@ -6,7 +6,6 @@ import (
 	"correlatiApp/internal/services"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -59,15 +58,15 @@ func GetMyPrograms(c *gin.Context) {
 }
 
 func EnrollProgram(c *gin.Context) {
-	id := strings.TrimSpace(c.Param("id"))
-	if id == "" {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Program ID is required"})
+	id, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
 
 	var degreeProgram models.DegreeProgram
 
-	err := db.Db.Where("id = ?", id).First(&degreeProgram).Error
+	err = db.Db.Where("id = ?", id).First(&degreeProgram).Error
 	if err != nil {
 		slog.Error("Program not found", slog.Any("error: ", err))
 		c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Program not found"})
@@ -112,15 +111,15 @@ func EnrollProgram(c *gin.Context) {
 }
 
 func UnenrollProgram(c *gin.Context) {
-	id := strings.TrimSpace(c.Param("id"))
-	if id == "" {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Program ID is required"})
+	id, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
 
 	var degreeProgram models.DegreeProgram
 
-	err := db.Db.Where("id = ?", id).First(&degreeProgram).Error
+	err = db.Db.Where("id = ?", id).First(&degreeProgram).Error
 	if err != nil {
 		slog.Error("Program not found", slog.Any("error: ", err))
 		c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Program not found"})
@@ -167,9 +166,9 @@ func UnenrollProgram(c *gin.Context) {
 }
 
 func FavoriteProgram(c *gin.Context) {
-	id := strings.TrimSpace(c.Param("id"))
-	if id == "" {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Program ID is required"})
+	id, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
 
@@ -211,9 +210,9 @@ func FavoriteProgram(c *gin.Context) {
 }
 
 func UnfavoriteProgram(c *gin.Context) {
-	id := strings.TrimSpace(c.Param("id"))
-	if id == "" {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Program ID is required"})
+	id, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
 

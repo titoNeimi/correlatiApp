@@ -29,12 +29,16 @@ type UpdateElectiveRuleDTO struct {
 }
 
 func CreateElectiveRule(c *gin.Context) {
-	id := c.Param("id")
+	id, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var degreeProgram models.DegreeProgram
 	var req CreateElectiveRuleDTO
 
-	err := db.Db.Where("id = ?", id).First(&degreeProgram).Error
+	err = db.Db.Where("id = ?", id).First(&degreeProgram).Error
 	if err != nil {
 		slog.Error("Program not found", slog.Any("error: ", err))
 		c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Program not found"})
@@ -46,8 +50,13 @@ func CreateElectiveRule(c *gin.Context) {
 		return
 	}
 
-	if req.PoolID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "pool_id es requerido"})
+	poolID, err := validateID(req.PoolID, "pool_id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.AppliesFromYear <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "applies_from_year debe ser mayor que 0"})
 		return
 	}
 	if req.AppliesToYear != nil && *req.AppliesToYear < req.AppliesFromYear {
@@ -66,7 +75,7 @@ func CreateElectiveRule(c *gin.Context) {
 	}
 
 	var pool models.ElectivePool
-	if err := db.Db.Where("id = ?", req.PoolID).First(&pool).Error; err != nil {
+	if err := db.Db.Where("id = ?", poolID).First(&pool).Error; err != nil {
 		slog.Error("Pool not found", slog.Any("error: ", err))
 		c.IndentedJSON(http.StatusNotFound, gin.H{"ok": false, "error": "Pool not found"})
 		return
@@ -79,7 +88,7 @@ func CreateElectiveRule(c *gin.Context) {
 	rule := models.ElectiveRule{
 		ID:              uuid.NewString(),
 		DegreeProgramID: degreeProgram.ID,
-		PoolID:          req.PoolID,
+		PoolID:          poolID,
 		AppliesFromYear: req.AppliesFromYear,
 		AppliesToYear:   req.AppliesToYear,
 		RequirementType: req.RequirementType,
@@ -96,7 +105,11 @@ func CreateElectiveRule(c *gin.Context) {
 }
 
 func GetElectiveRulesByProgram(c *gin.Context) {
-	programID := c.Param("id")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var degreeProgram models.DegreeProgram
 	if err := db.Db.Where("id = ?", programID).First(&degreeProgram).Error; err != nil {
@@ -116,8 +129,16 @@ func GetElectiveRulesByProgram(c *gin.Context) {
 }
 
 func GetElectiveRuleByID(c *gin.Context) {
-	programID := c.Param("id")
-	ruleID := c.Param("ruleId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	ruleID, err := validateID(c.Param("ruleId"), "rule_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var rule models.ElectiveRule
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", ruleID, programID).Preload("Pool").First(&rule).Error; err != nil {
@@ -134,8 +155,16 @@ func GetElectiveRuleByID(c *gin.Context) {
 }
 
 func UpdateElectiveRule(c *gin.Context) {
-	programID := c.Param("id")
-	ruleID := c.Param("ruleId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	ruleID, err := validateID(c.Param("ruleId"), "rule_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var rule models.ElectiveRule
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", ruleID, programID).First(&rule).Error; err != nil {
@@ -154,9 +183,13 @@ func UpdateElectiveRule(c *gin.Context) {
 		return
 	}
 
-	if req.PoolID != nil && *req.PoolID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "pool_id no puede ser vacío"})
-		return
+	if req.PoolID != nil {
+		poolID, err := validateRequiredString(*req.PoolID, "pool_id", maxIDLen)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		req.PoolID = &poolID
 	}
 	if req.MinimumValue != nil && *req.MinimumValue <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "minimum_value debe ser mayor que 0"})
@@ -174,6 +207,10 @@ func UpdateElectiveRule(c *gin.Context) {
 	nextAppliesFrom := rule.AppliesFromYear
 	nextAppliesTo := rule.AppliesToYear
 	if req.AppliesFromYear != nil {
+		if *req.AppliesFromYear <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "applies_from_year debe ser mayor que 0"})
+			return
+		}
 		nextAppliesFrom = *req.AppliesFromYear
 	}
 	if req.AppliesToYear != nil {
@@ -220,8 +257,16 @@ func UpdateElectiveRule(c *gin.Context) {
 }
 
 func DeleteElectiveRule(c *gin.Context) {
-	programID := c.Param("id")
-	ruleID := c.Param("ruleId")
+	programID, err := validateID(c.Param("id"), "program_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	ruleID, err := validateID(c.Param("ruleId"), "rule_id")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
 
 	var rule models.ElectiveRule
 	if err := db.Db.Where("id = ? AND degree_program_id = ?", ruleID, programID).First(&rule).Error; err != nil {
