@@ -13,7 +13,6 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { MOCK_UNIVERSITIES } from '@/lib/mocks';
 import { useDegree } from './degree-context';
 import { CurriculumSubject, PrerequisiteType, ElectiveRequirementType } from './(types)/types';
 import { Select, YearColumn, SubjectCard, UnassignedPool } from './(components)';
@@ -462,8 +461,7 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
             {resultMessage?.text ?? 'Carrera creada correctamente'}
           </p>
           <p className="mt-2 text-base text-green-700">
-            {degreeData?.universityName ||
-              MOCK_UNIVERSITIES.find((u) => u.id === degreeData?.universityId)?.name}
+            {degreeData?.universityName || degreeData?.universityId}
           </p>
           <div className="mt-8 flex justify-center">
             <Link
@@ -485,8 +483,7 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
           {degreeData.degreeName}
         </h1>
         <p className="text-gray-600">
-          {degreeData.universityName ||
-            MOCK_UNIVERSITIES.find((u) => u.id === degreeData.universityId)?.name}
+          {degreeData.universityName || degreeData.universityId}
         </p>
       </div>
 

@@ -13,6 +13,12 @@ export function Topbar({ isDark, onThemeToggle }: { isDark: boolean; onThemeTogg
         </div>
         
         <div className="flex items-center gap-3">
+          <Link
+            href="/carreras/crear"
+            className="hidden md:inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+          >
+            Crear carrera
+          </Link>
           <ThemeToggle isDark={isDark} onToggle={onThemeToggle} />
           
           {/* Notifications */}

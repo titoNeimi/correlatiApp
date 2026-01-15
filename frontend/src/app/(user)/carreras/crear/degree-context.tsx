@@ -7,7 +7,6 @@ import {
   ElectivePoolDraft,
   ElectiveRuleDraft,
 } from './(types)/types';
-import { MOCK_SUBJECTS } from '@/lib/mocks';
 
 const DegreeContext = createContext<DegreeContextType | undefined>(undefined);
 
@@ -20,7 +19,6 @@ const DegreeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   useEffect(() => {
     try {
-      let hasStoredSubjects = false;
       const storedDegree = localStorage.getItem('degreeData');
       const storedSubjects = localStorage.getItem('degreeSubjects');
       const storedPools = localStorage.getItem('degreeElectivePools');
@@ -35,7 +33,6 @@ const DegreeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
         const parsed = JSON.parse(storedSubjects) as CurriculumSubject[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           setSubjects(parsed);
-          hasStoredSubjects = true;
         }
       }
 
@@ -52,15 +49,10 @@ const DegreeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
           setElectiveRules(parsedRules);
         }
       }
-      if (!hasStoredSubjects) {
-        setSubjects(MOCK_SUBJECTS.map((s) => ({ ...s, year: null })));
-      }
       return;
     } catch {
-      // ignore parse errors and fallback to mocks
+      // ignore parse errors
     }
-    // fallback si no hay storage o está vacío
-    setSubjects(MOCK_SUBJECTS.map((s) => ({ ...s, year: null })));
   }, []);
 
   // persistencia centralizada

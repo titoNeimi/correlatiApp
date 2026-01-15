@@ -108,6 +108,13 @@ const UniversityStep: React.FC<{
       setPrograms((prev) => [...prev, created]);
       setValue('universityId', created.id);
       data.universityId = created.id;
+      data.universityName = created.name;
+    }
+    if (mode === 'select' && data.universityId) {
+      const selected = programs.find((uni) => uni.id === data.universityId);
+      if (selected) {
+        data.universityName = selected.name;
+      }
     }
     onNext(data);
   };
