@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type SubjectsFromProgram struct {
@@ -32,11 +33,12 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 
 	var userWithPrograms models.User
 	if err := db.Db.Preload("DegreePrograms").First(&userWithPrograms, "id = ?", u.ID).Error; err != nil {
+		slog.Error("Error loading user programs", slog.Any("error", err))
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 
-	programId := c.Param("programId")
+	programId := strings.TrimSpace(c.Param("programId"))
 	if programId == "" {
 		if len(userWithPrograms.DegreePrograms) == 0 {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "User has no degree programs"})
@@ -59,6 +61,7 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 
 	var program models.DegreeProgram
 	if err := db.Db.Preload("University").Where("id = ?", programId).First(&program).Error; err != nil {
+		slog.Error("Program not found", slog.Any("error", err))
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
 		return
 	}
@@ -68,6 +71,7 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 	if err := db.Db.
 		Where("degree_program_id = ?", programId).
 		Find(&subjects).Error; err != nil {
+		slog.Error("Error loading subjects", slog.Any("error", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error loading subjects"})
 		return
 	}
@@ -107,6 +111,7 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 
 	var links []models.SubjectRequirement
 	if err := db.Db.Where("subject_id IN ?", subjectIDs).Find(&links).Error; err != nil {
+		slog.Error("Error loading subject requirements", slog.Any("error", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error loading subject requirements"})
 		return
 	}
@@ -168,11 +173,12 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 
 	var userWithPrograms models.User
 	if err := db.Db.Preload("DegreePrograms").First(&userWithPrograms, "id = ?", u.ID).Error; err != nil {
+		slog.Error("Error loading user programs", slog.Any("error", err))
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 
-	programId := c.Param("programId")
+	programId := strings.TrimSpace(c.Param("programId"))
 	if programId == "" {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Program ID is required"})
 		return
@@ -192,6 +198,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 
 	var subjects []models.Subject
 	if err := db.Db.Where("degree_program_id = ?", programId).Find(&subjects).Error; err != nil {
+		slog.Error("Error loading subjects", slog.Any("error", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error loading subjects"})
 		return
 	}
@@ -205,6 +212,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 
 	var payload SaveUserSubjectsRequest
 	if err := c.ShouldBindJSON(&payload); err != nil {
+		slog.Error("Invalid subjects payload", slog.Any("error", err))
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
 		return
 	}
@@ -244,6 +252,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 
 	tx := db.Db.Begin()
 	if tx.Error != nil {
+		slog.Error("Error starting transaction", slog.Any("error", tx.Error))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error saving subjects"})
 		return
 	}
@@ -251,12 +260,14 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 	if len(subjectIDs) > 0 {
 		if len(payloadIDs) == 0 {
 			if err := tx.Where("user_id = ? AND subject_id IN ?", u.ID, subjectIDs).Delete(&models.UserSubject{}).Error; err != nil {
+				slog.Error("Error deleting user subjects", slog.Any("error", err))
 				tx.Rollback()
 				c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error saving subjects"})
 				return
 			}
 		} else {
 			if err := tx.Where("user_id = ? AND subject_id IN ? AND subject_id NOT IN ?", u.ID, subjectIDs, payloadIDs).Delete(&models.UserSubject{}).Error; err != nil {
+				slog.Error("Error pruning user subjects", slog.Any("error", err))
 				tx.Rollback()
 				c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error saving subjects"})
 				return
@@ -269,6 +280,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 			Columns:   []clause.Column{{Name: "user_id"}, {Name: "subject_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"status", "updated_at"}),
 		}).Create(&records).Error; err != nil {
+			slog.Error("Error upserting user subjects", slog.Any("error", err))
 			tx.Rollback()
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error saving subjects"})
 			return
@@ -276,6 +288,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		slog.Error("Error committing user subjects transaction", slog.Any("error", err))
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error saving subjects"})
 		return
 	}

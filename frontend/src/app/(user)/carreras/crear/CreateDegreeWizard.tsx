@@ -53,6 +53,7 @@ const UniversityStep: React.FC<{
   const [loading, setLoading] = useState<boolean>(true);
   const [creating, setCreating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -70,8 +71,12 @@ const UniversityStep: React.FC<{
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setLoadError(null);
       const data = await fetchDegreePrograms();
       setPrograms(data.data || []);
+      if (data.error) {
+        setLoadError(data.error);
+      }
       setLoading(false);
     };
     fetchData();
@@ -101,14 +106,19 @@ const UniversityStep: React.FC<{
       setCreating(true);
       const created = await createUniversity(name);
       setCreating(false);
-      if (!created) {
+      if (!created.ok) {
+        setError(created.message || 'No se pudo crear la universidad');
+        return;
+      }
+      const newUniversity = created.data;
+      if (!newUniversity) {
         setError('No se pudo crear la universidad');
         return;
       }
-      setPrograms((prev) => [...prev, created]);
-      setValue('universityId', created.id);
-      data.universityId = created.id;
-      data.universityName = created.name;
+      setPrograms((prev) => [...prev, newUniversity]);
+      setValue('universityId', newUniversity.id);
+      data.universityId = newUniversity.id;
+      data.universityName = newUniversity.name;
     }
     if (mode === 'select' && data.universityId) {
       const selected = programs.find((uni) => uni.id === data.universityId);
@@ -154,19 +164,22 @@ const UniversityStep: React.FC<{
                 Cargando universidades...
               </div>
             ) : (
-              <Select
-                id="universityId"
-                {...register('universityId')}
-                error={!!errors.universityId}
-                disabled={loading}
-              >
-                <option value="">Seleccione...</option>
-                {programs.map((uni) => (
-                  <option key={uni.id} value={uni.id}>
-                    {uni.name}
-                  </option>
-                ))}
-              </Select>
+              <>
+                <Select
+                  id="universityId"
+                  {...register('universityId')}
+                  error={!!errors.universityId}
+                  disabled={loading}
+                >
+                  <option value="">Seleccione...</option>
+                  {programs.map((uni) => (
+                    <option key={uni.id} value={uni.id}>
+                      {uni.name}
+                    </option>
+                  ))}
+                </Select>
+                {loadError && <p className="text-sm text-red-600 mt-2">{loadError}</p>}
+              </>
             )}
           </div>
         )}

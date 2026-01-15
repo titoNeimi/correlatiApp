@@ -6,12 +6,13 @@ import {
   ElectivePoolDraft,
   ElectiveRuleDraft,
 } from './(types)/types';
-import { ApiError, apiFetch, apiFetchJson } from '@/lib/api';
+import { ApiError, apiFetch, apiFetchJson, getApiErrorMessage } from '@/lib/api';
 import { cookies, headers } from 'next/headers';
 
 type fetchDegreeProgramsResponse = {
   count: number,
   data: University[]
+  error?: string
 }
 
 export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse> => {
@@ -20,11 +21,50 @@ export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse
     return data
   } catch (error) {
     console.log(error)
-    return {count:0, data:[]}
+    return {count:0, data:[], error: getApiErrorMessage(error, 'No se pudieron cargar las universidades')}
   }
 }
 
-export const createUniversity = async (name: string): Promise<University | null> => {
+type actionResult<T> = {
+  ok: boolean
+  data?: T
+  message?: string
+}
+
+const getResponseErrorMessage = async (response: Response, fallback: string) => {
+  if (response.status === 401 || response.status === 403) {
+    return 'Necesitas iniciar sesión para continuar'
+  }
+  if (response.status === 404) {
+    return 'No se encontró el recurso solicitado'
+  }
+  if (response.status === 409) {
+    return 'El registro ya existe'
+  }
+  if (response.status === 422 || response.status === 400) {
+    return 'Los datos enviados no son válidos'
+  }
+  try {
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const data = await response.json()
+      const message = data?.error || data?.message
+      if (typeof message === 'string' && message.trim() !== '') {
+        return message
+      }
+    } else {
+      const text = await response.text()
+      if (text.trim() !== '') {
+        return text
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return fallback
+}
+
+export const createUniversity = async (name: string): Promise<actionResult<University>> => {
   try {
     const originHeader = getOriginHeader();
     const response = await apiFetch('/universities', {
@@ -37,14 +77,15 @@ export const createUniversity = async (name: string): Promise<University | null>
     })
 
     if(!response.ok) {
-      return null
+      const message = await getResponseErrorMessage(response, 'No se pudo crear la universidad')
+      return { ok: false, message }
     }
     const data = await response.json()
     console.log(data)
-    return data
+    return { ok: true, data }
   } catch (error) {
     console.log(error)
-    return null
+    return { ok: false, message: getApiErrorMessage(error, 'No se pudo crear la universidad') }
   }
 }
 
@@ -60,7 +101,7 @@ export const confirmCreation = async (payload: {
   subjects: CurriculumSubject[];
   electivePools: ElectivePoolDraft[];
   electiveRules: ElectiveRuleDraft[];
-}) => {
+}): Promise<actionResult<null>> => {
   const { degreeData, subjects, electivePools, electiveRules } = payload
   const cookieStore = cookies()
   const cookieHeader = cookieStore.toString()
@@ -119,7 +160,8 @@ export const confirmCreation = async (payload: {
       credentials: 'include',
     })
     if(!response.ok){
-      return {ok:false, message: 'No se pudo crear la carrera'}
+      const message = await getResponseErrorMessage(response, 'No se pudo crear la carrera')
+      return {ok:false, message: `No se pudo crear la carrera: ${message}`}
     }
     const createdProgram = await response.json()
     createdProgramId = createdProgram.id
@@ -146,7 +188,8 @@ export const confirmCreation = async (payload: {
       })
       if(!subjectResponse.ok){
         await cleanupCreation()
-        return { ok: false, message: 'No se pudieron crear todas las materias' }
+        const message = await getResponseErrorMessage(subjectResponse, 'No se pudieron crear todas las materias')
+        return { ok: false, message: `No se pudieron crear todas las materias: ${message}` }
       }
       const newSubjectData = await subjectResponse.json()
       createdSubjectIds.push(newSubjectData.id)
@@ -185,9 +228,10 @@ export const confirmCreation = async (payload: {
         credentials: 'include',
       })
       if (!updateResp.ok) {
-        console.log('No se pudo actualizar requirements de subject', newSubjectId)
+        const errorBody = await getResponseErrorMessage(updateResp, 'No se pudieron actualizar los requisitos')
+        console.log('No se pudo actualizar requirements de subject', newSubjectId, errorBody)
         await cleanupCreation()
-        return { ok: false, message: 'No se pudieron actualizar los requisitos' }
+        return { ok: false, message: `No se pudieron actualizar los requisitos: ${errorBody}` }
       }
     }
 
@@ -203,10 +247,10 @@ export const confirmCreation = async (payload: {
         credentials: 'include',
       })
       if (!poolResponse.ok) {
-        const errorBody = await poolResponse.text().catch(() => '')
+        const errorBody = await getResponseErrorMessage(poolResponse, 'No se pudieron crear los pools de electivas')
         console.log('Pool create failed', poolResponse.status, errorBody)
         await cleanupCreation()
-        return { ok: false, message: 'No se pudieron crear los pools de electivas' }
+        return { ok: false, message: `No se pudieron crear los pools de electivas: ${errorBody}` }
       }
       const createdPool = await poolResponse.json()
       createdPoolIds.push(createdPool.id)
@@ -228,10 +272,10 @@ export const confirmCreation = async (payload: {
           }
         )
         if (!linkResp.ok) {
-          const errorBody = await linkResp.text().catch(() => '')
+          const errorBody = await getResponseErrorMessage(linkResp, 'No se pudieron asignar electivas a pools')
           console.log('Pool subject link failed', linkResp.status, errorBody)
           await cleanupCreation()
-          return { ok: false, message: 'No se pudieron asignar electivas a pools' }
+          return { ok: false, message: `No se pudieron asignar electivas a pools: ${errorBody}` }
         }
       }
     }
@@ -255,10 +299,10 @@ export const confirmCreation = async (payload: {
         credentials: 'include',
       })
       if (!ruleResp.ok) {
-        const errorBody = await ruleResp.text().catch(() => '')
+        const errorBody = await getResponseErrorMessage(ruleResp, 'No se pudieron crear las reglas de electivas')
         console.log('Rule create failed', ruleResp.status, errorBody)
         await cleanupCreation()
-        return { ok: false, message: 'No se pudieron crear las reglas de electivas' }
+        return { ok: false, message: `No se pudieron crear las reglas de electivas: ${errorBody}` }
       }
     }
 
@@ -269,7 +313,7 @@ export const confirmCreation = async (payload: {
     }
     console.log(error)
     await cleanupCreation()
-    return { ok: false, message: 'Ocurrió un error al crear la carrera' }
+    return { ok: false, message: getApiErrorMessage(error, 'Ocurrió un error al crear la carrera') }
   }
 }
 
