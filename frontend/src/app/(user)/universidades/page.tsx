@@ -4,6 +4,7 @@ import { Building2, Filter, Globe, GraduationCap, MapPin, Search, Sparkles } fro
 import Link from 'next/link'
 import { apiFetchJson, getApiErrorMessage } from '@/lib/api'
 import { ClientPageShell } from '@/components/layout/client-page-shell'
+import { LoadingState } from '@/components/ui/loading-state'
 
 type UniversityResponse = {
   data: University[],
@@ -104,7 +105,7 @@ export default function UniversitiesPage() {
   if (loading){
     return (
       <ClientPageShell mainClassName="max-w-3xl py-12">
-        <h1 className="text-2xl text-slate-900">Cargando</h1>
+        <LoadingState title="Cargando universidades" description="Preparando el directorio academico." />
       </ClientPageShell>
     )
   }

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch, getApiErrorMessage } from '@/lib/api'
 import { ClientPageShell } from '@/components/layout/client-page-shell'
+import { LoadingState } from '@/components/ui/loading-state'
 
 // Placeholder sections to connect once the backend exposes these fields.
 const universityHighlightPool: Array<{ tone: string; focus: string; tag: string }> = [
@@ -93,7 +94,7 @@ export default function UniversityDetailPage() {
   if (loading) {
     return (
       <ClientPageShell mainClassName="max-w-3xl py-12">
-        <h2 className="text-2xl text-slate-900">Cargando...</h2>
+        <LoadingState title="Cargando universidad" description="Buscando la informacion mas reciente." />
       </ClientPageShell>
     )
   }
