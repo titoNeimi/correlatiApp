@@ -7,6 +7,8 @@ import { apiFetch, apiFetchJson, getApiErrorMessage } from "@/lib/api";
 
 type ProgramData = {
   count: number
+  page?: number
+  limit?: number
   data: DegreeProgram[]
 }
 
@@ -19,6 +21,7 @@ export default function ProgramsPage() {
   const [publicFilter, setPublicFilter] = useState<'all' | 'public' | 'private'>('all')
   const [page, setPage] = useState<number>(1)
   const [perPage, setPerPage] = useState<number>(12)
+  const [totalCount, setTotalCount] = useState<number>(0)
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat('es-AR', {
     day: 'numeric',
     month: 'short',
@@ -29,16 +32,17 @@ export default function ProgramsPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page: '1', limit: '100' });
+      const params = new URLSearchParams({ page: page.toString(), limit: perPage.toString() });
       const data = await apiFetchJson<ProgramData>(`/degreeProgram?${params.toString()}`, { credentials: 'include' });
       setPrograms(data.data);
+      setTotalCount(typeof data.count === 'number' ? data.count : data.data.length);
       setLoading(false);
     } catch (error) {
       console.log(error);
       setError(getApiErrorMessage(error, "Error desconocido"));
       setLoading(false);
     }
-  }, []);
+  }, [page, perPage]);
 
   useEffect(() => {
     fetchPrograms();
@@ -149,12 +153,14 @@ export default function ProgramsPage() {
     })
   }, [programs, search, statusFilter, publicFilter])
 
-  const totalPages = Math.max(1, Math.ceil(filteredPrograms.length / perPage))
+  const totalPages = Math.max(1, Math.ceil(totalCount / perPage))
   const pageSafe = Math.min(page, totalPages)
-  const pagedPrograms = useMemo(() => {
-    const start = (pageSafe - 1) * perPage
-    return filteredPrograms.slice(start, start + perPage)
-  }, [filteredPrograms, pageSafe, perPage])
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
 
   if(loading){
     return (
@@ -271,7 +277,7 @@ export default function ProgramsPage() {
 
       {/* Grid de cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {pagedPrograms.map((program, idx) => (
+        {filteredPrograms.map((program, idx) => (
           <Card key={idx} className="p-4 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
