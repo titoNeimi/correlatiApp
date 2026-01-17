@@ -58,7 +58,16 @@ func CreateUniversity(c *gin.Context) {
 
 func GetAllUniversities(c *gin.Context) {
 	var universities []models.University
-	if err := db.Db.Preload("DegreePrograms").Find(&universities).Error; err != nil {
+
+	page, limit, offset := parsePagination(c)
+	query := db.Db.Model(&models.University{})
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error loading universities"})
+		return
+	}
+
+	if err := query.Preload("DegreePrograms").Limit(limit).Offset(offset).Find(&universities).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error loading universities"})
 		return
 	}
@@ -67,7 +76,12 @@ func GetAllUniversities(c *gin.Context) {
 			universities[i].DegreePrograms = filterPublicPrograms(universities[i].DegreePrograms)
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"count": len(universities), "data": universities})
+	c.JSON(http.StatusOK, gin.H{
+		"count": total,
+		"page":  page,
+		"limit": limit,
+		"data":  universities,
+	})
 }
 
 func GetUniversityByID(c *gin.Context) {

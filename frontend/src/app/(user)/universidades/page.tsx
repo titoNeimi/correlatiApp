@@ -9,6 +9,8 @@ import { LoadingState } from '@/components/ui/loading-state'
 type UniversityResponse = {
   data: University[],
   count: number,
+  page?: number,
+  limit?: number,
 }
 
 // Placeholder metadata until these fields exist in backend/domain.
@@ -74,6 +76,9 @@ export default function UniversitiesPage() {
   const [error, setError] = useState<string | null>(null)
   const [totalPrograms, setTotalPrograms] = useState<number>(0)
   const [uniqueLocations, setUniqueLocations] = useState<number>(0)
+  const [page, setPage] = useState<number>(1)
+  const [totalCount, setTotalCount] = useState<number>(0)
+  const limit = 12
 
   useEffect(() => {
     const totalPrograms = universities.reduce((total, university) => total + (university.degreePrograms?.length ?? 0), 0)
@@ -91,8 +96,12 @@ export default function UniversitiesPage() {
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
-        const data = await apiFetchJson<UniversityResponse>('/universities')
+        setLoading(true)
+        setError(null)
+        const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() })
+        const data = await apiFetchJson<UniversityResponse>(`/universities?${params.toString()}`)
         setUniversities(data.data)
+        setTotalCount(typeof data.count === 'number' ? data.count : data.data.length)
       } catch (error) {
         setError(getApiErrorMessage(error, "No se pudo realizar el fetch"))
       } finally{
@@ -100,7 +109,9 @@ export default function UniversitiesPage() {
       }
     }
     fetchUniversities()
-  }, [])
+  }, [page, limit])
+
+  const totalPages = totalCount ? Math.max(1, Math.ceil(totalCount / limit)) : 1
 
   if (loading){
     return (
@@ -137,7 +148,7 @@ export default function UniversitiesPage() {
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
                   <GraduationCap className="w-4 h-4" />
-                  {universities.length} universidades activas
+                  {totalCount || universities.length} universidades activas
                 </div>
                 <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
                   <Building2 className="w-4 h-4" />
@@ -191,6 +202,28 @@ export default function UniversitiesPage() {
           </div>
         </div>
       </section>
+
+      <div className="flex items-center justify-center gap-3 pb-6">
+        <button
+          type="button"
+          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+          disabled={page <= 1}
+          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:hover:bg-transparent transition-colors"
+        >
+          Anterior
+        </button>
+        <span className="text-sm text-slate-600">
+          Pagina {page} de {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+          disabled={page >= totalPages}
+          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:hover:bg-transparent transition-colors"
+        >
+          Siguiente
+        </button>
+      </div>
 
         <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6 h-fit">

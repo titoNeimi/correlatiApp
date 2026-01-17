@@ -17,7 +17,8 @@ type fetchDegreeProgramsResponse = {
 
 export const fetchDegreePrograms = async (): Promise<fetchDegreeProgramsResponse> => {
   try {
-    const data = await apiFetchJson<fetchDegreeProgramsResponse>('/universities')
+    const params = new URLSearchParams({ page: '1', limit: '100' })
+    const data = await apiFetchJson<fetchDegreeProgramsResponse>(`/universities?${params.toString()}`)
     return data
   } catch (error) {
     console.log(error)
