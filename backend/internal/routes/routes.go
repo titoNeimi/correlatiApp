@@ -36,6 +36,8 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		ExemptPaths:    []string{"/auth/login", "/auth/register"},
 	}))
 
+	r.GET("/health", handlers.Health)
+
 	sessSvc := services.New(db, 7*24*time.Hour)
 
 	cookieSecure := os.Getenv("COOKIE_SECURE")
