@@ -25,7 +25,8 @@ export default function ProgramSubjectsPage() {
   const fetchPrograms = useCallback(async () => {
     setError(null);
     try {
-      const data = await apiFetchJson<{ data: DegreeProgram[]; count: number }>('/degreeProgram', {
+      const params = new URLSearchParams({ page: '1', limit: '100' });
+      const data = await apiFetchJson<{ data: DegreeProgram[]; count: number }>(`/degreeProgram?${params.toString()}`, {
         credentials: 'include',
       });
       setPrograms(data.data);

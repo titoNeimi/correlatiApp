@@ -19,9 +19,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const params = new URLSearchParams({ page: '1', limit: '100' });
         const [usersResp, programsResp] = await Promise.all([
           apiFetch('/users', { credentials: 'include' }),
-          apiFetch('/degreeProgram', { credentials: 'include' }),
+          apiFetch(`/degreeProgram?${params.toString()}`, { credentials: 'include' }),
         ]);
 
         if (!usersResp.ok && usersResp.status !== 401) {

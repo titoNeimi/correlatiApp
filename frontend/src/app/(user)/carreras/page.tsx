@@ -14,12 +14,14 @@ type DegreeProgramDTO = {
 type fetchDegree = {
   count:number,
   data: DegreeProgramDTO[]
+  page?: number
+  limit?: number
 }
 
-const fetchDegreePrograms = async (): Promise<fetchDegree | null> =>  {
+const fetchDegreePrograms = async (page: number, limit: number): Promise<fetchDegree | null> =>  {
   try {
-
-    const data = await apiFetchJson<fetchDegree>('/degreeProgram')
+    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() })
+    const data = await apiFetchJson<fetchDegree>(`/degreeProgram?${params.toString()}`)
     return data
   } catch (error) {
     console.log(error)
@@ -27,7 +29,13 @@ const fetchDegreePrograms = async (): Promise<fetchDegree | null> =>  {
   }
 }
 
-async function CareersPage () {
+async function CareersPage ({ searchParams }: { searchParams?: { page?: string | string[]; limit?: string | string[] } }) {
+  const rawPage = Array.isArray(searchParams?.page) ? searchParams?.page[0] : searchParams?.page
+  const rawLimit = Array.isArray(searchParams?.limit) ? searchParams?.limit[0] : searchParams?.limit
+  const pageParam = Number(rawPage ?? '1')
+  const limitParam = Number(rawLimit ?? '12')
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1
+  const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 100) : 12
 
   const cardTones = [
     'from-blue-50 via-white to-indigo-50',
@@ -50,9 +58,12 @@ async function CareersPage () {
   const filterModalities = ['Presencial', 'Hibrida', 'Virtual']
   const filterDurations = ['2-3 años', '4 años', '5+ años']
 
-  const data = await fetchDegreePrograms()
+  const data = await fetchDegreePrograms(page, limit)
   const programs = Array.isArray(data?.data) ? data?.data : null
   const programCount = typeof data?.count === 'number' ? data.count : programs?.length
+  const totalPages = programCount ? Math.max(1, Math.ceil(programCount / limit)) : 1
+  const nextPage = Math.min(page + 1, totalPages)
+  const prevPage = Math.max(1, page - 1)
 
   if(data == null){
     return(
@@ -257,6 +268,36 @@ async function CareersPage () {
                 </div>
               </article>
             ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-3 pt-6">
+            {page > 1 ? (
+              <Link
+                href={`/carreras?page=${prevPage}&limit=${limit}`}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Anterior
+              </Link>
+            ) : (
+              <span className="rounded-xl border border-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+                Anterior
+              </span>
+            )}
+            <span className="text-sm text-slate-600">
+              Pagina {page} de {totalPages}
+            </span>
+            {page < totalPages ? (
+              <Link
+                href={`/carreras?page=${nextPage}&limit=${limit}`}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Siguiente
+              </Link>
+            ) : (
+              <span className="rounded-xl border border-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+                Siguiente
+              </span>
+            )}
           </div>
 
           <div className="bg-slate-900 text-white rounded-3xl p-8 text-center">

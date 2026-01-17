@@ -76,7 +76,8 @@ export default function MyProgramsPage() {
           return
         }
 
-        const degreePrograms = await apiFetchJson<DegreeProgramResponse>('/degreeProgram')
+        const params = new URLSearchParams({ page: '1', limit: '100' })
+        const degreePrograms = await apiFetchJson<DegreeProgramResponse>(`/degreeProgram?${params.toString()}`)
         const list = Array.isArray(degreePrograms.data) ? degreePrograms.data : []
         setEnrolledPrograms(list.filter((program) => enrolledIds.includes(program.id)))
         setFavoritePrograms(list.filter((program) => favoriteProgramIds.includes(program.id)))

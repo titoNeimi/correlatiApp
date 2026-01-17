@@ -29,7 +29,8 @@ export default function ProgramsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetchJson<ProgramData>('/degreeProgram', { credentials: 'include' });
+      const params = new URLSearchParams({ page: '1', limit: '100' });
+      const data = await apiFetchJson<ProgramData>(`/degreeProgram?${params.toString()}`, { credentials: 'include' });
       setPrograms(data.data);
       setLoading(false);
     } catch (error) {

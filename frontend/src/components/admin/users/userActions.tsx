@@ -124,7 +124,8 @@ export function UserActions({
     if (action === "programs" && !programOptions && !programsLoading) {
       setProgramsLoading(true);
       try {
-        const data = await apiFetchJson<{ data?: { id: string; name: string }[] }>('/degreeProgram', {
+        const params = new URLSearchParams({ page: '1', limit: '100' });
+        const data = await apiFetchJson<{ data?: { id: string; name: string }[] }>(`/degreeProgram?${params.toString()}`, {
           credentials: "include",
         });
         const list: { id: string; label: string }[] =

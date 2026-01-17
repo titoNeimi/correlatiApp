@@ -189,12 +189,24 @@ func DeleteProgram(c *gin.Context) {
 func GetAllDegreeProgramsWithSubjects(c *gin.Context) {
 	var degreePrograms []models.DegreeProgram
 
+	page, limit, offset := parsePagination(c)
+
 	// Preload incluye las materias relacionadas
-	query := db.Db.Preload("Subjects").Preload("University")
+	query := db.Db.Model(&models.DegreeProgram{})
 	if !isAdminOrStaff(c) {
 		query = query.Where("approval_status = ? AND public_requested = TRUE", models.DegreeProgramApproved)
 	}
-	result := query.Find(&degreePrograms)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error getting all the degrees",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	result := query.Preload("Subjects").Preload("University").Limit(limit).Offset(offset).Find(&degreePrograms)
 
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -217,7 +229,9 @@ func GetAllDegreeProgramsWithSubjects(c *gin.Context) {
 	*/
 
 	c.JSON(http.StatusOK, gin.H{
-		"count": len(degreePrograms),
+		"count": total,
+		"page":  page,
+		"limit": limit,
 		"data":  degreePrograms,
 	})
 }
