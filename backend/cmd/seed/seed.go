@@ -65,6 +65,9 @@ func Connect() {
 
 	if err := Db.AutoMigrate(
 		&models.University{},
+		&models.UniversityTag{},
+		&models.QuickLink{},
+		&models.AdditionalInformation{},
 		&models.User{},
 		&models.DegreeProgram{},
 		&models.Subject{},
@@ -107,11 +110,79 @@ func Seed(gdb *gorm.DB) error {
 		}
 
 		// 2) University
-		utnFrba := models.University{
-			ID:   "utn-frba",
-			Name: "Universidad Tecnológica Nacional - Facultad Regional Buenos Aires",
+	utnFrba := models.University{
+			ID:              "utn-frba",
+			Name:            "Universidad Tecnológica Nacional - Facultad Regional Buenos Aires",
+			Location:        "CABA, Argentina",
+			Website:         "https://www.frba.utn.edu.ar",
+			InstitutionType: models.InstitutionPublic,
+			Summary:         "Facultad regional de la UTN con foco en ingeniería y tecnología aplicada.",
+			LogoURL:         "https://www.frba.utn.edu.ar/wp-content/uploads/2017/10/logo-utn-frba.png",
+			PrimaryFocus:    "Ingeniería aplicada y tecnología",
 		}
 		if err := tx.Create(&utnFrba).Error; err != nil {
+			return err
+		}
+
+		tags := []models.UniversityTag{
+			{UniversityID: utnFrba.ID, Tag: "Ingeniería"},
+			{UniversityID: utnFrba.ID, Tag: "Tecnología"},
+			{UniversityID: utnFrba.ID, Tag: "Investigación"},
+			{UniversityID: utnFrba.ID, Tag: "Extensión"},
+		}
+		if err := tx.Create(&tags).Error; err != nil {
+			return err
+		}
+
+		quickLinks := []models.QuickLink{
+			{
+				ID:           uuid.NewString(),
+				UniversityID: utnFrba.ID,
+				Label:        "Sitio oficial",
+				URL:          "https://www.frba.utn.edu.ar",
+			},
+			{
+				ID:           uuid.NewString(),
+				UniversityID: utnFrba.ID,
+				Label:        "Calendario académico",
+				URL:          "https://www.frba.utn.edu.ar/academica/",
+			},
+			{
+				ID:           uuid.NewString(),
+				UniversityID: utnFrba.ID,
+				Label:        "Admisiones",
+				URL:          "https://www.frba.utn.edu.ar/ingreso/",
+			},
+		}
+		if err := tx.Create(&quickLinks).Error; err != nil {
+			return err
+		}
+
+		additionalInfo := []models.AdditionalInformation{
+			{
+				ID:           uuid.NewString(),
+				UniversityID: utnFrba.ID,
+				Title:        "Admisiones",
+				Description:  "Información general sobre inscripciones, requisitos y fechas clave.",
+				URL:          "https://www.frba.utn.edu.ar/ingreso/",
+				Status:       "Disponible",
+			},
+			{
+				ID:           uuid.NewString(),
+				UniversityID: utnFrba.ID,
+				Title:        "Becas y apoyos",
+				Description:  "Programas de ayuda para estudiantes y beneficios disponibles.",
+				Status:       "Disponible",
+			},
+			{
+				ID:           uuid.NewString(),
+				UniversityID: utnFrba.ID,
+				Title:        "Vida universitaria",
+				Description:  "Clubes, actividades y comunidad estudiantil.",
+				Status:       "Pendiente",
+			},
+		}
+		if err := tx.Create(&additionalInfo).Error; err != nil {
 			return err
 		}
 
@@ -519,6 +590,9 @@ func resetAll(tx *gorm.DB) error {
 		// OJO: incluye tablas join explícitas
 		sql := `
 		TRUNCATE TABLE
+			university_additional_information,
+			university_quick_links,
+			university_tags,
 			subject_requirements,
 			elective_pool_subjects,
 			elective_rules,
@@ -537,6 +611,9 @@ func resetAll(tx *gorm.DB) error {
 	default:
 		// Orden: primero joins / dependientes
 		tables := []string{
+			"university_additional_information",
+			"university_quick_links",
+			"university_tags",
 			"subject_requirements",
 			"elective_pool_subjects",
 			"elective_rules",

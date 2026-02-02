@@ -25,7 +25,28 @@ type SubjectWithUserStatusDTO struct {
 }
 
 type UniversityUpdateDTO struct {
-	Name     *string `json:"name,omitempty"`
-	Location *string `json:"location,omitempty"`
-	Website  *string `json:"website,omitempty"`
+	Name                  *string                         `json:"name,omitempty"`
+	Location              *string                         `json:"location,omitempty"`
+	Website               *string                         `json:"website,omitempty"`
+	InstitutionType       *InstitutionType                `json:"institution_type,omitempty"`
+	Summary               *string                         `json:"summary,omitempty"`
+	LogoURL               *string                         `json:"logo_url,omitempty"`
+	PrimaryFocus          *string                         `json:"primary_focus,omitempty"`
+	FocusTags             *[]string                       `json:"focus_tags,omitempty"`
+	QuickLinks            *[]QuickLinkDTO                 `json:"quick_links,omitempty"`
+	AdditionalInformation *[]AdditionalInformationDTO     `json:"additional_information,omitempty"`
+}
+
+type QuickLinkDTO struct {
+	ID    *string `json:"id,omitempty"`
+	Label *string `json:"label,omitempty"`
+	URL   *string `json:"url,omitempty"`
+}
+
+type AdditionalInformationDTO struct {
+	ID          *string `json:"id,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	URL         *string `json:"url,omitempty"`
+	Status      *string `json:"status,omitempty"`
 }

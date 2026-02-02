@@ -24,6 +24,14 @@ const (
 	DegreeProgramRejected DegreeProgramApprovalStatus = "rejected"
 )
 
+type InstitutionType string
+
+const (
+	InstitutionPublic  InstitutionType = "public"
+	InstitutionPrivate InstitutionType = "private"
+	InstitutionMixed   InstitutionType = "mixed"
+)
+
 type RequirementMinStatus string
 
 const (
@@ -44,13 +52,20 @@ type User struct {
 }
 
 type University struct {
-	ID             string          `json:"id" gorm:"primaryKey;size:191"`
-	Name           string          `json:"name" gorm:"unique;not null;size:191"`
-	Location       string          `json:"location,omitempty" gorm:"size:191"`
-	Website        string          `json:"website,omitempty" gorm:"size:191"`
-	DegreePrograms []DegreeProgram `json:"degreePrograms,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	CreatedAt      time.Time       `json:"created_at"`
-	UpdatedAt      time.Time       `json:"updated_at"`
+	ID                    string                  `json:"id" gorm:"primaryKey;size:191"`
+	Name                  string                  `json:"name" gorm:"unique;not null;size:191"`
+	Location              string                  `json:"location,omitempty" gorm:"size:191"`
+	Website               string                  `json:"website,omitempty" gorm:"size:191"`
+	DegreePrograms        []DegreeProgram         `json:"degreePrograms,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	InstitutionType       InstitutionType         `json:"institution_type" gorm:"type:enum('public','private','mixed')"`
+	Summary               string                  `json:"summary,omitempty"`
+	LogoURL               string                  `json:"logo_url,omitempty"`
+	PrimaryFocus          string                  `json:"primary_focus,omitempty" gorm:"size:191"`
+	FocusTags             []UniversityTag         `json:"focus_tags,omitempty" gorm:"foreignKey:UniversityID;constraint:OnDelete:CASCADE"`
+	QuickLinks            []QuickLink             `json:"quick_links,omitempty" gorm:"foreignKey:UniversityID;constraint:OnDelete:CASCADE"`
+	AdditionalInformation []AdditionalInformation `json:"additional_information,omitempty" gorm:"foreignKey:UniversityID;constraint:OnDelete:CASCADE"`
+	CreatedAt             time.Time               `json:"created_at"`
+	UpdatedAt             time.Time               `json:"updated_at"`
 }
 
 type DegreeProgram struct {
@@ -155,3 +170,36 @@ type ElectiveRule struct {
 	CreatedAt       time.Time               `json:"created_at"`
 	UpdatedAt       time.Time               `json:"updated_at"`
 }
+
+type AdditionalInformation struct {
+	ID           string    `json:"id" gorm:"primaryKey;size:191"`
+	UniversityID string    `json:"university_id" gorm:"not null;size:191;index"`
+	Title        string    `json:"title" gorm:"not null;size:191"`
+	Description  string    `json:"description" gorm:"type:text"`
+	URL          string    `json:"url,omitempty" gorm:"size:191"`
+	Status       string    `json:"status,omitempty" gorm:"size:64"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type QuickLink struct {
+	ID           string    `json:"id" gorm:"primaryKey;size:191"`
+	UniversityID string    `json:"university_id" gorm:"not null;size:191;index"`
+	Label        string    `json:"label" gorm:"not null;size:191"`
+	URL          string    `json:"url" gorm:"not null;size:191"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type UniversityTag struct {
+	UniversityID string    `json:"university_id" gorm:"primaryKey;size:191;index"`
+	Tag          string    `json:"tag" gorm:"primaryKey;size:191;index"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+func (UniversityTag) TableName() string { return "university_tags" }
+
+func (AdditionalInformation) TableName() string { return "university_additional_information" }
+
+func (QuickLink) TableName() string { return "university_quick_links" }

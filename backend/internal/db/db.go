@@ -60,6 +60,9 @@ func Connect() {
 
 	if err := Db.AutoMigrate(
 		&models.University{},
+		&models.UniversityTag{},
+		&models.QuickLink{},
+		&models.AdditionalInformation{},
 		&models.User{},
 		&models.DegreeProgram{},
 		&models.Subject{},
