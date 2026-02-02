@@ -7,16 +7,15 @@ import { apiFetch, getApiErrorMessage } from '@/lib/api'
 import { ClientPageShell } from '@/components/layout/client-page-shell'
 import { LoadingState } from '@/components/ui/loading-state'
 
-// Placeholder sections to connect once the backend exposes these fields.
-const universityHighlightPool: Array<{ tone: string; focus: string; tag: string }> = [
-  { tone: 'from-blue-50 via-white to-indigo-50', focus: 'Investigacion y extension', tag: 'Publica' },
-  { tone: 'from-amber-50 via-white to-orange-50', focus: 'Ingenieria aplicada', tag: 'Publica' },
-  { tone: 'from-emerald-50 via-white to-green-50', focus: 'Salud y ciencias', tag: 'Publica' },
-  { tone: 'from-sky-50 via-white to-cyan-50', focus: 'Exactas y tecnologia', tag: 'Publica' },
-  { tone: 'from-purple-50 via-white to-fuchsia-50', focus: 'Humanidades y ciencias', tag: 'Publica' },
-  { tone: 'from-rose-50 via-white to-pink-50', focus: 'Negocios e innovacion', tag: 'Privada' },
-  { tone: 'from-slate-50 via-white to-gray-50', focus: 'Economia y diseno', tag: 'Privada' },
-  { tone: 'from-lime-50 via-white to-emerald-50', focus: 'Ciencias de la salud', tag: 'Privada' }
+const universityHighlightPool: Array<{ tone: string }> = [
+  { tone: 'from-blue-50 via-white to-indigo-50' },
+  { tone: 'from-amber-50 via-white to-orange-50' },
+  { tone: 'from-emerald-50 via-white to-green-50' },
+  { tone: 'from-sky-50 via-white to-cyan-50' },
+  { tone: 'from-purple-50 via-white to-fuchsia-50' },
+  { tone: 'from-rose-50 via-white to-pink-50' },
+  { tone: 'from-slate-50 via-white to-gray-50' },
+  { tone: 'from-lime-50 via-white to-emerald-50' }
 ]
 
 const getUniversityHighlight = (id: string) => {
@@ -24,23 +23,12 @@ const getUniversityHighlight = (id: string) => {
   return universityHighlightPool[hash % universityHighlightPool.length]
 }
 
-const infoCards = [
-  {
-    title: 'Admisiones',
-    description: 'Fechas y requisitos generales.',
-    status: 'Pendiente'
-  },
-  {
-    title: 'Becas y apoyos',
-    description: 'Programas de ayuda disponibles.',
-    status: 'Pendiente'
-  },
-  {
-    title: 'Vida universitaria',
-    description: 'Clubes, actividades y comunidad.',
-    status: 'Pendiente'
-  }
-]
+const getInstitutionLabel = (value?: string) => {
+  if (value === 'public') return 'Publica'
+  if (value === 'private') return 'Privada'
+  if (value === 'mixed') return 'Mixta'
+  return 'Pendiente'
+}
 
 const formatDate = (value?: string) => {
   if (!value) return 'Pendiente'
@@ -117,6 +105,14 @@ export default function UniversityDetailPage() {
 
   const highlight = getUniversityHighlight(university.id)
   const programs = university.degreePrograms ?? []
+  const focusTags = (university.focus_tags ?? []).map((tag) => tag.tag).filter(Boolean)
+  const quickLinks =
+    university.quick_links && university.quick_links.length > 0
+      ? university.quick_links
+      : university.website
+        ? [{ label: 'Sitio oficial', url: university.website }]
+        : []
+  const additionalInfo = university.additional_information ?? []
 
   return (
     <ClientPageShell mainClassName="max-w-6xl py-10">
@@ -131,26 +127,33 @@ export default function UniversityDetailPage() {
               <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mt-3">
                 <span className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  {university.location}
+                  {university.location ?? 'Ubicacion pendiente'}
                 </span>
                 <span className="flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  {highlight.tag}
+                  {getInstitutionLabel(university.institution_type)}
                 </span>
               </div>
               <p className="text-slate-600 mt-4 max-w-2xl">
-                Un perfil completo para explorar su oferta academica y acceder rapido a la informacion principal.
+                {university.summary?.trim() || 'Sin resumen disponible.'}
               </p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <a
-                  href={university.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
-                >
-                  <Globe className="w-4 h-4" />
-                  Ir al sitio oficial
-                </a>
+                {university.website ? (
+                  <a
+                    href={university.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
+                  >
+                    <Globe className="w-4 h-4" />
+                    Ir al sitio oficial
+                  </a>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-500">
+                    <Globe className="w-4 h-4" />
+                    Sitio oficial pendiente
+                  </div>
+                )}
               </div>
             </div>
             <div className="bg-white/80 rounded-2xl border border-white/70 shadow-lg p-5 min-w-[240px]">
@@ -202,53 +205,68 @@ export default function UniversityDetailPage() {
           <aside className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
               <h3 className="text-lg font-semibold text-slate-900">Enfoque academico</h3>
-              <p className="text-slate-600 mt-2">{highlight.focus}</p>
+              <p className="text-slate-600 mt-2">{university.primary_focus ?? 'Pendiente'}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {['Investigacion', 'Practica', 'Comunidad', 'Innovacion'].map((tag) => (
-                  <span key={tag} className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-                    {tag}
-                  </span>
-                ))}
+                {focusTags.length === 0 ? (
+                  <span className="text-xs text-slate-500">Sin tags cargados.</span>
+                ) : (
+                  focusTags.map((tag) => (
+                    <span key={tag} className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                      {tag}
+                    </span>
+                  ))
+                )}
               </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
               <h3 className="text-lg font-semibold text-slate-900">Accesos rapidos</h3>
-              <div className="mt-4 space-y-3 text-sm">
-                <a
-                  href={university.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 transition-colors"
-                >
-                  Sitio oficial
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-                <button className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 transition-colors">
-                  Calendario academico
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 transition-colors">
-                  Oficina de admisiones
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
+              {quickLinks.length === 0 ? (
+                <p className="mt-4 text-sm text-slate-500">No hay accesos rapidos disponibles.</p>
+              ) : (
+                <div className="mt-4 space-y-3 text-sm">
+                  {quickLinks.map((link) => (
+                    <a
+                      key={link.id ?? link.url}
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 transition-colors"
+                    >
+                      {link.label}
+                      <ArrowRight className="w-4 h-4" />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="bg-gradient-to-br from-slate-900 to-slate-700 text-white rounded-2xl p-6">
               <h3 className="text-lg font-semibold">Informacion adicional</h3>
-              <p className="text-slate-200 text-sm mt-2">
-                Espacios listos para vincular modalidad, becas y ranking cuando esten disponibles.
-              </p>
-              <div className="mt-4 space-y-3">
-                {infoCards.map((card) => (
-                  <div key={card.title} className="bg-white/10 rounded-xl px-4 py-3">
-                    <p className="text-sm font-semibold">{card.title}</p>
-                    <p className="text-xs text-white/70">{card.description}</p>
-                    <span className="text-xs font-semibold text-white/80">{card.status}</span>
-                  </div>
-                ))}
-              </div>
+              {additionalInfo.length === 0 ? (
+                <p className="text-slate-200 text-sm mt-2">No hay informacion adicional disponible.</p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {additionalInfo.map((card) => (
+                    <div key={card.id ?? card.title} className="bg-white/10 rounded-xl px-4 py-3">
+                      <p className="text-sm font-semibold">{card.title}</p>
+                      {card.description && <p className="text-xs text-white/70">{card.description}</p>}
+                      {card.status && <span className="text-xs font-semibold text-white/80">{card.status}</span>}
+                      {card.url && (
+                        <a
+                          href={card.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-white underline underline-offset-2"
+                        >
+                          Ver mas
+                          <ArrowRight className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </aside>
         </section>
