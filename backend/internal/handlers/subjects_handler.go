@@ -3,8 +3,10 @@ package handlers
 import (
 	"correlatiApp/internal/db"
 	"correlatiApp/internal/models"
+	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +23,7 @@ type createSubjectDTO struct {
 	Name            string             `json:"name" binding:"required"`
 	Year            *int               `json:"year,omitempty"`
 	SubjectYear     *int               `json:"subjectYear,omitempty"`
+	Term            *string            `json:"term,omitempty"`
 	DegreeProgramID string             `json:"degreeProgramID" binding:"required"`
 	IsElective      *bool              `json:"is_elective,omitempty"`
 	Requirements    []requirementInput `json:"requirements"`
@@ -30,9 +33,25 @@ type updateSubjectDTO struct {
 	Name            *string             `json:"name,omitempty"`
 	Year            *int                `json:"year,omitempty"`
 	SubjectYear     *int                `json:"subjectYear,omitempty"`
+	Term            *string             `json:"term,omitempty"`
 	DegreeProgramID *string             `json:"degreeProgramID,omitempty"`
 	Requirements    *[]requirementInput `json:"requirements,omitempty"`
 }
+
+func normalizeSubjectTerm(term string) (string, bool) {
+	clean := strings.ToLower(strings.TrimSpace(term))
+	switch clean {
+	case "annual", "semester", "quarterly", "bimonthly":
+		return clean, true
+	default:
+		return "", false
+	}
+}
+
+var (
+	errInvalidSubjectTerm    = errors.New("invalid subject term")
+	errEmptySubjectProgramID = errors.New("degree program id cannot be empty")
+)
 
 func GetAllSubjectsFromProgram(c *gin.Context) {
 	programID := c.Param("programId")
@@ -55,6 +74,7 @@ func GetAllSubjectsFromProgram(c *gin.Context) {
 		Name            string                  `json:"name"`
 		Year            *int                    `json:"year,omitempty"`
 		SubjectYear     *int                    `json:"subjectYear,omitempty"`
+		Term            string                  `json:"term"`
 		DegreeProgramID string                  `json:"degreeProgramID"`
 		Requirements    []requirementWithStatus `json:"requirements"`
 		CreatedAt       time.Time               `json:"created_at"`
@@ -100,6 +120,7 @@ func GetAllSubjectsFromProgram(c *gin.Context) {
 			Name:            subject.Name,
 			Year:            subject.Year,
 			SubjectYear:     subject.Year,
+			Term:            subject.Term,
 			DegreeProgramID: subject.DegreeProgramID,
 			Requirements:    requirements,
 			CreatedAt:       subject.CreatedAt,
@@ -128,11 +149,21 @@ func CreateSubject(c *gin.Context) {
 	if year == nil {
 		year = dto.SubjectYear
 	}
+	term := "annual"
+	if dto.Term != nil {
+		normalizedTerm, ok := normalizeSubjectTerm(*dto.Term)
+		if !ok {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid term"})
+			return
+		}
+		term = normalizedTerm
+	}
 
 	subject := models.Subject{
 		ID:              uuid.New().String(),
 		Name:            dto.Name,
 		Year:            year,
+		Term:            term,
 		DegreeProgramID: dto.DegreeProgramID,
 		IsElective:      dto.IsElective != nil && *dto.IsElective,
 		CreatedAt:       time.Now(),
@@ -223,13 +254,20 @@ func UpdateSubject(c *gin.Context) {
 			updates["name"] = *dto.Name
 		}
 		if dto.Year != nil {
-			updates["year"] = *dto.Year
+			updates["subject_year"] = *dto.Year
 		} else if dto.SubjectYear != nil {
-			updates["year"] = *dto.SubjectYear
+			updates["subject_year"] = *dto.SubjectYear
+		}
+		if dto.Term != nil {
+			normalizedTerm, ok := normalizeSubjectTerm(*dto.Term)
+			if !ok {
+				return errInvalidSubjectTerm
+			}
+			updates["term"] = normalizedTerm
 		}
 		if dto.DegreeProgramID != nil {
 			if *dto.DegreeProgramID == "" {
-				return gorm.ErrInvalidData
+				return errEmptySubjectProgramID
 			}
 			updates["degree_program_id"] = *dto.DegreeProgramID
 		}
@@ -295,8 +333,12 @@ func UpdateSubject(c *gin.Context) {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Some requirement IDs are invalid"})
 			return
 		}
-		if err == gorm.ErrInvalidData {
+		if errors.Is(err, errEmptySubjectProgramID) {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "degreeProgramID cannot be empty"})
+			return
+		}
+		if errors.Is(err, errInvalidSubjectTerm) {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid term"})
 			return
 		}
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error updating the subject"})

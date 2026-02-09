@@ -67,7 +67,8 @@ export default function ProgramSubjectsPage() {
   const columns = useMemo(() => [
     { key: 'name', label: 'Nombre', width: '30%' },
     { key: 'year', label: 'Año', width: '10%' },
-    { key: 'requirements', label: 'Correlativas', width: '40%' },
+    { key: 'term', label: 'Cursada', width: '10%' },
+    { key: 'requirements', label: 'Correlativas', width: '30%' },
     { key: 'status', label: 'Estado', width: '20%' },
   ], []);
 
@@ -82,6 +83,13 @@ export default function ProgramSubjectsPage() {
   };
 
   const tableData = useMemo(() => {
+    const termLabelByValue: Record<string, string> = {
+      annual: 'Anual',
+      semester: 'Semestral',
+      quarterly: 'Cuatrimestral',
+      bimonthly: 'Bimestral',
+    };
+
     const toRequirementLabel = (req: unknown) => {
       if (typeof req === 'string') return req;
       if (req && typeof req === 'object' && 'name' in (req as Record<string, unknown>)) {
@@ -104,6 +112,7 @@ export default function ProgramSubjectsPage() {
         return {
           name: subject.name,
           year: typeof subject.year === 'number' ? `${subject.year}°` : '—',
+          term: subject.term ? (termLabelByValue[subject.term] ?? subject.term) : '—',
           requirements: requirementLabels.length ? (
             <div className="flex flex-wrap gap-1">
               {requirementLabels.map((req, idx) => (

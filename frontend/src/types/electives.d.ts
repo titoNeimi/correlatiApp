@@ -2,6 +2,7 @@ export type ElectivePoolSubject = {
   id: string
   name: string
   year?: number | null
+  term?: 'annual' | 'semester' | 'quarterly' | 'bimonthly'
   credits?: number | null
   hours?: number | null
   is_elective?: boolean

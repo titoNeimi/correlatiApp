@@ -102,8 +102,10 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 	}
 
 	statusBySubject := make(map[string]models.SubjectStatus, len(userSubjects))
+	finalCalificationBySubject := make(map[string]float64, len(userSubjects))
 	for _, us := range userSubjects {
 		statusBySubject[us.SubjectID] = us.Status
+		finalCalificationBySubject[us.SubjectID] = us.FianlCalification
 	}
 
 	// Traer reglas de requirements (join table)
@@ -138,17 +140,23 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 		if !found {
 			st = models.StatusAvailable
 		}
+		finalCalification, hasFinalCalification := finalCalificationBySubject[s.ID]
 
-		out = append(out, gin.H{
+		subjectJSON := gin.H{
 			"id":              s.ID,
 			"name":            s.Name,
 			"year":            s.Year,
 			"subjectYear":     s.Year,
+			"term":            s.Term,
 			"degreeProgramID": s.DegreeProgramID,
 			"is_elective":     s.IsElective,
 			"status":          st,
 			"requirements":    reqRulesBySubject[s.ID], // [{id, minStatus}]
-		})
+		}
+		if hasFinalCalification {
+			subjectJSON["final_calification"] = finalCalification
+		}
+		out = append(out, subjectJSON)
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{
@@ -162,8 +170,9 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 
 type SaveUserSubjectsRequest struct {
 	Subjects []struct {
-		ID     string               `json:"id"`
-		Status models.SubjectStatus `json:"status"`
+		ID                string               `json:"id"`
+		Status            models.SubjectStatus `json:"status"`
+		FinalCalification *float64             `json:"final_calification,omitempty"`
 	} `json:"subjects"`
 }
 
@@ -240,6 +249,8 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 	records := make([]models.UserSubject, 0, len(payload.Subjects))
 	payloadIDs := make([]string, 0, len(payload.Subjects))
 	payloadIDSet := make(map[string]struct{}, len(payload.Subjects))
+	missingCalificationSubjectIDs := make([]string, 0, len(payload.Subjects))
+	recordIndexBySubjectID := make(map[string]int, len(payload.Subjects))
 
 	for _, item := range payload.Subjects {
 		subjectID, err := validateID(item.ID, "subject_id")
@@ -255,13 +266,45 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid subject status"})
 			return
 		}
+		if _, exists := payloadIDSet[subjectID]; exists {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Duplicate subject in payload"})
+			return
+		}
+		if item.FinalCalification != nil && (*item.FinalCalification < 0 || *item.FinalCalification > 10) {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "final_calification must be between 0 and 10"})
+			return
+		}
 		payloadIDs = append(payloadIDs, subjectID)
 		payloadIDSet[subjectID] = struct{}{}
-		records = append(records, models.UserSubject{
+
+		record := models.UserSubject{
 			UserID:    u.ID,
 			SubjectID: subjectID,
 			Status:    item.Status,
-		})
+		}
+		if item.FinalCalification != nil {
+			record.FianlCalification = *item.FinalCalification
+		} else {
+			missingCalificationSubjectIDs = append(missingCalificationSubjectIDs, subjectID)
+		}
+		recordIndexBySubjectID[subjectID] = len(records)
+		records = append(records, record)
+	}
+
+	if len(missingCalificationSubjectIDs) > 0 {
+		var existingRows []models.UserSubject
+		if err := db.Db.
+			Where("user_id = ? AND subject_id IN ?", u.ID, missingCalificationSubjectIDs).
+			Find(&existingRows).Error; err != nil {
+			slog.Error("Error loading existing user subject grades", slog.Any("error", err))
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error saving subjects"})
+			return
+		}
+		for _, row := range existingRows {
+			if idx, ok := recordIndexBySubjectID[row.SubjectID]; ok {
+				records[idx].FianlCalification = row.FianlCalification
+			}
+		}
 	}
 
 	tx := db.Db.Begin()
@@ -292,7 +335,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 	if len(records) > 0 {
 		if err := tx.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "user_id"}, {Name: "subject_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"status", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"status", "fianl_calification", "updated_at"}),
 		}).Create(&records).Error; err != nil {
 			slog.Error("Error upserting user subjects", slog.Any("error", err))
 			tx.Rollback()

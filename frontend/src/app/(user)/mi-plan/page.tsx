@@ -8,7 +8,7 @@ import { SubjectStatus, SubjectsFromProgram, SubjectDTO } from '@/types/subjects
 import { computeAvailability } from '@/lib/subject_status'
 import { apiFetch, apiFetchJson, getApiErrorMessage } from '@/lib/api'
 import { ElectivePool, ElectiveRequirementType, ElectiveRule } from '@/types/electives'
-import { BookOpen, } from 'lucide-react'
+import { BookOpen, Pencil } from 'lucide-react'
 import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 type Subject = {
@@ -16,6 +16,8 @@ type Subject = {
   name: string
   subjectYear: number
   status: SubjectStatus
+  term?: SubjectDTO['term']
+  final_calification?: number
 }
 
 const statusConfig: Record<SubjectStatus, { label: string; classes: string; borderColor: string }> = {
@@ -77,10 +79,16 @@ export default function SubjectsPage() {
   const [electiveError, setElectiveError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [editingFinalCalificationSubjectId, setEditingFinalCalificationSubjectId] = useState<string | null>(null)
+  const [savedFinalCalificationSubjectIds, setSavedFinalCalificationSubjectIds] = useState<Set<string>>(new Set())
 
   const normalizeSubjectYear = (subject: SubjectDTO & { year?: number | null }) => {
     const raw = typeof subject.subjectYear === 'number' ? subject.subjectYear : subject.year ?? 0
     return Number.isFinite(raw) ? raw : 0
+  }
+
+  const canHaveFinalCalification = (status: SubjectStatus) => {
+    return status === 'passed' || status === 'passed_with_distinction'
   }
 
   const fetchElectives = useCallback(async (programId: string) => {
@@ -142,6 +150,14 @@ export default function SubjectsPage() {
 
       setSubjectsData(data)
       setSubjects(data.subjects)
+      setEditingFinalCalificationSubjectId(null)
+      setSavedFinalCalificationSubjectIds(
+        new Set(
+          data.subjects
+            .filter((subject) => canHaveFinalCalification(subject.status) && typeof subject.final_calification === 'number')
+            .map((subject) => subject.id)
+        )
+      )
     } catch (e) {
       setError(getApiErrorMessage(e, 'Error inesperado'))
     } finally {
@@ -208,6 +224,64 @@ export default function SubjectsPage() {
     : completedCount
   const progressPercent = Math.min(100, Math.round((progressNumerator / totalCount) * 100))
 
+  const electiveProgress = useMemo(() => {
+    const completedStatuses = includeFinalPending
+      ? new Set<SubjectStatus>(['final_pending', 'passed', 'passed_with_distinction'])
+      : new Set<SubjectStatus>(['passed', 'passed_with_distinction'])
+
+    const selectedType = (['hours', 'credits'] as ElectiveRequirementType[]).find((type) =>
+      electiveRules.some((rule) => rule.requirement_type === type)
+    )
+    if (!selectedType) {
+      return { achieved: 0, target: 0, percent: 0, label: 'horas/créditos', hasRules: false }
+    }
+
+    const relevantRules = electiveRules.filter((rule) => rule.requirement_type === selectedType)
+
+    const { achieved, target } = relevantRules.reduce(
+      (acc, rule) => {
+        const poolSubjects = electivePools.find((pool) => pool.id === rule.pool_id)?.subjects ?? []
+        const completedSubjects = poolSubjects.filter((subject) => {
+          const status = statusBySubjectId.get(subject.id)
+          return status ? completedStatuses.has(status) : false
+        })
+
+        const achievedForRule =
+          selectedType === 'hours'
+            ? completedSubjects.reduce((sum, subject) => sum + (subject.hours ?? 0), 0)
+            : completedSubjects.reduce((sum, subject) => sum + (subject.credits ?? 0), 0)
+
+        acc.achieved += achievedForRule
+        acc.target += rule.minimum_value
+        return acc
+      },
+      { achieved: 0, target: 0 }
+    )
+
+    return {
+      achieved,
+      target,
+      percent: target > 0 ? Math.min(100, Math.round((achieved / target) * 100)) : 0,
+      label: selectedType === 'hours' ? 'horas' : 'créditos',
+      hasRules: true,
+    }
+  }, [electivePools, electiveRules, includeFinalPending, statusBySubjectId])
+
+  const averageFinalCalification = useMemo(() => {
+    const gradedSubjects = subjects.filter(
+      (subject) =>
+        canHaveFinalCalification(subject.status) &&
+        typeof subject.final_calification === 'number'
+    )
+    if (gradedSubjects.length === 0) return null
+
+    const totalCalification = gradedSubjects.reduce(
+      (acc, subject) => acc + (subject.final_calification ?? 0),
+      0
+    )
+    return (totalCalification / gradedSubjects.length).toFixed(2)
+  }, [subjects])
+
   const requirementTypeLabels: Record<ElectiveRequirementType, string> = {
     hours: 'horas',
     credits: 'créditos',
@@ -268,6 +342,21 @@ export default function SubjectsPage() {
     return `${year}° Año`
   }
 
+  const formatTermLabel = (term?: SubjectDTO['term']) => {
+    switch (term) {
+      case 'annual':
+        return 'Anual'
+      case 'semester':
+        return 'Semestral'
+      case 'quarterly':
+        return 'Cuatrimestral'
+      case 'bimonthly':
+        return 'Bimestral'
+      default:
+        return null
+    }
+  }
+
   const handleRightClick = (e: React.MouseEvent, subjectId: string) => {
     e.preventDefault()
     if (subjects.find((s) => s.id === subjectId)?.status === 'not_available') return
@@ -281,6 +370,27 @@ export default function SubjectsPage() {
       return computeAvailability(updated)
     })
   }
+
+  const handleFinalCalificationChange = useCallback((subjectId: string, rawValue: string) => {
+    setSubjects((prev) =>
+      prev.map((subject) => {
+        if (subject.id !== subjectId) return subject
+        if (rawValue.trim() === '') {
+          return { ...subject, final_calification: undefined }
+        }
+        const parsed = Number(rawValue)
+        if (!Number.isFinite(parsed)) return subject
+        const normalized = Math.min(10, Math.max(0, parsed))
+        return { ...subject, final_calification: normalized }
+      })
+    )
+    setSavedFinalCalificationSubjectIds((prev) => {
+      if (!prev.has(subjectId)) return prev
+      const next = new Set(prev)
+      next.delete(subjectId)
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -350,7 +460,8 @@ export default function SubjectsPage() {
         .filter((subject) => subject.status !== 'not_available')
         .map((subject) => ({
           id: subject.id,
-          status: subject.status
+          status: subject.status,
+          final_calification: subject.final_calification
         }))
       const response = await apiFetch(`/me/subjects/${programId}`, {
         method: 'POST',
@@ -370,6 +481,14 @@ export default function SubjectsPage() {
           statuses: new Map(subjects.map((subject) => [subject.id, subject.status]))
         }
       }
+      setSavedFinalCalificationSubjectIds(
+        new Set(
+          subjects
+            .filter((subject) => canHaveFinalCalification(subject.status) && typeof subject.final_calification === 'number')
+            .map((subject) => subject.id)
+        )
+      )
+      setEditingFinalCalificationSubjectId(null)
       setSaveMessage('Cambios guardados.')
     } catch (err) {
       setSaveMessage(getApiErrorMessage(err, 'No se pudieron guardar los cambios.'))
@@ -413,6 +532,9 @@ export default function SubjectsPage() {
                   <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 font-medium text-emerald-700">
                     {statusCounts.in_progress} cursando
                   </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 font-medium text-blue-700">
+                    Promedio: {averageFinalCalification ?? '—'}
+                  </span>
                 </div>
               </div>
               <div className="mt-5">
@@ -452,6 +574,25 @@ export default function SubjectsPage() {
                 <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                   <span>{progressPercent}% completado</span>
                   {saveMessage && <span className="text-slate-600">{saveMessage}</span>}
+                </div>
+                <div className="mt-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-slate-900">Progreso de electivas</p>
+                    <p className="text-xs text-slate-500">
+                      {formatMinimumValue(electiveProgress.achieved)} de {formatMinimumValue(electiveProgress.target)} {electiveProgress.label}
+                    </p>
+                  </div>
+                  <div className="mt-2 h-3 w-full rounded-full bg-slate-100">
+                    <div
+                      className="h-3 rounded-full bg-blue-500 transition-all duration-300"
+                      style={{ width: `${electiveProgress.percent}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {electiveProgress.hasRules
+                      ? `${electiveProgress.percent}% del requisito de electivas cubierto`
+                      : 'No hay reglas de horas/créditos para calcular este progreso'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -493,6 +634,49 @@ export default function SubjectsPage() {
                         `}
                       >
                         <h4 className="font-semibold text-sm leading-tight mb-2">{subject.name}</h4>
+                        {formatTermLabel(subject.term) && (
+                          <p className="mb-2 text-[11px] uppercase tracking-wide opacity-80">{formatTermLabel(subject.term)}</p>
+                        )}
+                        {canHaveFinalCalification(subject.status) && (
+                          <div className="mb-2">
+                            {typeof subject.final_calification === 'number' &&
+                            savedFinalCalificationSubjectIds.has(subject.id) &&
+                            editingFinalCalificationSubjectId !== subject.id ? (
+                              <div className="flex items-center justify-between gap-2 text-[11px] opacity-80">
+                                <span>
+                                  Nota final: <strong>{subject.final_calification}</strong>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    setEditingFinalCalificationSubjectId(subject.id)
+                                  }}
+                                  className="inline-flex items-center justify-center rounded border border-current/30 bg-white/70 px-2 py-1 text-slate-700 hover:bg-white"
+                                  title="Cambiar nota final"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <label className="flex items-center justify-between gap-2 text-[11px] opacity-80">
+                                Nota final
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={10}
+                                  step="0.1"
+                                  value={typeof subject.final_calification === 'number' ? subject.final_calification : ''}
+                                  onChange={(event) => handleFinalCalificationChange(subject.id, event.target.value)}
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="w-20 rounded border border-current/30 bg-white/80 px-2 py-1 text-right text-[11px] text-slate-900"
+                                  placeholder="-"
+                                  autoFocus={editingFinalCalificationSubjectId === subject.id}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           <span className="text-xs opacity-80">{statusConfig[subject.status].label}</span>
                           <div className="w-2 h-2 rounded-full bg-current opacity-50" />

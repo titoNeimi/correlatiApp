@@ -16,6 +16,14 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Info, PlusCircleIcon, Trash2 } from "lucide-react";
 import React from "react";
 
+const getTermLabel = (term?: CurriculumSubject["term"]) => {
+  if (term === "annual") return "Anual";
+  if (term === "semester") return "Semestral";
+  if (term === "quarterly") return "Cuatrimestral";
+  if (term === "bimonthly") return "Bimestral";
+  return "Anual";
+};
+
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
   children,
   className = "",
@@ -256,6 +264,9 @@ const SubjectCard: React.FC<{
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-medium text-gray-900">{subject.name}</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">
+                {getTermLabel(subject.term)}
+              </span>
               {subject.isElective && (
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
                   Electiva

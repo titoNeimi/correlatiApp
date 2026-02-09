@@ -12,7 +12,8 @@ type DegreeProgramSubject = {
   id: string
   name: string
   subjectYear: number
-  requirements?: Array<string | { id?: string; name?: string }>
+  term?: 'annual' | 'semester' | 'quarterly' | 'bimonthly'
+  requirements?: Array<string | { id?: string; name?: string; minStatus?: 'passed' | 'final_pending' }>
 }
 
 type DegreeProgramDetail = {
@@ -61,11 +62,22 @@ const getRequirementStatusClasses = (status?: string) => {
   return 'bg-emerald-500/20 text-emerald-100 border-emerald-400/40'
 }
 
+const formatTermLabel = (term?: DegreeProgramSubject['term']) => {
+  if (term === 'annual') return 'Anual'
+  if (term === 'semester') return 'Semestral'
+  if (term === 'quarterly') return 'Cuatrimestral'
+  if (term === 'bimonthly') return 'Bimestral'
+  return null
+}
+
 const renderSubjectCard = (subject: DegreeProgramSubject) => (
   <div key={subject.id} className="bg-white rounded-xl border border-slate-100 p-4">
     <div className="flex items-start justify-between gap-3">
       <div>
         <p className="text-sm font-semibold text-slate-900">{subject.name}</p>
+        {formatTermLabel(subject.term) && (
+          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{formatTermLabel(subject.term)}</p>
+        )}
         {subject.requirements && subject.requirements.length ? (
           <div className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600">
             <span>Correlativas</span>
@@ -626,6 +638,7 @@ export default function CareerDetailPage() {
                           id: subject.id,
                           name: subject.name,
                           subjectYear: subject.year ?? 0,
+                          term: subject.term,
                           requirements: [],
                         })
                       )}

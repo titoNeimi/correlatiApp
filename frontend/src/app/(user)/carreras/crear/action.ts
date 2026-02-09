@@ -174,6 +174,7 @@ export const confirmCreation = async (payload: {
         name: subject.name,
         year: subject.year,
         subjectYear: subject.year,
+        term: subject.term ?? 'annual',
         degreeProgramID: createdProgram.id,
         is_elective: subject.isElective ?? false,
       }

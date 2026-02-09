@@ -19,6 +19,8 @@ import { Select, YearColumn, SubjectCard, UnassignedPool } from './(components)'
 import { confirmCreation } from './action';
 import Link from 'next/link';
 
+const DEFAULT_TERM: NonNullable<CurriculumSubject['term']> = 'annual';
+
 const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) => {
   const {
     degreeData,
@@ -40,7 +42,7 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
     x: number;
     y: number;
     subjectId: string;
-    view: 'default' | 'addRequirement';
+    view: 'default' | 'addRequirement' | 'setTerm';
   } | null>(null);
   const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
@@ -48,6 +50,7 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
     subjectId: '',
     type: 'pending_final',
   });
+  const [termSelection, setTermSelection] = useState<NonNullable<CurriculumSubject['term']>>(DEFAULT_TERM);
   const [poolName, setPoolName] = useState('');
   const [poolDescription, setPoolDescription] = useState('');
   const [poolError, setPoolError] = useState<string | null>(null);
@@ -190,6 +193,23 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
     setContextMenu(null);
   };
 
+  const handleSetSubjectTerm = (subjectId: string, term: NonNullable<CurriculumSubject['term']>) => {
+    setSubjects(subjects.map((subject) => (subject.id === subjectId ? { ...subject, term } : subject)));
+  };
+
+  const openSetTerm = () => {
+    if (!contextMenu) return;
+    const subject = subjects.find((item) => item.id === contextMenu.subjectId);
+    setTermSelection(subject?.term ?? DEFAULT_TERM);
+    setContextMenu((prev) => (prev ? { ...prev, view: 'setTerm' } : prev));
+  };
+
+  const submitTerm = () => {
+    if (!contextMenu) return;
+    handleSetSubjectTerm(contextMenu.subjectId, termSelection);
+    setContextMenu(null);
+  };
+
   if (!degreeData) {
     return (
       <div className="w-full max-w-xl mx-auto text-center space-y-4">
@@ -289,6 +309,7 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
       id: `new${count}`,
       year: null,
       name: `Materia Nueva ${count}`,
+      term: DEFAULT_TERM,
       prerequisites: [],
       isElective,
     };
@@ -810,6 +831,12 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
               </button>
               <button
                 className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                onClick={() => openSetTerm()}
+              >
+                Cambiar cursada
+              </button>
+              <button
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                 onClick={() => handleToggleElective(contextMenu.subjectId)}
               >
                 {subjects.find((subject) => subject.id === contextMenu.subjectId)?.isElective
@@ -867,6 +894,36 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
                     onClick={submitRequirement}
                   >
                     Agregar
+                  </button>
+                </div>
+              </div>
+            )}
+            {contextMenu.view === 'setTerm' && (
+              <div className="border-t border-gray-200 p-3 space-y-2 w-80">
+                <p className="text-sm font-medium text-gray-800">Definir cursada</p>
+                <Select
+                  value={termSelection}
+                  onChange={(e) =>
+                    setTermSelection(e.target.value as NonNullable<CurriculumSubject['term']>)
+                  }
+                >
+                  <option value="annual">Anual</option>
+                  <option value="semester">Semestral</option>
+                  <option value="quarterly">Cuatrimestral</option>
+                  <option value="bimonthly">Bimestral</option>
+                </Select>
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    className="px-3 py-1 rounded border border-gray-200 text-sm hover:bg-gray-50"
+                    onClick={() => setContextMenu(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
+                    onClick={submitTerm}
+                  >
+                    Guardar
                   </button>
                 </div>
               </div>

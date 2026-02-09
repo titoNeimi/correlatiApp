@@ -1,11 +1,4 @@
-import { SubjectDTO, SubjectStatus } from "@/types/subjects";
-
-type RequirementMinStatus = "passed" | "final_pending";
-
-type SubjectRequirementDTO = {
-  id: string;
-  minStatus?: RequirementMinStatus; // default: "passed"
-};
+import { SubjectDTO, SubjectRequirementDTO, SubjectStatus } from "@/types/subjects";
 
 export function computeAvailability(subjects: SubjectDTO[]): SubjectDTO[] {
   const APPROVED_STATUSES: Set<SubjectStatus> = new Set([
@@ -33,7 +26,12 @@ export function computeAvailability(subjects: SubjectDTO[]): SubjectDTO[] {
   return subjects.map((subject) => {
     const updated = { ...subject };
 
-    const reqs = (updated.requirements ?? []) as unknown as SubjectRequirementDTO[];
+    const reqs: SubjectRequirementDTO[] = (updated.requirements ?? []).map((req) => {
+      if (typeof req === "string") {
+        return { id: req };
+      }
+      return req;
+    });
 
     const meetsRequirement = (req: SubjectRequirementDTO): boolean => {
       const reqStatus = statusById.get(req.id);

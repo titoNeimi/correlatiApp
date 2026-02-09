@@ -11,6 +11,7 @@ interface CurriculumSubject {
   id: string;
   name: string;
   year: number | null;
+  term?: 'annual' | 'semester' | 'quarterly' | 'bimonthly';
   prerequisites: Prerequisite[];
   isElective?: boolean;
 }
