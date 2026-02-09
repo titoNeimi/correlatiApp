@@ -130,7 +130,7 @@ const LoginPage: React.FC = () => {
 
           <div className="text-right">
             <a
-              href="/resetPassword"
+              href="/forgot-password"
               className="text-indigo-600 text-sm font-medium hover:underline bg-transparent border-none cursor-pointer"
             >
               ¿Olvidaste tu contraseña?

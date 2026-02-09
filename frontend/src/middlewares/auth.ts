@@ -2,7 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { apiFetch } from '@/lib/api'
 
 type Role = 'admin' | 'staff' | 'user' | 'none'
-const PUBLIC_PATHS = ['/', '/login', '/register', '/about', '/universidades', '/carreras', '/contacto', '/sugerencias']
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/about',
+  '/universidades',
+  '/carreras',
+  '/contacto',
+  '/sugerencias',
+]
 const PUBLIC_PREFIXES = ['/universidades/', '/carreras/']
 
 const ACL: Array<{ pattern: RegExp; allow: Role[] }> = [
