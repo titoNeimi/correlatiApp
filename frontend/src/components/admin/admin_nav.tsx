@@ -33,7 +33,7 @@ export function Topbar({ isDark, onThemeToggle }: { isDark: boolean; onThemeTogg
           <div className="flex items-center gap-3 pl-3 border-l border-gray-200 dark:border-gray-700">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Admin User</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">admin@correlatiapp.com</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">admin@acadifyapp.com</p>
             </div>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
               A
@@ -183,7 +183,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap transition-all duration-200
               ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}
             `}>
-              CorrelatiApp
+              AcadifyApp
             </span>
           </div>
           <button

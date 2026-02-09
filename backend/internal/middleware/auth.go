@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"correlatiApp/internal/http"
-	"correlatiApp/internal/models"
-	"correlatiApp/internal/services"
+	"acadifyapp/internal/http"
+	"acadifyapp/internal/models"
+	"acadifyapp/internal/services"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"

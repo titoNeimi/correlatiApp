@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"correlatiApp/internal/http"
-	"correlatiApp/internal/models"
-	"correlatiApp/internal/services"
-	"correlatiApp/internal/utils"
+	"acadifyapp/internal/http"
+	"acadifyapp/internal/models"
+	"acadifyapp/internal/services"
+	"acadifyapp/internal/utils"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"

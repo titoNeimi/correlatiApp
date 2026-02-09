@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"acadifyapp/internal/models"
 	"bytes"
-	"correlatiApp/internal/models"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"

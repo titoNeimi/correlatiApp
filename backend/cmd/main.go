@@ -1,16 +1,16 @@
 package main
 
 import (
-	"correlatiApp/internal/db"
-	"correlatiApp/internal/routes"
+	"acadifyapp/internal/db"
+	"acadifyapp/internal/routes"
 	"log/slog"
 
 	"github.com/gin-gonic/gin"
 )
 
-func main(){
+func main() {
 	db.Connect()
-	gin.SetMode(gin.DebugMode) 
+	gin.SetMode(gin.DebugMode)
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 	routes.SetUpRoutes(router, db.Db)

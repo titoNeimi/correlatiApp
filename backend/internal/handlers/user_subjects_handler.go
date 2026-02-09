@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"correlatiApp/internal/db"
-	"correlatiApp/internal/models"
-	"correlatiApp/internal/services"
+	"acadifyapp/internal/db"
+	"acadifyapp/internal/models"
+	"acadifyapp/internal/services"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm/clause"
 	"log/slog"

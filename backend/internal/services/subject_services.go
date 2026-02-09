@@ -1,11 +1,11 @@
 package services
 
 import (
-	"correlatiApp/internal/db"
-	"correlatiApp/internal/models"
+	"acadifyapp/internal/db"
+	"acadifyapp/internal/models"
 )
 
-func GetAllSubjectsFromProgram (id string) (models.DegreeProgram, error){
+func GetAllSubjectsFromProgram(id string) (models.DegreeProgram, error) {
 	var degreeProgram models.DegreeProgram
 
 	if err := db.Db.

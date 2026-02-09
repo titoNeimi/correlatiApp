@@ -1,7 +1,7 @@
 package db
 
 import (
-	"correlatiApp/internal/models"
+	"acadifyapp/internal/models"
 	"log/slog"
 	"os"
 

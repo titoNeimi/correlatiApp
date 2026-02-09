@@ -37,7 +37,7 @@ type AuthHeaderProps = {
 };
 
 function AuthHeader({
-  title = "CorrelatiApp",
+  title = "AcadifyApp",
   subtitle = "Gestiona tu progreso académico",
 }: AuthHeaderProps) {
   return (

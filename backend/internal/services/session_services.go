@@ -1,7 +1,7 @@
 package services
 
 import (
-	"correlatiApp/internal/models"
+	"acadifyapp/internal/models"
 	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"

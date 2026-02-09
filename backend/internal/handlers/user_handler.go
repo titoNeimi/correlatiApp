@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"correlatiApp/internal/models"
-	"correlatiApp/internal/services"
+	"acadifyapp/internal/models"
+	"acadifyapp/internal/services"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"log/slog"

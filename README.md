@@ -1,4 +1,4 @@
-# CorrelatiApp
+# AcadifyApp
 
 Plataforma para gestionar universidades, carreras y planes de estudio, con seguimiento del progreso academico de los usuarios. Incluye un panel administrativo para aprobar/publicar programas y una experiencia publica para explorar universidades y carreras.
 
@@ -42,7 +42,7 @@ BREVO_SMTP_PORT="587"
 BREVO_SMTP_USER="tu_usuario_brevo"
 BREVO_SMTP_PASS="tu_smtp_key_brevo"
 MAIL_FROM_EMAIL="no-reply@tudominio.com"
-MAIL_FROM_NAME="CorrelatiApp"
+MAIL_FROM_NAME="AcadifyApp"
 PASSWORD_RESET_URL_BASE="http://localhost:3000/reset-password"
 PASSWORD_RESET_TOKEN_TTL="30m"
 ```

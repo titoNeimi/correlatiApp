@@ -129,7 +129,7 @@ export default function Home() {
               ))}
             </div>
             <blockquote className="text-xl md:text-2xl text-gray-700 font-medium mb-8 leading-relaxed">
-              &quot;CorrelatiApp me ayudó a entender completamente mi plan de estudios. 
+              &quot;AcadifyApp me ayudó a entender completamente mi plan de estudios. 
               Ahora puedo planificar mis semestres de manera eficiente y ver claramente mi progreso.&quot;
             </blockquote>
             <div className="flex flex-col items-center">
@@ -150,7 +150,7 @@ export default function Home() {
             Comienza a organizar tu carrera hoy
           </h3>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Únete a miles de estudiantes que ya están usando CorrelatiApp para 
+            Únete a miles de estudiantes que ya están usando AcadifyApp para 
             planificar su futuro académico de manera inteligente.
           </p>
           <a href='/register' className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
@@ -167,7 +167,7 @@ export default function Home() {
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl">
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
-              <span className="text-xl font-bold">CorrelatiApp</span>
+              <span className="text-xl font-bold">AcadifyApp</span>
             </div>
             <div className="flex space-x-8">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacidad</a>
@@ -176,7 +176,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>&copy; 2025 CorrelatiApp. Todos los derechos reservados.</p>
+            <p>&copy; 2025 AcadifyApp. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

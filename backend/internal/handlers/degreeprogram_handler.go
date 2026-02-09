@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"correlatiApp/internal/db"
-	"correlatiApp/internal/models"
+	"acadifyapp/internal/db"
+	"acadifyapp/internal/models"
 	"log/slog"
 	"net/http"
 	"strings"

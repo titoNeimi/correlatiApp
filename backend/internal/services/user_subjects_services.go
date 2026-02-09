@@ -1,8 +1,8 @@
 package services
 
 import (
-	"correlatiApp/internal/db"
-	"correlatiApp/internal/models"
+	"acadifyapp/internal/db"
+	"acadifyapp/internal/models"
 )
 
 func GetAllUserSubjects(userId string, programId string) ([]models.UserSubject, error) {

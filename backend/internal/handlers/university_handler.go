@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"correlatiApp/internal/db"
-	"correlatiApp/internal/models"
+	"acadifyapp/internal/db"
+	"acadifyapp/internal/models"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -14,15 +14,15 @@ import (
 )
 
 type createUniversityRequest struct {
-	Name                  string                           `json:"name" binding:"required"`
-	Location              string                           `json:"location"`
-	Website               string                           `json:"website"`
-	InstitutionType       *models.InstitutionType          `json:"institution_type"`
-	Summary               string                           `json:"summary"`
-	LogoURL               string                           `json:"logo_url"`
-	PrimaryFocus          string                           `json:"primary_focus"`
-	FocusTags             []string                         `json:"focus_tags"`
-	QuickLinks            []models.QuickLinkDTO            `json:"quick_links"`
+	Name                  string                            `json:"name" binding:"required"`
+	Location              string                            `json:"location"`
+	Website               string                            `json:"website"`
+	InstitutionType       *models.InstitutionType           `json:"institution_type"`
+	Summary               string                            `json:"summary"`
+	LogoURL               string                            `json:"logo_url"`
+	PrimaryFocus          string                            `json:"primary_focus"`
+	FocusTags             []string                          `json:"focus_tags"`
+	QuickLinks            []models.QuickLinkDTO             `json:"quick_links"`
 	AdditionalInformation []models.AdditionalInformationDTO `json:"additional_information"`
 }
 
@@ -67,13 +67,13 @@ func CreateUniversity(c *gin.Context) {
 	tags := normalizeTags(req.FocusTags)
 
 	university := models.University{
-		ID:            uuid.NewString(),
-		Name:          name,
-		Location:      strings.TrimSpace(req.Location),
-		Website:       strings.TrimSpace(req.Website),
-		Summary:       strings.TrimSpace(req.Summary),
-		LogoURL:       strings.TrimSpace(req.LogoURL),
-		PrimaryFocus:  strings.TrimSpace(req.PrimaryFocus),
+		ID:           uuid.NewString(),
+		Name:         name,
+		Location:     strings.TrimSpace(req.Location),
+		Website:      strings.TrimSpace(req.Website),
+		Summary:      strings.TrimSpace(req.Summary),
+		LogoURL:      strings.TrimSpace(req.LogoURL),
+		PrimaryFocus: strings.TrimSpace(req.PrimaryFocus),
 	}
 
 	if req.InstitutionType != nil {

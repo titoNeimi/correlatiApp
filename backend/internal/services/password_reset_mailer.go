@@ -84,7 +84,7 @@ func (m *BrevoSMTPMailer) SendPasswordReset(toEmail, resetURL string) error {
 		fromHeader = fmt.Sprintf("%s <%s>", m.fromName, m.fromEmail)
 	}
 
-	subject := "Recuperar contrasena - CorrelatiApp"
+	subject := "Recuperar contrasena - AcadifyApp"
 	body := fmt.Sprintf(
 		"Recibimos una solicitud para restablecer tu contrasena.\r\n\r\n"+
 			"Hace click en este enlace para continuar:\r\n%s\r\n\r\n"+

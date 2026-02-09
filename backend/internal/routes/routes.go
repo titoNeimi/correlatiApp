@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"correlatiApp/internal/handlers"
-	httpx "correlatiApp/internal/http"
-	"correlatiApp/internal/middleware"
-	"correlatiApp/internal/services"
+	"acadifyapp/internal/handlers"
+	httpx "acadifyapp/internal/http"
+	"acadifyapp/internal/middleware"
+	"acadifyapp/internal/services"
 	"log/slog"
 	"net/http"
 	"os"

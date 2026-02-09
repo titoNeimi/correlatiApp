@@ -1,9 +1,9 @@
 package main
 
 import (
-	"correlatiApp/internal/db"
-	"correlatiApp/internal/models"
-	"correlatiApp/internal/utils"
+	"acadifyapp/internal/db"
+	"acadifyapp/internal/models"
+	"acadifyapp/internal/utils"
 	"fmt"
 	"log"
 	"log/slog"

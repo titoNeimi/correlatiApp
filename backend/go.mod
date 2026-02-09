@@ -1,4 +1,4 @@
-module correlatiApp
+module acadifyapp
 
 go 1.24.5
 

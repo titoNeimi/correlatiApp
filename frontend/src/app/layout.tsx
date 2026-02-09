@@ -3,7 +3,7 @@ import './globals.css'
 import { UserProvider } from '@/context/UserContext'
 
 export const metadata: Metadata = {
-  title: "Corralati App",
+  title: "AcadifyApp",
   description: "Una aplicacion en para tu carrera",
 };
 

@@ -40,4 +40,3 @@ func ClearSessionCookie(w http.ResponseWriter, cfg CookieCfg) {
 	}
 	http.SetCookie(w, c)
 }
-
