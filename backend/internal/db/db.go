@@ -72,6 +72,7 @@ func Connect() {
 		&models.ElectivePoolSubject{},
 		&models.ElectiveRule{},
 		&models.Session{},
+		&models.PasswordResetToken{},
 	); err != nil {
 		slog.Error("automigrate failed", slog.Any("error", err))
 		panic(err)

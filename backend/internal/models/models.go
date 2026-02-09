@@ -91,6 +91,7 @@ type Subject struct {
 	Requirements    []*Subject     `json:"requirements" gorm:"many2many:subject_requirements;joinForeignKey:SubjectID;joinReferences:RequirementID"`
 	DegreeProgramID string         `json:"degreeProgramID" gorm:"not null;size:191;index"`
 	Credits         float64        `json:"credits,omitempty"`
+	Term            string         `json:"term" gorm:"type:enum('annual', 'semester', 'quarterly', 'bimonthly')"`
 	Hours           float64        `json:"hours,omitempty"`
 	IsElective      bool           `json:"is_elective" gorm:"default:false"`
 	ElectivePools   []ElectivePool `json:"electivePools,omitempty" gorm:"many2many:elective_pool_subjects"`
@@ -99,12 +100,13 @@ type Subject struct {
 }
 
 type UserSubject struct {
-	UserID    string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
-	SubjectID string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
-	Status    SubjectStatus `gorm:"type:enum('available','in_progress','passed_with_distinction','final_pending','passed');default:'available'"`
-	UpdatedAt time.Time
-	User      User    `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	Subject   Subject `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	UserID            string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
+	SubjectID         string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
+	Status            SubjectStatus `gorm:"type:enum('available','in_progress','passed_with_distinction','final_pending','passed');default:'available'"`
+	FianlCalification float64       `json:"final_calification"`
+	User              User          `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	Subject           Subject       `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	UpdatedAt         time.Time
 }
 
 func (UserSubject) TableName() string { return "user_subjects" }
@@ -127,6 +129,17 @@ type Session struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+type PasswordResetToken struct {
+	ID        string     `gorm:"type:char(36);primaryKey"`
+	UserID    string     `gorm:"not null;size:191;index"`
+	User      User       `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	TokenHash string     `gorm:"not null;size:64;uniqueIndex"`
+	ExpiresAt time.Time  `gorm:"not null;index"`
+	UsedAt    *time.Time `gorm:"index"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type ElectivePool struct {

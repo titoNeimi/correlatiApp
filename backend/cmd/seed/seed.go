@@ -77,6 +77,7 @@ func Connect() {
 		&models.ElectivePoolSubject{},
 		&models.ElectiveRule{},
 		&models.Session{},
+		&models.PasswordResetToken{},
 	); err != nil {
 		slog.Error("automigrate failed", slog.Any("error", err))
 		panic(err)
@@ -110,7 +111,7 @@ func Seed(gdb *gorm.DB) error {
 		}
 
 		// 2) University
-	utnFrba := models.University{
+		utnFrba := models.University{
 			ID:              "utn-frba",
 			Name:            "Universidad Tecnológica Nacional - Facultad Regional Buenos Aires",
 			Location:        "CABA, Argentina",
@@ -257,6 +258,7 @@ func Seed(gdb *gorm.DB) error {
 				ID:              s.ID,
 				Name:            s.Name,
 				Year:            &year,
+				Term:            "annual",
 				DegreeProgramID: dpISI.ID,
 				Credits:         s.Credits,
 				Hours:           s.Hours,
@@ -436,6 +438,7 @@ func Seed(gdb *gorm.DB) error {
 				ID:              subject.ID,
 				Name:            subject.Name,
 				Year:            &year,
+				Term:            "annual",
 				DegreeProgramID: dpISI.ID,
 				Hours:           subject.Hours,
 				Credits:         subject.Credits,

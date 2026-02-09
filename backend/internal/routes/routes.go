@@ -2,15 +2,18 @@ package routes
 
 import (
 	"correlatiApp/internal/handlers"
-	"correlatiApp/internal/http"
+	httpx "correlatiApp/internal/http"
 	"correlatiApp/internal/middleware"
 	"correlatiApp/internal/services"
+	"log/slog"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
-	"os"
-	"time"
 )
 
 func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
@@ -33,7 +36,12 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	r.Use(middleware.ErrorLogger())
 	r.Use(middleware.CSRFMiddleware(middleware.CSRFCfg{
 		AllowedOrigins: allowedOrigins,
-		ExemptPaths:    []string{"/auth/login", "/auth/register"},
+		ExemptPaths: []string{
+			"/auth/login",
+			"/auth/register",
+			"/auth/password/forgot",
+			"/auth/password/reset",
+		},
 	}))
 
 	r.GET("/health", handlers.Health)
@@ -49,7 +57,38 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 	}
-	authHandlers := &handlers.AuthHandlers{DB: db, Sessions: sessSvc, Cookies: cookies}
+
+	resetURLBase := strings.TrimSpace(os.Getenv("PASSWORD_RESET_URL_BASE"))
+	if resetURLBase == "" {
+		resetURLBase = "http://localhost:3000/reset-password"
+	}
+
+	resetTokenTTL := 30 * time.Minute
+	if rawTTL := strings.TrimSpace(os.Getenv("PASSWORD_RESET_TOKEN_TTL")); rawTTL != "" {
+		ttl, err := time.ParseDuration(rawTTL)
+		if err != nil || ttl <= 0 {
+			slog.Warn("invalid PASSWORD_RESET_TOKEN_TTL, using default", slog.String("value", rawTTL))
+		} else {
+			resetTokenTTL = ttl
+		}
+	}
+
+	var resetMailer services.PasswordResetMailer
+	mailer, err := services.NewBrevoSMTPMailer(services.BrevoSMTPConfigFromEnv())
+	if err != nil {
+		slog.Warn("brevo mailer is not configured, password reset by email disabled", slog.Any("error", err))
+	} else {
+		resetMailer = mailer
+	}
+
+	authHandlers := &handlers.AuthHandlers{
+		DB:            db,
+		Sessions:      sessSvc,
+		Cookies:       cookies,
+		Mailer:        resetMailer,
+		ResetURLBase:  resetURLBase,
+		ResetTokenTTL: resetTokenTTL,
+	}
 
 	users := r.Group("/users")
 	{
@@ -108,6 +147,9 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		auth.POST("/login", middleware.RateLimit(8, time.Minute), authHandlers.LoginHandler)
 		auth.POST("/logout", middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Logout)
 		auth.POST("/register", authHandlers.Register)
+
+		auth.POST("/password/forgot", middleware.RateLimit(5, time.Minute), authHandlers.ForgotPassword)
+		auth.POST("/password/reset", middleware.RateLimit(5, time.Minute), authHandlers.ResetPassword)
 	}
 
 	me := r.Group("/me", middleware.AuthRequired(db, sessSvc, cookies))
