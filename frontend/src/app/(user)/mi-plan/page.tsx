@@ -1,6 +1,7 @@
 'use client'
 
 import { useUser } from '@/context/UserContext'
+import { Suspense } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import UserSubjectsGate from '@/components/userSubjectGate'
@@ -57,7 +58,16 @@ const statusOrder: SubjectStatus[] = ['not_available', 'available', 'in_progress
 const STORAGE_KEY = 'mi-plan_state'
 const LEGACY_STORAGE_KEY = 'tuCarrera_state'
 
-export default function SubjectsPage() {
+const normalizeSubjectYear = (subject: SubjectDTO & { year?: number | null }) => {
+  const raw = typeof subject.subjectYear === 'number' ? subject.subjectYear : subject.year ?? 0
+  return Number.isFinite(raw) ? raw : 0
+}
+
+const canHaveFinalCalification = (status: SubjectStatus) => {
+  return status === 'passed' || status === 'passed_with_distinction'
+}
+
+function SubjectsPageContent() {
   const { user, isLoading: isLoadingUser } = useUser()
   const searchParams = useSearchParams()
   const programIdParam = searchParams.get('programId') ?? ''
@@ -81,15 +91,6 @@ export default function SubjectsPage() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [editingFinalCalificationSubjectId, setEditingFinalCalificationSubjectId] = useState<string | null>(null)
   const [savedFinalCalificationSubjectIds, setSavedFinalCalificationSubjectIds] = useState<Set<string>>(new Set())
-
-  const normalizeSubjectYear = (subject: SubjectDTO & { year?: number | null }) => {
-    const raw = typeof subject.subjectYear === 'number' ? subject.subjectYear : subject.year ?? 0
-    return Number.isFinite(raw) ? raw : 0
-  }
-
-  const canHaveFinalCalification = (status: SubjectStatus) => {
-    return status === 'passed' || status === 'passed_with_distinction'
-  }
 
   const fetchElectives = useCallback(async (programId: string) => {
     if (!programId) {
@@ -163,7 +164,7 @@ export default function SubjectsPage() {
     } finally {
       setLoadingSubjects(false)
     }
-  }, [])
+  }, [fetchElectives])
 
   const electiveIds = useMemo(() => {
     const ids = new Set<string>()
@@ -314,7 +315,7 @@ export default function SubjectsPage() {
 
     let achieved = 0
     let target = rule.minimum_value
-    let displayLabel = requirementTypeLabels[rule.requirement_type]
+    const displayLabel = requirementTypeLabels[rule.requirement_type]
     switch (rule.requirement_type) {
       case 'hours':
         achieved = completedSubjects.reduce((acc, subject) => acc + (subject.hours ?? 0), 0)
@@ -499,8 +500,11 @@ export default function SubjectsPage() {
 
   useEffect(() => {
     if (!saveMessage) return
-    setSaveMessage(null)
-  }, [subjects])
+    const timeout = setTimeout(() => {
+      setSaveMessage(null)
+    }, 3500)
+    return () => clearTimeout(timeout)
+  }, [saveMessage])
 
   useEffect(() => {
     if (!isHydratedRef.current) return
@@ -846,5 +850,19 @@ export default function SubjectsPage() {
           />
         </div>
       </ClientPageShell>
+  )
+}
+
+const SubjectsPageFallback = () => (
+  <ClientPageShell mainClassName="max-w-7xl py-2">
+    <div className="mt-6 text-sm text-slate-600">Cargando plan...</div>
+  </ClientPageShell>
+)
+
+export default function SubjectsPage() {
+  return (
+    <Suspense fallback={<SubjectsPageFallback />}>
+      <SubjectsPageContent />
+    </Suspense>
   )
 }

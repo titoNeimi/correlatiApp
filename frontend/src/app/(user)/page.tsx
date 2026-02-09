@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, TrendingUp, Users, Star, ChevronRight, GraduationCap } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -21,10 +22,10 @@ export default function Home() {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <a href='/carreras' className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center">
+            <Link href='/carreras' className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center">
               Explorar Carreras
               <ChevronRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
           </div>
 
           {/* Stats */}
@@ -153,9 +154,9 @@ export default function Home() {
             Únete a miles de estudiantes que ya están usando AcadifyApp para 
             planificar su futuro académico de manera inteligente.
           </p>
-          <a href='/register' className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+          <Link href='/register' className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
             Registrarse Gratis
-          </a>
+          </Link>
         </div>
       </section>
 

@@ -29,9 +29,14 @@ const fetchDegreePrograms = async (page: number, limit: number): Promise<fetchDe
   }
 }
 
-async function CareersPage ({ searchParams }: { searchParams?: { page?: string | string[]; limit?: string | string[] } }) {
-  const rawPage = Array.isArray(searchParams?.page) ? searchParams?.page[0] : searchParams?.page
-  const rawLimit = Array.isArray(searchParams?.limit) ? searchParams?.limit[0] : searchParams?.limit
+type CareersPageProps = {
+  searchParams?: Promise<{ page?: string | string[]; limit?: string | string[] }>
+}
+
+async function CareersPage ({ searchParams }: CareersPageProps) {
+  const resolvedSearchParams = await searchParams
+  const rawPage = Array.isArray(resolvedSearchParams?.page) ? resolvedSearchParams?.page[0] : resolvedSearchParams?.page
+  const rawLimit = Array.isArray(resolvedSearchParams?.limit) ? resolvedSearchParams?.limit[0] : resolvedSearchParams?.limit
   const pageParam = Number(rawPage ?? '1')
   const limitParam = Number(rawLimit ?? '12')
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1

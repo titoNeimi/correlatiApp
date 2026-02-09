@@ -32,7 +32,7 @@ const universitySchema = z
 
 const degreeSchema = z.object({
   degreeName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  publicRequested: z.boolean().default(false),
+  publicRequested: z.boolean(),
 });
 
 const structureSchema = z

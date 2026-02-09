@@ -132,7 +132,7 @@ async function fetchElectivePools(id: string): Promise<ElectivePool[] | null> {
 export default function CareerDetailPage() {
   const params = useParams<{ id: string }>()
   const id = Array.isArray(params.id) ? params.id[0] : params.id
-  const { user, isLoggedIn, isLoading: isLoadingUser, refresh } = useUser()
+  const { isLoggedIn, isLoading: isLoadingUser, refresh } = useUser()
   const [loading, setLoading] = useState(true)
   const [program, setProgram] = useState<DegreeProgramDetail | null>(null)
   const [subjects, setSubjects] = useState<DegreeProgramSubject[]>([])

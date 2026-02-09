@@ -4,13 +4,13 @@ import { Badge, Card } from '@/components/admin/baseComponents';
 import DataTable from '@/components/admin/dataTable';
 import { NativeSelect } from '@/components/ui/native-select';
 import { DegreeProgram, DegreeProgramSubject } from '@/types/degreeProgram';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { apiFetchJson, getApiErrorMessage } from '@/lib/api';
 
 type SubjectsResponse = DegreeProgramSubject[];
 
-export default function ProgramSubjectsPage() {
+function ProgramSubjectsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -218,4 +218,21 @@ export default function ProgramSubjectsPage() {
       </Card>
     </div>
   );
+}
+
+const ProgramSubjectsFallback = () => (
+  <div className="space-y-4">
+    <div className="h-10 w-48 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+    </div>
+  </div>
+)
+
+export default function ProgramSubjectsPage() {
+  return (
+    <Suspense fallback={<ProgramSubjectsFallback />}>
+      <ProgramSubjectsPageContent />
+    </Suspense>
+  )
 }

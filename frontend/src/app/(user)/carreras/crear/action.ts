@@ -67,7 +67,7 @@ const getResponseErrorMessage = async (response: Response, fallback: string) => 
 
 export const createUniversity = async (name: string): Promise<actionResult<University>> => {
   try {
-    const originHeader = getOriginHeader();
+    const originHeader = await getOriginHeader();
     const response = await apiFetch('/universities', {
       method: 'POST',
       headers: {
@@ -106,7 +106,7 @@ export const confirmCreation = async (payload: {
   const { degreeData, subjects, electivePools, electiveRules } = payload
   const cookieStore = cookies()
   const cookieHeader = cookieStore.toString()
-  const originHeader = getOriginHeader()
+  const originHeader = await getOriginHeader()
   const authHeaders: Record<string, string> = cookieHeader ? { Cookie: cookieHeader } : {}
   const csrfHeaders: Record<string, string> = originHeader ? { Origin: originHeader } : {}
   const degreeProgram = {
@@ -319,8 +319,8 @@ export const confirmCreation = async (payload: {
   }
 }
 
-const getOriginHeader = () => {
-  const headerList = headers()
+const getOriginHeader = async () => {
+  const headerList = await headers()
   const origin = headerList.get('origin')
   if (origin) return origin
   const proto = headerList.get('x-forwarded-proto') || 'http'

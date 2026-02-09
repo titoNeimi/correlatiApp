@@ -13,7 +13,6 @@ type Props = {
 
 export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, initialProgramId }: Props) {
   const [status, setStatus] = useState<"idle" | "no-program" | "pick-program" | "ready">("idle");
-  const [ids, setIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [programs, setPrograms] = useState<{ id: string; name: string }[]>([]);
@@ -21,7 +20,6 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
-      setIds([]);
       setStatus("no-program");
       return;
     }
@@ -30,7 +28,6 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
       try {
         const response = await apiFetch("/me/programs", { credentials: "include" });
         if (!response.ok) {
-          setIds([]);
           setStatus("no-program");
           return;
         }
@@ -41,7 +38,6 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
         const degreeProgramIds = data.enrolledProgramIds ?? [];
 
         if (degreeProgramIds.length === 0) {
-          setIds([]);
           setStatus("no-program");
           return;
         }
@@ -55,7 +51,6 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
         }
 
         setPrograms(programOptions);
-        setIds(degreeProgramIds);
         setSelectedId((prev) => {
           if (initialProgramId && degreeProgramIds.includes(initialProgramId)) return initialProgramId;
           if (prev && degreeProgramIds.includes(prev)) return prev;
@@ -63,7 +58,6 @@ export default function UserSubjectsGate({ user, isLoading, fetchUserSubjects, i
         });
         setStatus("ready");
       } catch {
-        setIds([]);
         setStatus("no-program");
       }
     };

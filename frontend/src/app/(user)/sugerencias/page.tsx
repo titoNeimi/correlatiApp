@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Bug, Building2, GraduationCap, Lightbulb, MessageSquare, Send, Sparkles } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { ClientPageShell } from '@/components/layout/client-page-shell'
 
 const suggestionTypes = [
@@ -47,7 +48,7 @@ const quickTips = [
 ]
 
 
-export default function SuggestionsPage() {
+function SuggestionsPageContent() {
   const searchParams = useSearchParams()
   const [selectedType, setSelectedType] = useState<string | null>(null)
 
@@ -232,5 +233,19 @@ export default function SuggestionsPage() {
           </div>
         </section>
       </ClientPageShell>
+  )
+}
+
+const SuggestionsFallback = () => (
+  <ClientPageShell>
+    <div className="py-10 text-center text-sm text-slate-600">Cargando sugerencias...</div>
+  </ClientPageShell>
+)
+
+export default function SuggestionsPage() {
+  return (
+    <Suspense fallback={<SuggestionsFallback />}>
+      <SuggestionsPageContent />
+    </Suspense>
   )
 }

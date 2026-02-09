@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import {
   AuthCard,
   AuthField,
@@ -20,7 +21,7 @@ type FormErrors = {
   repeatPassword?: string
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
   const [newPassword, setNewPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [errors, setErrors] = useState<FormErrors>({})
@@ -154,5 +155,22 @@ export default function ResetPasswordPage() {
         </div>
       </AuthCard>
     </AuthLayout>
+  )
+}
+
+const ResetPasswordFallback = () => (
+  <AuthLayout>
+    <AuthCard>
+      <AuthHeader title="Nueva contraseña" subtitle="Cargando..." />
+      <div className="py-8 text-center text-sm text-slate-600">Preparando formulario...</div>
+    </AuthCard>
+  </AuthLayout>
+)
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordFallback />}>
+      <ResetPasswordPageContent />
+    </Suspense>
   )
 }

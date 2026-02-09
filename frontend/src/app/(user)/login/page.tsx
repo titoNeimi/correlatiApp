@@ -1,6 +1,6 @@
 'use client'
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useUser } from '@/context/UserContext'
 import {
   AuthLayout,
@@ -22,7 +22,7 @@ interface FormErrors {
   password?: string;
 }
 
-const LoginPage: React.FC = () => {
+const LoginPageContent: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({ email: '', password: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   const [authError, setAuthError] = useState<string>('');
@@ -177,4 +177,19 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+const LoginFallback = () => (
+  <AuthLayout>
+    <AuthCard>
+      <AuthHeader />
+      <div className="py-8 text-center text-sm text-slate-600">Cargando login...</div>
+    </AuthCard>
+  </AuthLayout>
+)
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginPageContent />
+    </Suspense>
+  )
+}
