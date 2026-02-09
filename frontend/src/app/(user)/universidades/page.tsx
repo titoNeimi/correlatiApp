@@ -13,61 +13,36 @@ type UniversityResponse = {
   limit?: number,
 }
 
-// Placeholder metadata until these fields exist in backend/domain.
-const universityMetaPool: Array<{ accent: string; badge: string; focus: string; type: string }> = [
-  {
-    accent: 'from-blue-50 via-white to-indigo-50',
-    badge: 'bg-blue-100 text-blue-700',
-    focus: 'Investigacion y extension',
-    type: 'Publica'
-  },
-  {
-    accent: 'from-amber-50 via-white to-orange-50',
-    badge: 'bg-amber-100 text-amber-700',
-    focus: 'Ingenieria aplicada',
-    type: 'Publica'
-  },
-  {
-    accent: 'from-emerald-50 via-white to-green-50',
-    badge: 'bg-emerald-100 text-emerald-700',
-    focus: 'Salud y ciencias',
-    type: 'Publica'
-  },
-  {
-    accent: 'from-sky-50 via-white to-cyan-50',
-    badge: 'bg-sky-100 text-sky-700',
-    focus: 'Exactas y tecnologia',
-    type: 'Publica'
-  },
-  {
-    accent: 'from-purple-50 via-white to-fuchsia-50',
-    badge: 'bg-purple-100 text-purple-700',
-    focus: 'Humanidades y ciencias',
-    type: 'Publica'
-  },
-  {
-    accent: 'from-rose-50 via-white to-pink-50',
-    badge: 'bg-rose-100 text-rose-700',
-    focus: 'Negocios e innovacion',
-    type: 'Privada'
-  },
-  {
+const getInstitutionLabel = (value?: University['institution_type']) => {
+  if (value === 'public') return 'Publica'
+  if (value === 'private') return 'Privada'
+  if (value === 'mixed') return 'Mixta'
+  return 'Pendiente'
+}
+
+const getInstitutionStyles = (value?: University['institution_type']) => {
+  if (value === 'public') {
+    return {
+      accent: 'from-blue-50 via-white to-indigo-50',
+      badge: 'bg-blue-100 text-blue-700',
+    }
+  }
+  if (value === 'private') {
+    return {
+      accent: 'from-rose-50 via-white to-pink-50',
+      badge: 'bg-rose-100 text-rose-700',
+    }
+  }
+  if (value === 'mixed') {
+    return {
+      accent: 'from-emerald-50 via-white to-cyan-50',
+      badge: 'bg-emerald-100 text-emerald-700',
+    }
+  }
+  return {
     accent: 'from-slate-50 via-white to-gray-50',
     badge: 'bg-slate-200 text-slate-700',
-    focus: 'Economia y diseno',
-    type: 'Privada'
-  },
-  {
-    accent: 'from-lime-50 via-white to-emerald-50',
-    badge: 'bg-lime-100 text-lime-700',
-    focus: 'Ciencias de la salud',
-    type: 'Privada'
   }
-]
-
-const getUniversityMeta = (id: string) => {
-  const hash = Array.from(id).reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  return universityMetaPool[hash % universityMetaPool.length]
 }
 
 export default function UniversitiesPage() {
@@ -86,11 +61,22 @@ export default function UniversitiesPage() {
     setTotalPrograms(totalPrograms)
     setUniqueLocations(uniqueLocations)
   }, [universities])
-  
 
-  const placeholderFilters = ['CABA', 'Buenos Aires', 'Santa Fe', 'Cordoba']
-  const placeholderFocus = ['Salud', 'Ingenieria', 'Negocios', 'Arte', 'Ciencias']
-  const placeholderServices = ['Becas activas', 'Orientacion vocacional', 'Bolsa de trabajo']
+  const locationFilters = Array.from(
+    new Set(universities.map((university) => university.location?.trim()).filter(Boolean) as string[])
+  ).slice(0, 8)
+  const focusFilters = Array.from(
+    new Set(
+      universities.flatMap((university) => (university.focus_tags ?? []).map((tag) => tag.tag.trim()).filter(Boolean))
+    )
+  ).slice(0, 10)
+  const serviceFilters = Array.from(
+    new Set(
+      universities.flatMap((university) =>
+        (university.additional_information ?? []).map((info) => info.title.trim()).filter(Boolean)
+      )
+    )
+  ).slice(0, 8)
 
 
   useEffect(() => {
@@ -143,7 +129,7 @@ export default function UniversitiesPage() {
               </h1>
               <p className="text-slate-600 mt-3 leading-relaxed">
                 Explora instituciones y prepara tu proximo paso.
-                Los filtros y etiquetas avanzadas quedan listos para conectar mas adelante.
+                El directorio ahora incluye tipo institucional, enfoque y recursos destacados.
               </p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
@@ -176,26 +162,25 @@ export default function UniversitiesPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  {/* TODO: hook real filters once the data exists */}
                   <div className="bg-white/10 rounded-xl px-4 py-3">
                     <p className="text-white/70 text-xs">Tipo</p>
-                    <p className="font-semibold">Pendiente</p>
+                    <p className="font-semibold">{Array.from(new Set(universities.map((u) => getInstitutionLabel(u.institution_type)))).length} tipos</p>
                   </div>
                   <div className="bg-white/10 rounded-xl px-4 py-3">
-                    <p className="text-white/70 text-xs">Modalidad</p>
-                    <p className="font-semibold">Pendiente</p>
+                    <p className="text-white/70 text-xs">Enfoques</p>
+                    <p className="font-semibold">{focusFilters.length || 'Sin datos'}</p>
                   </div>
                   <div className="bg-white/10 rounded-xl px-4 py-3">
-                    <p className="text-white/70 text-xs">Rango</p>
-                    <p className="font-semibold">Pendiente</p>
+                    <p className="text-white/70 text-xs">Recursos</p>
+                    <p className="font-semibold">{serviceFilters.length || 'Sin datos'}</p>
                   </div>
                   <div className="bg-white/10 rounded-xl px-4 py-3">
-                    <p className="text-white/70 text-xs">Ranking</p>
-                    <p className="font-semibold">Pendiente</p>
+                    <p className="text-white/70 text-xs">Sitios web</p>
+                    <p className="font-semibold">{universities.filter((u) => Boolean(u.website)).length}</p>
                   </div>
                 </div>
                 <button className="w-full bg-white text-slate-900 font-semibold py-3 rounded-xl hover:bg-slate-100 transition-colors">
-                  Aplicar filtros
+                  Ver universidades
                 </button>
               </div>
             </div>
@@ -232,8 +217,7 @@ export default function UniversitiesPage() {
               <div>
                 <p className="text-slate-500 mb-2">Ubicacion</p>
                 <div className="flex flex-wrap gap-2">
-                  {/* TODO: replace placeholder filters */}
-                  {placeholderFilters.map((region) => (
+                  {(locationFilters.length > 0 ? locationFilters : ['Sin ubicaciones']).map((region) => (
                     <span key={region} className="px-3 py-1 rounded-full bg-slate-100 text-slate-700">
                       {region}
                     </span>
@@ -243,19 +227,20 @@ export default function UniversitiesPage() {
               <div>
                 <p className="text-slate-500 mb-2">Tipo de institucion</p>
                 <div className="space-y-2">
-                  {['Publica', 'Privada', 'Mixta'].map((type) => (
-                    <label key={type} className="flex items-center gap-2 text-slate-700">
-                      <input type="checkbox" className="rounded border-slate-300" />
-                      {type}
-                    </label>
+                  {(['public', 'private', 'mixed'] as const).map((type) => (
+                    <div key={type} className="flex items-center justify-between text-slate-700">
+                      <span>{getInstitutionLabel(type)}</span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                        {universities.filter((university) => university.institution_type === type).length}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
               <div>
                 <p className="text-slate-500 mb-2">Enfoque academico</p>
                 <div className="flex flex-wrap gap-2">
-                  {/* TODO: replace placeholder focus */}
-                  {placeholderFocus.map((focus) => (
+                  {(focusFilters.length > 0 ? focusFilters : ['Sin enfoque']).map((focus) => (
                     <span key={focus} className="px-3 py-1 rounded-full bg-slate-100 text-slate-700">
                       {focus}
                     </span>
@@ -265,10 +250,9 @@ export default function UniversitiesPage() {
               <div>
                 <p className="text-slate-500 mb-2">Servicios</p>
                 <div className="space-y-2">
-                  {/* TODO: replace placeholder services */}
-                  {placeholderServices.map((service) => (
+                  {(serviceFilters.length > 0 ? serviceFilters : ['Sin recursos']).map((service) => (
                     <label key={service} className="flex items-center gap-2 text-slate-700">
-                      <input type="checkbox" className="rounded border-slate-300" />
+                      <input type="checkbox" checked readOnly className="rounded border-slate-300" />
                       {service}
                     </label>
                   ))}
@@ -295,25 +279,29 @@ export default function UniversitiesPage() {
 
             <div className="grid gap-6 md:grid-cols-2">
               {universities.map((university) => {
-                const meta = getUniversityMeta(university.id)
+                const style = getInstitutionStyles(university.institution_type)
+                const focusSummary =
+                  university.primary_focus?.trim() ||
+                  (university.focus_tags ?? []).map((tag) => tag.tag).filter(Boolean).slice(0, 2).join(' · ') ||
+                  'Sin enfoque especificado'
                 return (
                   <article
                     key={university.id}
-                    className={`bg-gradient-to-br ${meta.accent} rounded-2xl border border-slate-100 shadow-lg p-6 hover:shadow-xl transition-all`}
+                    className={`bg-gradient-to-br ${style.accent} rounded-2xl border border-slate-100 shadow-lg p-6 hover:shadow-xl transition-all`}
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${meta.badge}`}>
-                          {meta.type}
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${style.badge}`}>
+                          {getInstitutionLabel(university.institution_type)}
                         </span>
                         <h3 className="text-xl font-bold text-slate-900 mt-3">{university.name}</h3>
                         <div className="flex items-center gap-2 text-sm text-slate-600 mt-2">
                           <MapPin className="w-4 h-4" />
-                          {university.location}
+                          {university.location ?? 'Ubicacion pendiente'}
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-600 mt-1">
                           <Globe className="w-4 h-4" />
-                          {university.website}
+                          {university.website ?? 'Sitio pendiente'}
                         </div>
                       </div>
                       <div className="bg-white/80 rounded-xl px-3 py-2 text-center shadow-sm">
@@ -324,7 +312,7 @@ export default function UniversitiesPage() {
 
                     <div className="mt-4 bg-white/70 rounded-xl p-4">
                       <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">Enfoque</p>
-                      <p className="text-sm text-slate-700 font-medium">{meta.focus}</p>
+                      <p className="text-sm text-slate-700 font-medium">{focusSummary}</p>
                     </div>
 
                     <div className="mt-4">
