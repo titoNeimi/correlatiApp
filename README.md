@@ -37,10 +37,9 @@ Crear `backend/.env`:
 ```bash
 MYSQL_DSN="user:password@tcp(127.0.0.1:3306)/correlati?charset=utf8mb4&parseTime=True&loc=Local"
 GIN_MODE="release"
-BREVO_SMTP_HOST="smtp-relay.brevo.com"
-BREVO_SMTP_PORT="587"
-BREVO_SMTP_USER="tu_usuario_brevo"
-BREVO_SMTP_PASS="tu_smtp_key_brevo"
+BREVO_API_KEY="tu_api_key_brevo"
+BREVO_API_URL="https://api.brevo.com/v3/smtp/email"
+BREVO_API_TIMEOUT="10s"
 MAIL_FROM_EMAIL="no-reply@tudominio.com"
 MAIL_FROM_NAME="AcadifyApp"
 PASSWORD_RESET_URL_BASE="http://localhost:3000/reset-password"
@@ -51,7 +50,8 @@ Notas:
 - `MYSQL_DSN` es obligatorio.
 - `GIN_MODE=release` desactiva el modo debug.
 - `PASSWORD_RESET_TOKEN_TTL` usa formato Go duration (`15m`, `30m`, `1h`).
-- Si falta config SMTP de Brevo, el endpoint de forgot password queda deshabilitado.
+- Si falta config API de Brevo, el backend intenta fallback SMTP (`BREVO_SMTP_*`).
+- Si no hay config API ni SMTP, el endpoint de forgot password queda deshabilitado.
 
 ### Recuperar contrasena por email (Brevo)
 
