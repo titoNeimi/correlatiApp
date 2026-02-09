@@ -12,6 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type stubPasswordResetMailer struct{}
+
+func (stubPasswordResetMailer) SendPasswordReset(toEmail, resetURL string) error {
+	return nil
+}
+
 // performRequest arma un router mínimo con un handler y devuelve la respuesta.
 // Esto permite testear validaciones básicas sin levantar todo el servidor.
 func performRequest(t *testing.T, method, route, path string, body []byte, handler gin.HandlerFunc) *httptest.ResponseRecorder {
@@ -116,6 +122,36 @@ func TestAuthRegister_InvalidJSON_Returns400(t *testing.T) {
 
 	h := &AuthHandlers{}
 	w := performRequest(t, http.MethodPost, "/auth/register", "/auth/register", []byte("{"), h.Register)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestAuthForgotPassword_InvalidJSON_Returns400(t *testing.T) {
+	t.Parallel()
+
+	h := &AuthHandlers{Mailer: stubPasswordResetMailer{}}
+	w := performRequest(t, http.MethodPost, "/auth/password/forgot", "/auth/password/forgot", []byte("{"), h.ForgotPassword)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestAuthForgotPassword_NoMailer_Returns503(t *testing.T) {
+	t.Parallel()
+
+	h := &AuthHandlers{}
+	w := performRequest(t, http.MethodPost, "/auth/password/forgot", "/auth/password/forgot", []byte(`{"email":"user@example.com"}`), h.ForgotPassword)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
+	}
+}
+
+func TestAuthResetPassword_InvalidJSON_Returns400(t *testing.T) {
+	t.Parallel()
+
+	h := &AuthHandlers{}
+	w := performRequest(t, http.MethodPost, "/auth/password/reset", "/auth/password/reset", []byte("{"), h.ResetPassword)
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", w.Code, http.StatusBadRequest)
 	}
