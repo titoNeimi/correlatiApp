@@ -21,6 +21,25 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	allowedOrigins := []string{
 		"http://localhost:3000",
 		"http://127.0.0.1:3000",
+		"https://acadifyapp.com",
+		"https://www.acadifyapp.com",
+	}
+	if extraOrigins := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS")); extraOrigins != "" {
+		seen := make(map[string]struct{}, len(allowedOrigins))
+		for _, origin := range allowedOrigins {
+			seen[origin] = struct{}{}
+		}
+		for _, origin := range strings.Split(extraOrigins, ",") {
+			clean := strings.TrimSpace(origin)
+			if clean == "" {
+				continue
+			}
+			if _, exists := seen[clean]; exists {
+				continue
+			}
+			allowedOrigins = append(allowedOrigins, clean)
+			seen[clean] = struct{}{}
+		}
 	}
 
 	r.Use(cors.New(cors.Config{
@@ -74,11 +93,18 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	}
 
 	var resetMailer services.PasswordResetMailer
-	mailer, err := services.NewBrevoSMTPMailer(services.BrevoSMTPConfigFromEnv())
-	if err != nil {
-		slog.Warn("brevo mailer is not configured, password reset by email disabled", slog.Any("error", err))
+	apiMailer, err := services.NewBrevoAPIMailer(services.BrevoAPIConfigFromEnv())
+	if err == nil {
+		resetMailer = apiMailer
 	} else {
-		resetMailer = mailer
+		slog.Warn("brevo API mailer is not configured, trying SMTP fallback", slog.Any("error", err))
+		smtpMailer, smtpErr := services.NewBrevoSMTPMailer(services.BrevoSMTPConfigFromEnv())
+		if smtpErr != nil {
+			slog.Warn("brevo mailer is not configured, password reset by email disabled", slog.Any("error", smtpErr))
+		} else {
+			slog.Warn("using SMTP fallback for password reset emails")
+			resetMailer = smtpMailer
+		}
 	}
 
 	authHandlers := &handlers.AuthHandlers{
