@@ -3,7 +3,6 @@ package db
 import (
 	"acadifyapp/internal/models"
 	"log/slog"
-	"os"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
@@ -22,8 +21,12 @@ func Connect() {
 		slog.Info("Archivo .env cargado exitosamente.")
 	}
 
-	dsn := os.Getenv("MYSQL_DSN")
-	slog.Any("dsn :", dsn)
+	dsn, err := ResolveMySQLDSN()
+	if err != nil {
+		slog.Error("database DSN resolution failed", slog.Any("error", err))
+		panic(err)
+	}
+
 	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
