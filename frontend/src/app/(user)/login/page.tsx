@@ -53,7 +53,6 @@ const LoginPageContent: React.FC = () => {
     const newErrors: FormErrors = {};
     const email = formData.email.trim();
     const password = formData.password.trim();
-    console.log(email, password);
 
     if (!email) newErrors.email = 'Campo requerido';
     if (!password) newErrors.password = 'Campo requerido';
