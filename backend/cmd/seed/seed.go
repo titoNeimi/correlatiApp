@@ -109,9 +109,11 @@ func Seed(gdb *gorm.DB) error {
 
 		// 3) Degree Program
 		dpISI := models.DegreeProgram{
-			ID:           "utnfrba-isi-plan2023",
-			Name:         "Ingeniería en Sistemas de Información",
-			UniversityID: utnFrba.ID,
+			ID:              "utnfrba-isi-plan2023",
+			Name:            "Ingeniería en Sistemas de Información",
+			UniversityID:    utnFrba.ID,
+			ApprovalStatus:  models.DegreeProgramApproved,
+			PublicRequested: true,
 		}
 		if err := tx.Create(&dpISI).Error; err != nil {
 			return err
