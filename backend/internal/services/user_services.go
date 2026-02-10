@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"log/slog"
+	"strings"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 )
 
 func GetUserByEmail(email string) models.User {
+	email = strings.TrimSpace(strings.ToLower(email))
 	var user *models.User
 	result := db.Db.Where("email = ?", email).Preload("DegreePrograms").First(&user)
 	if result.Error != nil {

@@ -69,9 +69,10 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 
 	cookieSecure := os.Getenv("COOKIE_SECURE")
 	secure := cookieSecure != "false"
+	cookieDomain := strings.TrimSpace(os.Getenv("COOKIE_DOMAIN"))
 	cookies := httpx.CookieCfg{
 		Name:     "session_id",
-		Domain:   "",
+		Domain:   cookieDomain,
 		Path:     "/",
 		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,

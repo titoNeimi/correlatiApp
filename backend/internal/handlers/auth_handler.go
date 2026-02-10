@@ -62,7 +62,8 @@ func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Parametros invalidos"})
 		return
 	}
-	user := services.GetUserByEmail(data.Email)
+	email := strings.TrimSpace(strings.ToLower(data.Email))
+	user := services.GetUserByEmail(email)
 	if user.ID == "" {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Datos incorrectos"})
 		return

@@ -3,6 +3,7 @@ package db
 import (
 	"acadifyapp/internal/models"
 	"log/slog"
+	"os"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
@@ -14,11 +15,16 @@ var Db *gorm.DB
 
 func Connect() {
 
-	err := godotenv.Load(".env")
-	if err != nil {
-		slog.Any("Error al cargar el archivo .env:", err)
+	// If DB env vars are already present (e.g. Railway), do not load local .env.
+	if os.Getenv("MYSQL_DSN") == "" && os.Getenv("MYSQL_URL") == "" && os.Getenv("MYSQL_PUBLIC_URL") == "" {
+		err := godotenv.Load(".env")
+		if err != nil {
+			slog.Any("Error al cargar el archivo .env:", err)
+		} else {
+			slog.Info("Archivo .env cargado exitosamente.")
+		}
 	} else {
-		slog.Info("Archivo .env cargado exitosamente.")
+		slog.Info("DB env vars found in process; skipping .env load")
 	}
 
 	dsn, err := ResolveMySQLDSN()
