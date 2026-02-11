@@ -4,6 +4,7 @@ import (
 	"acadifyapp/internal/models"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
@@ -33,8 +34,13 @@ func Connect() {
 		panic(err)
 	}
 
+	logMode := logger.Info
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("GIN_MODE")), "release") {
+		logMode = logger.Warn
+	}
+
 	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logMode),
 	})
 	if err != nil {
 		slog.Error("failed to connect database", slog.Any("error", err))

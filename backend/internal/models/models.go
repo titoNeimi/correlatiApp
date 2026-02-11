@@ -42,7 +42,7 @@ const (
 type User struct {
 	ID               string           `json:"id" gorm:"primaryKey;size:191"`
 	Email            string           `json:"email" gorm:"unique;not null;size:191"`
-	Password         string           `json:"password" gorm:"not null"`
+	Password         string           `json:"-" gorm:"not null"`
 	DegreePrograms   []*DegreeProgram `json:"degreePrograms" gorm:"many2many:user_degree_programs"`
 	FavoritePrograms []*DegreeProgram `json:"favoritePrograms" gorm:"many2many:user_favorite_programs"`
 	Subjects         []Subject        `json:"subjects" gorm:"many2many:user_subjects"`

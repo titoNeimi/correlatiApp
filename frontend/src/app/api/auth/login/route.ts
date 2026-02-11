@@ -34,7 +34,14 @@ export async function POST(req: Request) {
       try {
         ck.set(cookieOptions)
       } catch {
-        ck.set({ ...cookieOptions, httpOnly: false })
+        ck.set({
+          name,
+          value,
+          path: '/',
+          sameSite: 'lax',
+          httpOnly: true,
+          secure: isProduction,
+        })
       }
     }
   }

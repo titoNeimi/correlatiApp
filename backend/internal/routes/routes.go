@@ -4,6 +4,7 @@ import (
 	"acadifyapp/internal/handlers"
 	httpx "acadifyapp/internal/http"
 	"acadifyapp/internal/middleware"
+	"acadifyapp/internal/models"
 	"acadifyapp/internal/services"
 	"log/slog"
 	"net/http"
@@ -66,6 +67,7 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	r.GET("/health", handlers.Health)
 
 	sessSvc := services.New(db, 7*24*time.Hour)
+	startMaintenanceJobs(db, sessSvc)
 
 	cookieSecure := os.Getenv("COOKIE_SECURE")
 	secure := cookieSecure != "false"
@@ -120,8 +122,8 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	users := r.Group("/users")
 	{
 		users.GET("", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.GetAllUsers)
-		users.POST("", handlers.CreateUser)
-		users.GET("/:id", handlers.GetUser)
+		users.POST("", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.CreateUser)
+		users.GET("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.GetUser)
 		users.PUT("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.UpdateUser)
 		users.DELETE("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.DeleteUser)
 		users.POST("/:id/session/revoke", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin"), handlers.RevokeSession)
@@ -129,10 +131,10 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	degreeProgram := r.Group("/degreeProgram")
 	{
 		degreeProgram.GET("", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetAllDegreeProgramsWithSubjects)
-		degreeProgram.POST("", middleware.OptionalAuth(db, sessSvc, cookies), handlers.CreateProgram)
+		degreeProgram.POST("", middleware.AuthRequired(db, sessSvc, cookies), handlers.CreateProgram)
 		degreeProgram.GET("/:id", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetProgramById)
-		degreeProgram.PUT("/:id", handlers.UpdateProgram)
-		degreeProgram.DELETE("/:id", handlers.DeleteProgram)
+		degreeProgram.PUT("/:id", middleware.AuthRequired(db, sessSvc, cookies), handlers.UpdateProgram)
+		degreeProgram.DELETE("/:id", middleware.AuthRequired(db, sessSvc, cookies), handlers.DeleteProgram)
 		degreeProgram.POST("/:id/approve", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.ApproveProgram)
 		degreeProgram.POST("/:id/publish", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.PublishProgram)
 		degreeProgram.POST("/:id/unapprove", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.UnapproveProgram)
@@ -154,18 +156,18 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	}
 	subjects := r.Group("/subjects")
 	{
-		subjects.POST("", handlers.CreateSubject)
+		subjects.POST("", middleware.AuthRequired(db, sessSvc, cookies), handlers.CreateSubject)
 		subjects.GET("/:programId", handlers.GetAllSubjectsFromProgram)
-		subjects.PUT("/:id", handlers.UpdateSubject)
-		subjects.DELETE("/:id", handlers.DeleteSubject)
+		subjects.PUT("/:id", middleware.AuthRequired(db, sessSvc, cookies), handlers.UpdateSubject)
+		subjects.DELETE("/:id", middleware.AuthRequired(db, sessSvc, cookies), handlers.DeleteSubject)
 	}
 	universities := r.Group("/universities")
 	{
 		universities.GET("", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetAllUniversities)
-		universities.POST("", handlers.CreateUniversity)
+		universities.POST("", middleware.AuthRequired(db, sessSvc, cookies), handlers.CreateUniversity)
 		universities.GET("/:id", middleware.OptionalAuth(db, sessSvc, cookies), handlers.GetUniversityByID)
-		universities.PUT("/:id", handlers.UpdateUniversity)
-		universities.DELETE("/:id", handlers.DeleteUniversity)
+		universities.PUT("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.UpdateUniversity)
+		universities.DELETE("/:id", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.DeleteUniversity)
 	}
 
 	auth := r.Group("/auth")
@@ -173,7 +175,7 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		auth.GET("/me", middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Me)
 		auth.POST("/login", middleware.RateLimit(8, time.Minute), authHandlers.LoginHandler)
 		auth.POST("/logout", middleware.AuthRequired(db, sessSvc, cookies), authHandlers.Logout)
-		auth.POST("/register", authHandlers.Register)
+		auth.POST("/register", middleware.RateLimit(5, time.Minute), authHandlers.Register)
 
 		auth.POST("/password/forgot", middleware.RateLimit(5, time.Minute), authHandlers.ForgotPassword)
 		auth.POST("/password/reset", middleware.RateLimit(5, time.Minute), authHandlers.ResetPassword)
@@ -192,4 +194,36 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 			program.DELETE("/:id/favorite", handlers.UnfavoriteProgram)
 		}
 	}
+}
+
+func startMaintenanceJobs(db *gorm.DB, sessions *services.Service) {
+	runCleanup := func() {
+		if deletedSessions, err := sessions.DeleteExpired(); err != nil {
+			slog.Warn("failed to delete expired sessions", slog.Any("error", err))
+		} else if deletedSessions > 0 {
+			slog.Info("expired sessions deleted", slog.Int64("count", deletedSessions))
+		}
+
+		now := time.Now().UTC()
+		tx := db.Where("expires_at <= ? OR (used_at IS NOT NULL AND used_at <= ?)", now, now.Add(-24*time.Hour)).
+			Delete(&models.PasswordResetToken{})
+		if tx.Error != nil {
+			slog.Warn("failed to delete expired password reset tokens", slog.Any("error", tx.Error))
+			return
+		}
+		if tx.RowsAffected > 0 {
+			slog.Info("expired password reset tokens deleted", slog.Int64("count", tx.RowsAffected))
+		}
+	}
+
+	runCleanup()
+
+	go func() {
+		ticker := time.NewTicker(30 * time.Minute)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			runCleanup()
+		}
+	}()
 }

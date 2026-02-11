@@ -3,6 +3,7 @@ package handlers
 import (
 	"acadifyapp/internal/db"
 	"acadifyapp/internal/models"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -98,7 +99,7 @@ func UpdateProgram(c *gin.Context) {
 	id := c.Param("id")
 
 	updates := map[string]interface{}{}
-	var updatedProgram *models.DegreeProgram
+	var updatedProgram models.DegreeProgram
 
 	if err := c.BindJSON(&updates); err != nil {
 		slog.Error("Error getting the json from the body", slog.Any("Error: ", err))
@@ -111,6 +112,9 @@ func UpdateProgram(c *gin.Context) {
 
 	if err := db.Db.Where("id = ?", id).First(&updatedProgram).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
+		return
+	}
+	if !ensureProgramWriteAccessForProgram(c, &updatedProgram) {
 		return
 	}
 
@@ -143,10 +147,13 @@ func UpdateProgram(c *gin.Context) {
 func DeleteProgram(c *gin.Context) {
 	id := c.Param("id")
 
-	var program *models.DegreeProgram
+	var program models.DegreeProgram
 
 	if err := db.Db.Where("id = ?", id).First(&program).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
+		return
+	}
+	if !ensureProgramWriteAccessForProgram(c, &program) {
 		return
 	}
 
@@ -371,4 +378,55 @@ func canViewProgram(c *gin.Context, program *models.DegreeProgram) bool {
 		Where("user_id = ? AND degree_program_id = ?", user.ID, program.ID).
 		Count(&count).Error
 	return count > 0
+}
+
+func ensureProgramWriteAccess(c *gin.Context, programID string) bool {
+	var program models.DegreeProgram
+	if err := db.Db.Select("id", "approval_status", "public_requested").Where("id = ?", programID).First(&program).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Program not found"})
+			return false
+		}
+		slog.Error("Error loading program permissions", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error validating permissions"})
+		return false
+	}
+	return ensureProgramWriteAccessForProgram(c, &program)
+}
+
+func ensureProgramWriteAccessForProgram(c *gin.Context, program *models.DegreeProgram) bool {
+	if isAdminOrStaff(c) {
+		return true
+	}
+
+	u, ok := c.Get("user")
+	if !ok {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+		return false
+	}
+	user, ok := u.(models.User)
+	if !ok {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "no autenticado"})
+		return false
+	}
+
+	if program.ApprovalStatus == models.DegreeProgramApproved && program.PublicRequested {
+		c.IndentedJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return false
+	}
+
+	var count int64
+	if err := db.Db.Table("user_degree_programs").
+		Where("user_id = ? AND degree_program_id = ?", user.ID, program.ID).
+		Count(&count).Error; err != nil {
+		slog.Error("Error validating program permissions", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Error validating permissions"})
+		return false
+	}
+	if count == 0 {
+		c.IndentedJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return false
+	}
+
+	return true
 }

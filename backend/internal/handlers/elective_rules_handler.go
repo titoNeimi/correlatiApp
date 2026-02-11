@@ -34,6 +34,9 @@ func CreateElectiveRule(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
+	if !ensureProgramWriteAccess(c, id) {
+		return
+	}
 
 	var degreeProgram models.DegreeProgram
 	var req CreateElectiveRuleDTO
@@ -160,6 +163,9 @@ func UpdateElectiveRule(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
+	if !ensureProgramWriteAccess(c, programID) {
+		return
+	}
 	ruleID, err := validateID(c.Param("ruleId"), "rule_id")
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
@@ -260,6 +266,9 @@ func DeleteElectiveRule(c *gin.Context) {
 	programID, err := validateID(c.Param("id"), "program_id")
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	if !ensureProgramWriteAccess(c, programID) {
 		return
 	}
 	ruleID, err := validateID(c.Param("ruleId"), "rule_id")

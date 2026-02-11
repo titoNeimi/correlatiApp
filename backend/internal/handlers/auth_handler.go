@@ -55,6 +55,7 @@ type resetPasswordRequest struct {
 }
 
 const forgotPasswordGenericMessage = "si el email existe, te enviamos instrucciones para recuperar la contrasena"
+const forgotPasswordMinInterval = time.Minute
 
 func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 	var data loginData
@@ -164,6 +165,7 @@ func (h *AuthHandlers) ForgotPassword(c *gin.Context) {
 	}
 
 	email := strings.TrimSpace(strings.ToLower(req.Email))
+	now := time.Now().UTC()
 
 	var user models.User
 	if err := h.DB.Select("id", "email").Where("email = ?", email).First(&user).Error; err != nil {
@@ -172,6 +174,18 @@ func (h *AuthHandlers) ForgotPassword(c *gin.Context) {
 			return
 		}
 		slog.Error("error searching user for password reset", slog.Any("error", err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo iniciar la recuperación"})
+		return
+	}
+
+	var latestToken models.PasswordResetToken
+	if err := h.DB.Select("created_at").Where("user_id = ?", user.ID).Order("created_at DESC").First(&latestToken).Error; err == nil {
+		if now.Sub(latestToken.CreatedAt) < forgotPasswordMinInterval {
+			c.JSON(http.StatusOK, gin.H{"message": forgotPasswordGenericMessage})
+			return
+		}
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		slog.Error("error checking latest reset token", slog.Any("error", err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo iniciar la recuperación"})
 		return
 	}
@@ -187,7 +201,7 @@ func (h *AuthHandlers) ForgotPassword(c *gin.Context) {
 		ID:        uuid.NewString(),
 		UserID:    user.ID,
 		TokenHash: hashResetToken(rawToken),
-		ExpiresAt: time.Now().UTC().Add(h.getResetTokenTTL()),
+		ExpiresAt: now.Add(h.getResetTokenTTL()),
 	}
 
 	if err := h.DB.Where("user_id = ?", user.ID).Delete(&models.PasswordResetToken{}).Error; err != nil {

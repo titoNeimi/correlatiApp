@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -23,6 +24,29 @@ func RateLimit(max int, window time.Duration) gin.HandlerFunc {
 
 	var mu sync.Mutex
 	entries := map[string]*rateLimitEntry{}
+	cleanupInterval := window
+	if cleanupInterval > 5*time.Minute {
+		cleanupInterval = 5 * time.Minute
+	}
+	if cleanupInterval < 10*time.Second {
+		cleanupInterval = 10 * time.Second
+	}
+
+	go func() {
+		ticker := time.NewTicker(cleanupInterval)
+		defer ticker.Stop()
+
+		for now := range ticker.C {
+			now = now.UTC()
+			mu.Lock()
+			for key, entry := range entries {
+				if now.After(entry.windowEnd) {
+					delete(entries, key)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
 
 	return func(c *gin.Context) {
 		key := c.ClientIP()
@@ -40,7 +64,11 @@ func RateLimit(max int, window time.Duration) gin.HandlerFunc {
 		mu.Unlock()
 
 		if count > max {
-			c.Header("Retry-After", resetAt.Format(time.RFC1123))
+			retryAfter := int(time.Until(resetAt).Seconds())
+			if retryAfter < 1 {
+				retryAfter = 1
+			}
+			c.Header("Retry-After", strconv.Itoa(retryAfter))
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
 			return
 		}

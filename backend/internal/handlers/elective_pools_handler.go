@@ -32,6 +32,9 @@ func CreateElectivePool(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
+	if !ensureProgramWriteAccess(c, programID) {
+		return
+	}
 
 	var degreeProgram models.DegreeProgram
 	if err := db.Db.Where("id = ?", programID).First(&degreeProgram).Error; err != nil {
@@ -130,6 +133,9 @@ func UpdateElectivePool(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
+	if !ensureProgramWriteAccess(c, programID) {
+		return
+	}
 	poolID, err := validateID(c.Param("poolId"), "pool_id")
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
@@ -185,6 +191,9 @@ func DeleteElectivePool(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
+	if !ensureProgramWriteAccess(c, programID) {
+		return
+	}
 	poolID, err := validateID(c.Param("poolId"), "pool_id")
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
@@ -215,6 +224,9 @@ func AddSubjectToElectivePool(c *gin.Context) {
 	programID, err := validateID(c.Param("id"), "program_id")
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	if !ensureProgramWriteAccess(c, programID) {
 		return
 	}
 	poolID, err := validateID(c.Param("poolId"), "pool_id")
@@ -287,6 +299,9 @@ func RemoveSubjectFromElectivePool(c *gin.Context) {
 	programID, err := validateID(c.Param("id"), "program_id")
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		return
+	}
+	if !ensureProgramWriteAccess(c, programID) {
 		return
 	}
 	poolID, err := validateID(c.Param("poolId"), "pool_id")

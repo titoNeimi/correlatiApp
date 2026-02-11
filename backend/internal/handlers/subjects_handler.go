@@ -144,6 +144,9 @@ func CreateSubject(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "degreeProgramID is required"})
 		return
 	}
+	if !ensureProgramWriteAccess(c, dto.DegreeProgramID) {
+		return
+	}
 
 	year := dto.Year
 	if year == nil {
@@ -245,6 +248,9 @@ func UpdateSubject(c *gin.Context) {
 	var subject models.Subject
 	if err := db.Db.Where("id = ?", id).First(&subject).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Subject not found"})
+		return
+	}
+	if !ensureProgramWriteAccess(c, subject.DegreeProgramID) {
 		return
 	}
 
@@ -359,6 +365,9 @@ func DeleteSubject(c *gin.Context) {
 	var subject models.Subject
 	if err := db.Db.Where("id = ?", id).First(&subject).Error; err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Subject not found"})
+		return
+	}
+	if !ensureProgramWriteAccess(c, subject.DegreeProgramID) {
 		return
 	}
 
