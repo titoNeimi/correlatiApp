@@ -162,7 +162,10 @@ func (m *BrevoSMTPMailer) SendPasswordReset(toEmail, resetURL string) error {
 	addr := net.JoinHostPort(m.host, strconv.Itoa(m.port))
 	auth := smtp.PlainAuth("", m.username, m.password, m.host)
 
-	return smtp.SendMail(addr, auth, m.fromEmail, []string{toEmail}, []byte(message.String()))
+	if err := smtp.SendMail(addr, auth, m.fromEmail, []string{toEmail}, []byte(message.String())); err != nil {
+		return fmt.Errorf("smtp send failed via %s: %w", addr, err)
+	}
+	return nil
 }
 
 func (m *BrevoAPIMailer) SendPasswordReset(toEmail, resetURL string) error {
@@ -212,7 +215,7 @@ func (m *BrevoAPIMailer) SendPasswordReset(toEmail, resetURL string) error {
 
 	res, err := m.client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("brevo api request failed to %s: %w", m.apiURL, err)
 	}
 	defer res.Body.Close()
 

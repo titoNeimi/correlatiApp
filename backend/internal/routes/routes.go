@@ -96,18 +96,36 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 	}
 
 	var resetMailer services.PasswordResetMailer
-	apiMailer, err := services.NewBrevoAPIMailer(services.BrevoAPIConfigFromEnv())
+	apiCfg := services.BrevoAPIConfigFromEnv()
+	apiMailer, err := services.NewBrevoAPIMailer(apiCfg)
 	if err == nil {
 		resetMailer = apiMailer
+		slog.Info(
+			"password reset mailer configured",
+			slog.String("provider", "brevo_api"),
+			slog.String("api_url", apiCfg.APIURL),
+			slog.String("from_email", apiCfg.FromEmail),
+			slog.Duration("timeout", apiCfg.Timeout),
+		)
 	} else {
 		slog.Warn("brevo API mailer is not configured, trying SMTP fallback", slog.Any("error", err))
-		smtpMailer, smtpErr := services.NewBrevoSMTPMailer(services.BrevoSMTPConfigFromEnv())
+		smtpCfg := services.BrevoSMTPConfigFromEnv()
+		smtpMailer, smtpErr := services.NewBrevoSMTPMailer(smtpCfg)
 		if smtpErr != nil {
 			slog.Warn("brevo mailer is not configured, password reset by email disabled", slog.Any("error", smtpErr))
 		} else {
-			slog.Warn("using SMTP fallback for password reset emails")
+			slog.Info(
+				"password reset mailer configured",
+				slog.String("provider", "brevo_smtp"),
+				slog.String("host", smtpCfg.Host),
+				slog.Int("port", smtpCfg.Port),
+				slog.String("from_email", smtpCfg.FromEmail),
+			)
 			resetMailer = smtpMailer
 		}
+	}
+	if resetMailer == nil {
+		slog.Warn("password reset mailer is disabled; /auth/password/forgot will return 503")
 	}
 
 	authHandlers := &handlers.AuthHandlers{

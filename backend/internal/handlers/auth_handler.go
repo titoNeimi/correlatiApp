@@ -154,6 +154,7 @@ func (h *AuthHandlers) Me(c *gin.Context) {
 
 func (h *AuthHandlers) ForgotPassword(c *gin.Context) {
 	if h.Mailer == nil {
+		slog.Warn("password reset requested but mailer is not configured")
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "password reset mailer is not configured"})
 		return
 	}
@@ -177,6 +178,11 @@ func (h *AuthHandlers) ForgotPassword(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo iniciar la recuperación"})
 		return
 	}
+	slog.Info(
+		"password reset request accepted",
+		slog.String("user_id", user.ID),
+		slog.String("mailer", mailerName(h.Mailer)),
+	)
 
 	var latestToken models.PasswordResetToken
 	if err := h.DB.Select("created_at").Where("user_id = ?", user.ID).Order("created_at DESC").First(&latestToken).Error; err == nil {
@@ -226,10 +232,20 @@ func (h *AuthHandlers) ForgotPassword(c *gin.Context) {
 
 	if err := h.Mailer.SendPasswordReset(user.Email, resetURL); err != nil {
 		_ = h.DB.Where("id = ?", resetToken.ID).Delete(&models.PasswordResetToken{}).Error
-		slog.Error("error sending reset password email", slog.Any("error", err))
+		slog.Error(
+			"error sending reset password email",
+			slog.String("user_id", user.ID),
+			slog.String("mailer", mailerName(h.Mailer)),
+			slog.Any("error", err),
+		)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo enviar el correo de recuperación"})
 		return
 	}
+	slog.Info(
+		"password reset email sent",
+		slog.String("user_id", user.ID),
+		slog.String("mailer", mailerName(h.Mailer)),
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": forgotPasswordGenericMessage})
 }
@@ -350,4 +366,15 @@ func buildResetURL(base, token string) (string, error) {
 	query.Set("token", token)
 	u.RawQuery = query.Encode()
 	return u.String(), nil
+}
+
+func mailerName(m services.PasswordResetMailer) string {
+	switch m.(type) {
+	case *services.BrevoAPIMailer:
+		return "brevo_api"
+	case *services.BrevoSMTPMailer:
+		return "brevo_smtp"
+	default:
+		return "unknown"
+	}
 }
