@@ -61,6 +61,7 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 			"/auth/register",
 			"/auth/password/forgot",
 			"/auth/password/reset",
+			"/suggestions",
 		},
 	}))
 
@@ -212,6 +213,20 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 			program.DELETE("/:id/favorite", handlers.UnfavoriteProgram)
 		}
 	}
+
+	suggestionsToEmail := strings.TrimSpace(os.Getenv("SUGGESTIONS_TO_EMAIL"))
+	if suggestionsToEmail == "" {
+		suggestionsToEmail = "acadifyapp@gmail.com"
+	}
+	var suggestionMailer services.SuggestionMailer
+	if apiMailer != nil {
+		suggestionMailer = apiMailer
+	}
+	suggestionHandlers := &handlers.SuggestionHandlers{
+		Mailer:  suggestionMailer,
+		ToEmail: suggestionsToEmail,
+	}
+	r.POST("/suggestions", middleware.RateLimit(10, time.Minute), suggestionHandlers.Submit)
 }
 
 func startMaintenanceJobs(db *gorm.DB, sessions *services.Service) {

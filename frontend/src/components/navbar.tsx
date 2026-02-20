@@ -30,7 +30,7 @@ export function Navbar(){
               <Link href="/" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Inicio</Link>
               <Link href="/carreras" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Carreras</Link>
               <Link href="/universidades" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Universidades</Link>
-              <Link href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Contacto</Link>
+              <Link href="/sugerencias" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Sugerencias</Link>
             </nav>
           </div>
           <div className="flex items-center space-x-2">
@@ -80,7 +80,7 @@ export function Navbar(){
                         <GraduationCap className="w-4 h-4" />
                         <span>Mis carreras</span>
                       </Link>
-                      <Link
+                      {/* <Link
                         href="/perfil"
                         className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setDropdownOpen(false)}
@@ -96,7 +96,7 @@ export function Navbar(){
                       >
                         <Settings className="w-4 h-4" />
                         <span>Configuración</span>
-                      </Link>
+                      </Link> */}
                       {user?.role == 'admin' ? 
                         <Link
                           href="/admin"
