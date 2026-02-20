@@ -8,12 +8,14 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  );
   const [isDarkTheme, setIsDarkTheme] = useState(false);
 
   return (
     <div className={isDarkTheme ? 'dark' : ''}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 overflow-x-hidden">
         <Sidebar
           isCollapsed={isSidebarCollapsed} 
           onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -21,12 +23,13 @@ export default function AdminLayout({
 
         <div
           className={`transition-all duration-300 ease-out ${
-            isSidebarCollapsed ? 'ml-20' : 'ml-72'
+            isSidebarCollapsed ? 'md:ml-20' : 'md:ml-72'
           }`}
         >
-          <Topbar 
-            isDark={isDarkTheme} 
+          <Topbar
+            isDark={isDarkTheme}
             onThemeToggle={() => setIsDarkTheme(!isDarkTheme)}
+            onSidebarToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           />
 
           <main

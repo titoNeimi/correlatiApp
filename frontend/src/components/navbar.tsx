@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { ChevronDown, User, LogOut, Settings, GraduationCap, CircleUserRound, ShieldUser } from 'lucide-react';
+import { ChevronDown, User, LogOut, Settings, GraduationCap, CircleUserRound, ShieldUser, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext'
 
@@ -9,6 +9,7 @@ export function Navbar(){
 
   const { user: ctxUser, isLoggedIn, logout } = useUser()
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const user = ctxUser ? { name: ctxUser.email.split('@')[0], email: ctxUser.email, role: ctxUser.role} : null
 
   return(
@@ -24,26 +25,26 @@ export function Navbar(){
             </Link>
           </div>
           
-          <div className="flex items-center space-x-8">
-            <nav className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
+            <nav className="flex space-x-8">
               <Link href="/" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Inicio</Link>
               <Link href="/carreras" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Carreras</Link>
               <Link href="/universidades" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Universidades</Link>
               <Link href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Contacto</Link>
             </nav>
           </div>
-          <div>
+          <div className="flex items-center space-x-2">
             {!isLoggedIn ? (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
                 <Link
-                  href="/login" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors font-medium px-4 py-2 rounded-lg hover:bg-blue-50"
+                  href="/login"
+                  className="hidden md:block text-gray-600 hover:text-blue-600 transition-colors font-medium px-4 py-2 rounded-lg hover:bg-blue-50"
                 >
                   Iniciar Sesión
                 </Link>
-                <Link 
-                  href="/register" 
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                <Link
+                  href="/register"
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md text-sm sm:text-base"
                 >
                   Registrarse
                 </Link>
@@ -134,9 +135,30 @@ export function Navbar(){
                 )}
               </div>
             )}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6 text-gray-700" /> : <Menu className="w-6 h-6 text-gray-700" />}
+            </button>
           </div>
         </div>
       </div>
+
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-blue-100 bg-white/95 backdrop-blur-sm">
+          <nav className="max-w-7xl mx-auto px-4 py-2 flex flex-col">
+            <Link href="/" className="text-gray-600 hover:text-blue-600 transition-colors font-medium px-3 py-2.5 rounded-lg hover:bg-blue-50" onClick={() => setMobileMenuOpen(false)}>Inicio</Link>
+            <Link href="/carreras" className="text-gray-600 hover:text-blue-600 transition-colors font-medium px-3 py-2.5 rounded-lg hover:bg-blue-50" onClick={() => setMobileMenuOpen(false)}>Carreras</Link>
+            <Link href="/universidades" className="text-gray-600 hover:text-blue-600 transition-colors font-medium px-3 py-2.5 rounded-lg hover:bg-blue-50" onClick={() => setMobileMenuOpen(false)}>Universidades</Link>
+            <Link href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-medium px-3 py-2.5 rounded-lg hover:bg-blue-50" onClick={() => setMobileMenuOpen(false)}>Contacto</Link>
+            {!isLoggedIn && (
+              <Link href="/login" className="text-gray-600 hover:text-blue-600 transition-colors font-medium px-3 py-2.5 rounded-lg hover:bg-blue-50" onClick={() => setMobileMenuOpen(false)}>Iniciar Sesión</Link>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   )
 }

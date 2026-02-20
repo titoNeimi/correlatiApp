@@ -4,11 +4,20 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SearchInput, ThemeToggle } from "./baseComponents";
 
-export function Topbar({ isDark, onThemeToggle }: { isDark: boolean; onThemeToggle: () => void }) {
+export function Topbar({ isDark, onThemeToggle, onSidebarToggle }: { isDark: boolean; onThemeToggle: () => void; onSidebarToggle: () => void }) {
   return (
     <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-shadow duration-200">
       <div className="flex items-center justify-between px-4 lg:px-6 py-4">
         <div className="flex items-center gap-4 flex-1 max-w-xl">
+          <button
+            onClick={onSidebarToggle}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
+            aria-label="Toggle sidebar"
+          >
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <SearchInput placeholder="Buscar usuarios, materias, carreras..." />
         </div>
         
@@ -58,9 +67,10 @@ function SidebarItem({ icon, label, href, isActive, isCollapsed }: SidebarItemPr
     <Link
       href={href}
       className={`
-        flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
-        ${isActive 
-          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
+        flex items-center py-2.5 rounded-lg transition-all duration-200
+        ${isCollapsed ? 'justify-center px-2 gap-0' : 'gap-3 px-3'}
+        ${isActive
+          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
         }
         focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -70,7 +80,7 @@ function SidebarItem({ icon, label, href, isActive, isCollapsed }: SidebarItemPr
       <span className="flex-shrink-0 w-5 h-5">{icon}</span>
       <span className={`
         font-medium text-sm whitespace-nowrap transition-all duration-200
-        ${isCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100'}
+        ${isCollapsed ? 'opacity-0 w-0 overflow-hidden pointer-events-none' : 'opacity-100'}
       `}>
         {label}
       </span>
@@ -165,11 +175,22 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   ], []);
 
   return (
+    <>
+      {/* Mobile backdrop */}
+      {!isCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={onToggle}
+          aria-hidden="true"
+        />
+      )}
     <aside
       className={`
-        fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40
-        transition-all duration-300 ease-out
-        ${isCollapsed ? 'w-20' : 'w-72'}
+        fixed left-0 top-0 h-full w-72 overflow-hidden bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-40
+        transition-transform duration-300 ease-out
+        ${isCollapsed
+          ? '-translate-x-full md:translate-x-0 md:w-20'
+          : 'translate-x-0'}
       `}
     >
       <div className="flex flex-col h-full">
@@ -181,7 +202,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             </div>
             <span className={`
               text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap transition-all duration-200
-              ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}
+              ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}
             `}>
               AcadifyApp
             </span>
@@ -191,7 +212,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             className={`
               p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200
               focus:outline-none focus:ring-2 focus:ring-blue-500
-              ${isCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100'}
+              ${isCollapsed ? 'opacity-0 w-0 overflow-hidden pointer-events-none' : 'opacity-100'}
             `}
             aria-label="Colapsar sidebar"
           >
@@ -202,7 +223,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" aria-label="Navegación principal">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden" aria-label="Navegación principal">
           {menuItems.map((item) => (
             <SidebarItem
               key={item.id}
@@ -246,5 +267,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         )}
       </div>
     </aside>
+    </>
   );
 }
