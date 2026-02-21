@@ -1,186 +1,202 @@
-import React from 'react';
-import { BookOpen, TrendingUp, Users, Star, ChevronRight, GraduationCap } from 'lucide-react';
-import Link from 'next/link';
+import Link from 'next/link'
+import {
+  ArrowRight,
+  BookOpen,
+  Compass,
+  GraduationCap,
+  LayoutDashboard,
+  MapPinned,
+  Sparkles,
+  Users
+} from 'lucide-react'
+import { PageShell } from '@/components/layout/page-shell'
 
-export default function Home() {
+const onboardingSteps = [
+  {
+    title: 'Explora carreras',
+    description: 'Encuentra un plan de estudio y revisa materias por ano.',
+    href: '/carreras',
+    cta: 'Ver carreras',
+    icon: GraduationCap,
+    tone: 'from-sky-50 via-white to-cyan-50',
+    badge: 'bg-sky-100 text-sky-700'
+  },
+  {
+    title: 'Guarda tus favoritas',
+    description: 'Arma una lista corta para comparar opciones con calma.',
+    href: '/mis-carreras',
+    cta: 'Ir a mis carreras',
+    icon: BookOpen,
+    tone: 'from-amber-50 via-white to-orange-50',
+    badge: 'bg-amber-100 text-amber-700'
+  },
+  {
+    title: 'Empieza tu plan',
+    description: 'Marca avance por materia y proyecta los proximos semestres.',
+    href: '/mi-plan',
+    cta: 'Abrir mi plan',
+    icon: LayoutDashboard,
+    tone: 'from-emerald-50 via-white to-teal-50',
+    badge: 'bg-emerald-100 text-emerald-700'
+  }
+]
+
+const quickLinks = [
+  {
+    title: 'Universidades',
+    description: 'Filtra por ciudad, enfoque y tipo institucional.',
+    href: '/universidades',
+    icon: MapPinned
+  },
+  {
+    title: 'Comunidad',
+    description: 'Comparte sugerencias y ayudanos a mejorar el catalogo.',
+    href: '/sugerencias',
+    icon: Users
+  }
+]
+
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="mb-8">
-            <h2 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6">
-              Tu carrera universitaria
-              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                organizada y clara
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Descubre programas académicos, visualiza tu progreso en tiempo real y toma decisiones informadas 
-              sobre tu futuro universitario con estadísticas detalladas.
+    <PageShell>
+      <section className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-8 mb-10">
+        <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
+              <Sparkles className="w-4 h-4" />
+              Bienvenida
+            </div>
+            <h1 className="text-3xl sm:text-5xl font-bold text-slate-900 mt-4 leading-tight">
+              Bienvenido a CorrelatiApp
+            </h1>
+            <p className="text-slate-600 mt-4 max-w-2xl text-base sm:text-lg">
+              Tu espacio para entender la carrera que eliges, organizar materias y avanzar con un plan claro.
             </p>
+
+            <div className="mt-7 flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/carreras"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+              >
+                Empezar ahora
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Crear cuenta gratis
+              </Link>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                <GraduationCap className="w-4 h-4" />
+                500+ carreras
+              </div>
+              <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                <Users className="w-4 h-4" />
+                50+ universidades
+              </div>
+            </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link href='/carreras' className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center">
-              Explorar Carreras
-              <ChevronRight className="ml-2 h-5 w-5" />
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-amber-50 p-6">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-sky-100/70 blur-xl" />
+            <div className="pointer-events-none absolute -bottom-12 -left-8 h-36 w-36 rounded-full bg-amber-100/70 blur-xl" />
+            <div className="relative">
+              <p className="text-sm uppercase tracking-wide text-slate-500">Si es tu primera vez</p>
+              <h2 className="text-xl font-bold mt-3 text-slate-900">Empieza en menos de 5 minutos</h2>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="rounded-xl border border-sky-100 bg-white/90 px-4 py-3">
+                  <p className="text-slate-500 text-xs">Paso 1</p>
+                  <p className="font-semibold text-slate-900">Busca una carrera en el catalogo</p>
+                </div>
+                <div className="rounded-xl border border-amber-100 bg-white/90 px-4 py-3">
+                  <p className="text-slate-500 text-xs">Paso 2</p>
+                  <p className="font-semibold text-slate-900">Revisa su estructura y correlativas</p>
+                </div>
+                <div className="rounded-xl border border-emerald-100 bg-white/90 px-4 py-3">
+                  <p className="text-slate-500 text-xs">Paso 3</p>
+                  <p className="font-semibold text-slate-900">Carga tus materias y sigue tu avance</p>
+                </div>
+                <Link
+                  href="/mi-plan"
+                  className="block text-center bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-800 transition-colors"
+                >
+                  Ir a mi plan
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <div className="flex items-center gap-2 mb-6 text-slate-900">
+          <Compass className="w-5 h-5" />
+          <h2 className="text-2xl sm:text-3xl font-bold">Como empezar</h2>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {onboardingSteps.map((step) => (
+            <article
+              key={step.title}
+              className={`rounded-2xl border border-slate-100 bg-gradient-to-br ${step.tone} p-6 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}
+            >
+              <div className={`inline-flex p-2 rounded-xl ${step.badge}`}>
+                <step.icon className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mt-4">{step.title}</h3>
+              <p className="text-slate-600 mt-2 text-sm leading-relaxed">{step.description}</p>
+              <Link
+                href={step.href}
+                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+              >
+                {step.cta}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 md:grid-cols-2 mb-10">
+        {quickLinks.map((link) => (
+          <article key={link.title} className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
+            <div className="bg-slate-900 text-white inline-flex p-2 rounded-lg">
+              <link.icon className="w-5 h-5" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mt-4">{link.title}</h3>
+            <p className="text-slate-600 mt-2 text-sm">{link.description}</p>
+            <Link
+              href={link.href}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              Abrir
+              <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 border-2 border-blue-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 group">
-              <div className="text-center">
-                <div className="text-4xl font-extrabold text-blue-600 mb-3 group-hover:scale-110 transition-transform duration-300">500+</div>
-                <div className="text-gray-700 font-semibold text-lg">Programas Académicos</div>
-                <div className="w-12 h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full mx-auto mt-3"></div>
-              </div>
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 border-2 border-purple-100 shadow-sm hover:shadow-lg hover:border-purple-200 transition-all duration-300 group">
-              <div className="text-center">
-                <div className="text-4xl font-extrabold text-purple-600 mb-3 group-hover:scale-110 transition-transform duration-300">50+</div>
-                <div className="text-gray-700 font-semibold text-lg">Universidades</div>
-                <div className="w-12 h-1 bg-gradient-to-r from-purple-400 to-purple-600 rounded-full mx-auto mt-3"></div>
-              </div>
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 border-2 border-green-100 shadow-sm hover:shadow-lg hover:border-green-200 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
-              <div className="text-center">
-                <div className="text-4xl font-extrabold text-green-600 mb-3 group-hover:scale-110 transition-transform duration-300">10K+</div>
-                <div className="text-gray-700 font-semibold text-lg">Estudiantes</div>
-                <div className="w-12 h-1 bg-gradient-to-r from-green-400 to-green-600 rounded-full mx-auto mt-3"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+          </article>
+        ))}
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-gray-900 mb-4">
-              Todo lo que necesitas para tu carrera
-            </h3>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Herramientas diseñadas específicamente para estudiantes universitarios
+      <section className="bg-gradient-to-br from-amber-50 via-white to-sky-50 rounded-3xl border border-slate-200 p-6 sm:p-8">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Listo para arrancar tu recorrido academico</h2>
+            <p className="text-slate-600 mt-2 max-w-2xl">
+              Crea tu cuenta para guardar tu progreso y continuar desde cualquier dispositivo.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg border-2 border-gray-100 hover:border-blue-200 hover:shadow-xl transition-all duration-300 group">
-              <div className="flex flex-col h-full">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl w-fit mb-6 group-hover:scale-105 transition-transform duration-300">
-                  <BookOpen className="h-10 w-10 text-blue-600" />
-                </div>
-                <h4 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300">
-                  Explorar Materias
-                </h4>
-                <p className="text-gray-600 leading-relaxed flex-grow">
-                  Visualiza todas las materias de tu carrera, sus requisitos y cómo se conectan entre sí.
-                </p>
-                <div className="w-full h-1 bg-gradient-to-r from-blue-200 to-blue-400 rounded-full mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-            </div>
-
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg border-2 border-gray-100 hover:border-purple-200 hover:shadow-xl transition-all duration-300 group">
-              <div className="flex flex-col h-full">
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl w-fit mb-6 group-hover:scale-105 transition-transform duration-300">
-                  <TrendingUp className="h-10 w-10 text-purple-600" />
-                </div>
-                <h4 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-purple-600 transition-colors duration-300">
-                  Seguir tu Progreso
-                </h4>
-                <p className="text-gray-600 leading-relaxed flex-grow">
-                  Monitorea tu avance académico con estadísticas detalladas y visualizaciones claras.
-                </p>
-                <div className="w-full h-1 bg-gradient-to-r from-purple-200 to-purple-400 rounded-full mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-            </div>
-
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg border-2 border-gray-100 hover:border-green-200 hover:shadow-xl transition-all duration-300 group md:col-span-2 xl:col-span-1">
-              <div className="flex flex-col h-full">
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-2xl w-fit mb-6 group-hover:scale-105 transition-transform duration-300">
-                  <Users className="h-10 w-10 text-green-600" />
-                </div>
-                <h4 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-green-600 transition-colors duration-300">
-                  Comparar Universidades
-                </h4>
-                <p className="text-gray-600 leading-relaxed flex-grow">
-                  Compara programas académicos entre diferentes universidades para tomar la mejor decisión.
-                </p>
-                <div className="w-full h-1 bg-gradient-to-r from-green-200 to-green-400 rounded-full mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonial Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-3xl font-bold text-gray-900 mb-12">
-            Lo que dicen nuestros estudiantes
-          </h3>
-          
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 md:p-12">
-            <div className="flex justify-center mb-6">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="h-6 w-6 text-yellow-400 fill-current" />
-              ))}
-            </div>
-            <blockquote className="text-xl md:text-2xl text-gray-700 font-medium mb-8 leading-relaxed">
-              &quot;AcadifyApp me ayudó a entender completamente mi plan de estudios. 
-              Ahora puedo planificar mis semestres de manera eficiente y ver claramente mi progreso.&quot;
-            </blockquote>
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mb-3">
-                AM
-              </div>
-              <div className="text-gray-900 font-semibold">Ana Martínez</div>
-              <div className="text-gray-600">Estudiante de Ingeniería - UBA</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-4xl font-bold text-white mb-6">
-            Comienza a organizar tu carrera hoy
-          </h3>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Únete a miles de estudiantes que ya están usando AcadifyApp para 
-            planificar su futuro académico de manera inteligente.
-          </p>
-          <Link href='/register' className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
-            Registrarse Gratis
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+          >
+            Crear cuenta
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-3 mb-6 md:mb-0">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl">
-                <GraduationCap className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold">AcadifyApp</span>
-            </div>
-            <div className="flex space-x-8">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacidad</a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Términos</a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Soporte</a>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>&copy; 2025 AcadifyApp. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+    </PageShell>
+  )
 }

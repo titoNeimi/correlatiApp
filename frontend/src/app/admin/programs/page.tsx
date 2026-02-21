@@ -345,7 +345,13 @@ export default function ProgramsPage() {
               <span>{program.subjects ? program.subjects.length : 0} materias</span>
               <span>{program.updated_at ? dateFormatter.format(new Date(program.updated_at)) : '—'}</span>
             </div>
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <Link
+                href={`/carreras/${program.id}/editar`}
+                className="px-2 py-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 rounded-md transition-colors duration-200"
+              >
+                Editar materias
+              </Link>
               <button
                 onClick={() => handleDelete(program.id)}
                 className="px-2 py-1 text-[11px] font-semibold text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 rounded-md transition-colors duration-200"

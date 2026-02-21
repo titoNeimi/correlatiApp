@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { BookOpen, GraduationCap, Heart, MapPin, Sparkles } from 'lucide-react'
+import { BookOpen, GraduationCap, Heart, MapPin, Pencil, Sparkles } from 'lucide-react'
 import { apiFetch, apiFetchJson, getApiErrorMessage } from '@/lib/api'
 import { useUser } from '@/context/UserContext'
 import { ClientPageShell } from '@/components/layout/client-page-shell'
@@ -12,6 +12,8 @@ type DegreeProgramDTO = {
   name: string
   university?: { id: string; name: string }
   subjects?: { id: string }[]
+  approvalStatus?: 'pending' | 'approved' | 'rejected'
+  publicRequested?: boolean
 }
 
 type MeProgramsResponse = {
@@ -271,7 +273,16 @@ export default function MyProgramsPage() {
                       </Link>
                     </div>
 
-                    <div className="mt-auto pt-2">
+                    <div className="mt-auto pt-2 space-y-2">
+                      {!(program.approvalStatus === 'approved' && program.publicRequested) && (
+                        <Link
+                          href={`/carreras/${program.id}/editar`}
+                          className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Editar materias
+                        </Link>
+                      )}
                       <Link
                         href={`/mi-plan?programId=${program.id}`}
                         className="inline-flex items-center justify-center w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
