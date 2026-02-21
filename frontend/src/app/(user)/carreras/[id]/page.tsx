@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, Building2, Info, MapPin, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Building2, Info, MapPin, Pencil, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { apiFetch, getApiErrorMessage } from '@/lib/api'
@@ -25,6 +25,8 @@ type DegreeProgramDetail = {
     location?: string
   }
   subjects?: DegreeProgramSubject[]
+  approvalStatus?: 'pending' | 'approved' | 'rejected'
+  publicRequested?: boolean
   created_at?: string
   updated_at?: string
 }
@@ -132,7 +134,7 @@ async function fetchElectivePools(id: string): Promise<ElectivePool[] | null> {
 export default function CareerDetailPage() {
   const params = useParams<{ id: string }>()
   const id = Array.isArray(params.id) ? params.id[0] : params.id
-  const { isLoggedIn, isLoading: isLoadingUser, refresh } = useUser()
+  const { user, isLoggedIn, isLoading: isLoadingUser, refresh } = useUser()
   const [loading, setLoading] = useState(true)
   const [program, setProgram] = useState<DegreeProgramDetail | null>(null)
   const [subjects, setSubjects] = useState<DegreeProgramSubject[]>([])
@@ -248,6 +250,12 @@ export default function CareerDetailPage() {
     if (!id) return false
     return favoriteProgramIds.includes(id)
   }, [favoriteProgramIds, id])
+
+  const canEdit = useMemo(() => {
+    if (!isLoggedIn || !program) return false
+    if (user?.role === 'admin' || user?.role === 'staff') return true
+    return isEnrolled && !(program.approvalStatus === 'approved' && program.publicRequested)
+  }, [isLoggedIn, user, isEnrolled, program])
 
   const handleEnrollmentClick = async () => {
     if (isLoadingUser || actionLoading || !id) return
@@ -530,6 +538,15 @@ export default function CareerDetailPage() {
                       ? 'Quitar de favoritos'
                       : 'Guardar en favoritos'}
                 </button>
+                {canEdit && !isPageLoading && (
+                  <Link
+                    href={`/carreras/${id}/editar`}
+                    className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-xl text-sm font-semibold border border-slate-200 hover:border-slate-300 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Editar materias
+                  </Link>
+                )}
               </div>
               {actionMessage && (
                 <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
