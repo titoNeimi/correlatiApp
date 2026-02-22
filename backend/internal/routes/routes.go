@@ -158,7 +158,7 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		degreeProgram.POST("/:id/publish", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.PublishProgram)
 		degreeProgram.POST("/:id/unapprove", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.UnapproveProgram)
 		degreeProgram.POST("/:id/unpublish", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.UnpublishProgram)
-
+		
 		degreeProgram.POST("/:id/electivePools", middleware.AuthRequired(db, sessSvc, cookies), handlers.CreateElectivePool)
 		degreeProgram.GET("/:id/electivePools", handlers.GetElectivePoolsByProgram)
 		degreeProgram.GET("/:id/electivePools/:poolId", handlers.GetElectivePoolByID)
@@ -166,12 +166,14 @@ func SetUpRoutes(r *gin.Engine, db *gorm.DB) {
 		degreeProgram.DELETE("/:id/electivePools/:poolId", middleware.AuthRequired(db, sessSvc, cookies), handlers.DeleteElectivePool)
 		degreeProgram.POST("/:id/electivePools/:poolId/subjects", middleware.AuthRequired(db, sessSvc, cookies), handlers.AddSubjectToElectivePool)
 		degreeProgram.DELETE("/:id/electivePools/:poolId/subjects/:subjectId", middleware.AuthRequired(db, sessSvc, cookies), handlers.RemoveSubjectFromElectivePool)
-
+		
 		degreeProgram.POST("/:id/electiveRules", middleware.AuthRequired(db, sessSvc, cookies), handlers.CreateElectiveRule)
 		degreeProgram.GET("/:id/electiveRules", handlers.GetElectiveRulesByProgram)
 		degreeProgram.GET("/:id/electiveRules/:ruleId", handlers.GetElectiveRuleByID)
 		degreeProgram.PUT("/:id/electiveRules/:ruleId", middleware.AuthRequired(db, sessSvc, cookies), handlers.UpdateElectiveRule)
 		degreeProgram.DELETE("/:id/electiveRules/:ruleId", middleware.AuthRequired(db, sessSvc, cookies), handlers.DeleteElectiveRule)
+		
+		degreeProgram.POST("/seed", middleware.AuthRequired(db, sessSvc, cookies), middleware.RoleRequired("admin", "staff"), handlers.UploadSeed)
 	}
 	subjects := r.Group("/subjects")
 	{

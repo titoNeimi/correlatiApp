@@ -51,3 +51,47 @@ type AdditionalInformationDTO struct {
 	URL         *string `json:"url,omitempty"`
 	Status      *string `json:"status,omitempty"`
 }
+
+type uploadSeedRequest struct {
+	DegreeProgram
+}
+
+type SubjectTerm string
+
+const (
+	TermAnnual    SubjectTerm = "annual"
+	TermSemester  SubjectTerm = "semester"
+	TermQuarterly SubjectTerm = "quarterly"
+	TermBimonthly SubjectTerm = "bimonthly"
+)
+
+type SeedRequirementType string
+
+const (
+	SeedRequirementApproved   SeedRequirementType = "approved"
+	SeedRequirementRegularize SeedRequirementType = "regularized"
+)
+
+type JsonToDegreeProgram struct {
+	DegreeProgram SeedDegreeProgram `json:"degreeProgram"`
+	Subjects      []SeedSubject     `json:"subjects"`
+}
+
+type SeedDegreeProgram struct {
+	Name         string `json:"name"`
+	UniversityID string `json:"UniversityID"`
+}
+
+type SeedSubject struct {
+	Code         string            `json:"code"`
+	Name         string            `json:"name"`
+	SubjectYear  int               `json:"subjectYear"`
+	Term         SubjectTerm       `json:"term"`
+	IsElective   bool              `json:"is_elective"`
+	Requirements []SeedRequirement `json:"requirements"`
+}
+
+type SeedRequirement struct {
+	SubjectCode string              `json:"subjectCode"`
+	Type        SeedRequirementType `json:"type"`
+}

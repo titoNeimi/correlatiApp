@@ -430,3 +430,14 @@ func ensureProgramWriteAccessForProgram(c *gin.Context, program *models.DegreePr
 
 	return true
 }
+
+func UploadSeed(c *gin.Context) {
+	var data models.JsonToDegreeProgram
+
+	if err := c.BindJSON(&data); err != nil {
+		slog.Error("Error getting the json from the body", slog.Any("error", err))
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
+	}
+
+	
+}
