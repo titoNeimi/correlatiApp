@@ -103,7 +103,7 @@ type UserSubject struct {
 	UserID            string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
 	SubjectID         string        `gorm:"primaryKey;size:191;index:user_subject_unique,unique"`
 	Status            SubjectStatus `gorm:"type:enum('available','in_progress','passed_with_distinction','final_pending','passed');default:'available'"`
-	FianlCalification float64       `json:"final_calification"`
+	FinalCalification float64       `json:"final_calification" gorm:"column:final_calification"`
 	User              User          `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
 	Subject           Subject       `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
 	UpdatedAt         time.Time

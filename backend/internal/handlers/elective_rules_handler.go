@@ -296,3 +296,4 @@ func DeleteElectiveRule(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, gin.H{"ok": true})
 }
+

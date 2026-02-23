@@ -67,7 +67,7 @@ export default function HomePage() {
               Bienvenida
             </div>
             <h1 className="text-3xl sm:text-5xl font-bold text-slate-900 mt-4 leading-tight">
-              Bienvenido a CorrelatiApp
+              Bienvenido a AcadifyApp
             </h1>
             <p className="text-slate-600 mt-4 max-w-2xl text-base sm:text-lg">
               Tu espacio para entender la carrera que eliges, organizar materias y avanzar con un plan claro.

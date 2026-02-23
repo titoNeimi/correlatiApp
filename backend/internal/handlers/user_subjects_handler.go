@@ -105,7 +105,7 @@ func GetMySubjectsFromProgram(c *gin.Context) {
 	finalCalificationBySubject := make(map[string]float64, len(userSubjects))
 	for _, us := range userSubjects {
 		statusBySubject[us.SubjectID] = us.Status
-		finalCalificationBySubject[us.SubjectID] = us.FianlCalification
+		finalCalificationBySubject[us.SubjectID] = us.FinalCalification
 	}
 
 	// Traer reglas de requirements (join table)
@@ -283,7 +283,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 			Status:    item.Status,
 		}
 		if item.FinalCalification != nil {
-			record.FianlCalification = *item.FinalCalification
+			record.FinalCalification = *item.FinalCalification
 		} else {
 			missingCalificationSubjectIDs = append(missingCalificationSubjectIDs, subjectID)
 		}
@@ -302,7 +302,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 		}
 		for _, row := range existingRows {
 			if idx, ok := recordIndexBySubjectID[row.SubjectID]; ok {
-				records[idx].FianlCalification = row.FianlCalification
+				records[idx].FinalCalification = row.FinalCalification
 			}
 		}
 	}
