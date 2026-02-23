@@ -79,13 +79,13 @@ const REQ_TYPE_LABELS: Record<ElectiveRequirementType, string> = {
 const YEAR_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 
 async function fetchProgram(id: string): Promise<ProgramInfo | null> {
-  const res = await apiFetch(`/degreeProgram/${id}`, { cache: 'no-store' })
+  const res = await apiFetch(`/degreeProgram/${id}`, { credentials: 'include', cache: 'no-store' })
   if (!res.ok) return null
   return res.json()
 }
 
 async function fetchSubjects(programId: string): Promise<EditableSubject[]> {
-  const res = await apiFetch(`/subjects/${programId}`, { cache: 'no-store' })
+  const res = await apiFetch(`/subjects/${programId}`, { credentials: 'include', cache: 'no-store' })
   if (!res.ok) return []
   const raw = await res.json()
   return (raw as Array<{
