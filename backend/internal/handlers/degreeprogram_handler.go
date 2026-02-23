@@ -4,6 +4,7 @@ import (
 	"acadifyapp/internal/db"
 	"acadifyapp/internal/models"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -432,12 +433,190 @@ func ensureProgramWriteAccessForProgram(c *gin.Context, program *models.DegreePr
 }
 
 func UploadSeed(c *gin.Context) {
-	var data models.JsonToDegreeProgram
+	var payload models.JsonToDegreeProgram
 
-	if err := c.BindJSON(&data); err != nil {
+	if err := c.BindJSON(&payload); err != nil {
 		slog.Error("Error getting the json from the body", slog.Any("error", err))
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
+		return
 	}
 
-	
+	payload.DegreeProgram.Name = strings.TrimSpace(payload.DegreeProgram.Name)
+	if payload.DegreeProgram.Name == "" {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "degree program name is required"})
+		return
+	}
+	if payload.DegreeProgram.UniversityID == "" {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "universityID is required"})
+		return
+	}
+	if err := db.Db.First(&models.University{}, "id = ?", payload.DegreeProgram.UniversityID).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "University not found"})
+		return
+	}
+
+	validTerms := map[models.SubjectTerm]struct{}{
+		models.TermAnnual:    {},
+		models.TermSemester:  {},
+		models.TermQuarterly: {},
+		models.TermBimonthly: {},
+	}
+	codeMap := make(map[string]struct{}, len(payload.Subjects))
+	for i := range payload.Subjects {
+		payload.Subjects[i].Code = strings.TrimSpace(payload.Subjects[i].Code)
+		payload.Subjects[i].Name = strings.TrimSpace(payload.Subjects[i].Name)
+		s := payload.Subjects[i]
+
+		if s.Code == "" {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("subject at index %d is missing a code", i)})
+			return
+		}
+		if s.Name == "" {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("subject %q is missing a name", s.Code)})
+			return
+		}
+		if _, valid := validTerms[s.Term]; !valid {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("subject %q has invalid term %q", s.Code, s.Term)})
+			return
+		}
+		if _, exists := codeMap[s.Code]; exists {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("duplicate subject code %q", s.Code)})
+			return
+		}
+		codeMap[s.Code] = struct{}{}
+	}
+
+	for _, s := range payload.Subjects {
+		for _, req := range s.Requirements {
+			if _, exists := codeMap[req.SubjectCode]; !exists {
+				c.IndentedJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("subject %q references unknown requirement code %q", s.Code, req.SubjectCode)})
+				return
+			}
+			if req.Type != models.SeedRequirementApproved && req.Type != models.SeedRequirementRegularize {
+				c.IndentedJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("subject %q has invalid requirement type %q", s.Code, req.Type)})
+				return
+			}
+		}
+	}
+
+	if err := detectCircularDeps(payload.Subjects); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	degreeProgramID := uuid.NewString()
+
+	if err := db.Db.Transaction(func(tx *gorm.DB) error {
+		newDegreeProgram := models.DegreeProgram{
+			ID:              degreeProgramID,
+			Name:            payload.DegreeProgram.Name,
+			UniversityID:    payload.DegreeProgram.UniversityID,
+			ApprovalStatus:  models.DegreeProgramPending,
+			PublicRequested: false,
+		}
+
+		if err := tx.Create(&newDegreeProgram).Error; err != nil {
+			slog.Error("Error creating the degree program", slog.Any("error", err))
+			return err
+		}
+
+		if u, ok := c.Get("user"); ok {
+			if user, ok := u.(models.User); ok {
+				if err := tx.Model(&user).Association("DegreePrograms").Append(&newDegreeProgram); err != nil {
+					slog.Error("Error associating user with degree program", slog.Any("error", err))
+					return err
+				}
+			}
+		}
+
+		subjectCodeID := make(map[string]string, len(payload.Subjects))
+
+		for _, sub := range payload.Subjects {
+			year := sub.SubjectYear
+			newSubject := models.Subject{
+				ID:              uuid.NewString(),
+				Name:            sub.Name,
+				Term:            string(sub.Term),
+				Year:            &year,
+				IsElective:      sub.IsElective,
+				DegreeProgramID: newDegreeProgram.ID,
+			}
+
+			if err := tx.Create(&newSubject).Error; err != nil {
+				slog.Error("Error creating subject", slog.String("name", sub.Name), slog.Any("error", err))
+				return err
+			}
+			subjectCodeID[sub.Code] = newSubject.ID
+		}
+
+		for _, sub := range payload.Subjects {
+			for _, req := range sub.Requirements {
+				var minStatus models.RequirementMinStatus
+				if req.Type == models.SeedRequirementApproved {
+					minStatus = models.ReqPassed
+				} else {
+					minStatus = models.ReqFinalPending
+				}
+
+				subjReq := models.SubjectRequirement{
+					SubjectID:     subjectCodeID[sub.Code],
+					RequirementID: subjectCodeID[req.SubjectCode],
+					MinStatus:     minStatus,
+				}
+				if err := tx.Create(&subjReq).Error; err != nil {
+					slog.Error("Error creating subject requirement", slog.String("subject", sub.Code), slog.String("requirement", req.SubjectCode), slog.Any("error", err))
+					return err
+				}
+			}
+		}
+
+		return nil
+	}); err != nil {
+		slog.Error("Seed transaction failed, rolled back", slog.Any("error", err))
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "failed to seed degree program"})
+		return
+	}
+
+	var result models.DegreeProgram
+	db.Db.Preload("Subjects").Preload("University").First(&result, "id = ?", degreeProgramID)
+	c.IndentedJSON(http.StatusCreated, result)
+}
+
+func detectCircularDeps(subjects []models.SeedSubject) error {
+	graph := make(map[string][]string, len(subjects))
+	for _, s := range subjects {
+		deps := make([]string, 0, len(s.Requirements))
+		for _, r := range s.Requirements {
+			deps = append(deps, r.SubjectCode)
+		}
+		graph[s.Code] = deps
+	}
+
+	// 0 = unvisited, 1 = in stack, 2 = done
+	state := make(map[string]int, len(subjects))
+	var dfs func(code string) error
+	dfs = func(code string) error {
+		state[code] = 1
+		for _, dep := range graph[code] {
+			if state[dep] == 1 {
+				return fmt.Errorf("circular dependency detected involving subject %q", dep)
+			}
+			if state[dep] == 0 {
+				if err := dfs(dep); err != nil {
+					return err
+				}
+			}
+		}
+		state[code] = 2
+		return nil
+	}
+
+	for _, s := range subjects {
+		if state[s.Code] == 0 {
+			if err := dfs(s.Code); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
