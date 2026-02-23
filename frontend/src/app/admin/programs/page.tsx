@@ -432,12 +432,6 @@ export default function ProgramsPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestiona las carreras disponibles en la plataforma</p>
           </div>
           <div className="flex gap-3">
-            <Link
-              href="/admin/programs/subjects"
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              Materias
-            </Link>
             <button
               onClick={() => setImportModalOpen(true)}
               className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
@@ -448,15 +442,6 @@ export default function ProgramsPage() {
               + Agregar carrera
             </Link>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <span className="px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Carreras</span>
-          <Link
-            href="/admin/programs/subjects"
-            className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-          >
-            Materias
-          </Link>
         </div>
       </div>
 
