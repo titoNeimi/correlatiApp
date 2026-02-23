@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, User, LogOut, Settings, GraduationCap, CircleUserRound, ShieldUser, Menu, X } from 'lucide-react';
 import Link from 'next/link';
+import AppIcon from '@/components/AppIcon';
 import { useUser } from '@/context/UserContext'
 
 export function Navbar(){
@@ -17,8 +18,8 @@ export function Navbar(){
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Link href="/" className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl">
-              <GraduationCap className="h-8 w-8 text-white" />
+            <Link href="/">
+              <AppIcon size={40} />
             </Link>
             <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               AcadifyApp

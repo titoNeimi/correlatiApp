@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SearchInput, ThemeToggle } from "./baseComponents";
+import AppIcon from '@/components/AppIcon';
 
 export function Topbar({ isDark, onThemeToggle, onSidebarToggle }: { isDark: boolean; onThemeToggle: () => void; onSidebarToggle: () => void }) {
   return (
@@ -197,9 +198,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         {/* Logo */}
         <div className="flex items-center justify-between px-4 py-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-lg">C</span>
-            </div>
+            <AppIcon size={40} />
             <span className={`
               text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap transition-all duration-200
               ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}

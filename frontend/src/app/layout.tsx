@@ -5,6 +5,9 @@ import { UserProvider } from '@/context/UserContext'
 export const metadata: Metadata = {
   title: "AcadifyApp",
   description: "Una aplicacion en para tu carrera",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
