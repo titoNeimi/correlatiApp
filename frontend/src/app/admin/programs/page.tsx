@@ -28,7 +28,7 @@ type JsonToDegreeProgram = {
   subjects: SeedSubject[]
 }
 
-function ImportJsonModal({ onClose }: { onClose: () => void }) {
+function ImportJsonModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [universities, setUniversities] = useState<University[]>([])
   const [loadingUniversities, setLoadingUniversities] = useState(true)
   const [selectedUniversity, setSelectedUniversity] = useState<string>('')
@@ -101,6 +101,7 @@ function ImportJsonModal({ onClose }: { onClose: () => void }) {
           setFileError(msg || `Error al importar (${response.status})`)
           return
         }
+        onSuccess()
         onClose()
       } catch (err) {
         if (err instanceof SyntaxError) {
@@ -423,7 +424,7 @@ export default function ProgramsPage() {
 
   return (
     <div className="space-y-6">
-      {importModalOpen && <ImportJsonModal onClose={() => setImportModalOpen(false)} />}
+      {importModalOpen && <ImportJsonModal onClose={() => setImportModalOpen(false)} onSuccess={fetchPrograms} />}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
