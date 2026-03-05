@@ -14,7 +14,7 @@ type UniversityResponse = {
 }
 
 const getInstitutionLabel = (value?: University['institution_type']) => {
-  if (value === 'public') return 'Publica'
+  if (value === 'public') return 'Pública'
   if (value === 'private') return 'Privada'
   if (value === 'mixed') return 'Mixta'
   return 'Pendiente'

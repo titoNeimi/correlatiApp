@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import React from 'react';
 import { BookOpen, Filter, GraduationCap, Search, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +17,11 @@ type fetchDegree = {
   data: DegreeProgramDTO[]
   page?: number
   limit?: number
+}
+
+export const metadata: Metadata = {
+  title: 'Carreras',
+  description: 'Explorá el catálogo de carreras universitarias. Filtrá por universidad, área y modalidad.',
 }
 
 const fetchDegreePrograms = async (page: number, limit: number): Promise<fetchDegree | null> =>  {

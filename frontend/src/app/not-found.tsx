@@ -1,16 +1,21 @@
-'use client';
-import Link from 'next/link';
+import type { Metadata } from 'next'
+import Link from 'next/link'
 
-export default function Forbidden() {
+export const metadata: Metadata = {
+  title: 'Página no encontrada',
+  robots: { index: false, follow: false },
+}
+
+export default function NotFound() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="text-center">
         <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
         <p className="text-2xl font-semibold text-gray-600 mb-2">
-          Pagina no encontrada
+          Página no encontrada
         </p>
         <p className="text-gray-500 mb-8">
-          No se a encontrado la pagina
+          No se encontró la página que buscás.
         </p>
         <Link
           href="/"
@@ -20,5 +25,5 @@ export default function Forbidden() {
         </Link>
       </div>
     </div>
-  );
+  )
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import {
   ArrowRight,
@@ -10,6 +11,15 @@ import {
   Users
 } from 'lucide-react'
 import { PageShell } from '@/components/layout/page-shell'
+
+export const metadata: Metadata = {
+  title: 'Inicio',
+  description: 'Tu espacio para entender la carrera que elegís, organizar materias y avanzar con un plan claro.',
+  openGraph: {
+    title: 'AcadifyApp — Planificá tu carrera universitaria',
+    description: 'Explorá planes de estudio, revisá correlativas y seguí tu avance materia por materia.',
+  },
+}
 
 const onboardingSteps = [
   {
