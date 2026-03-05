@@ -6,9 +6,15 @@ export async function POST(req: Request) {
   const cookieDomain = (process.env.COOKIE_DOMAIN || '').trim()
   const isProduction = process.env.NODE_ENV === 'production'
 
+  const forwarded = req.headers.get('x-forwarded-for')
+  const clientIp = forwarded ? forwarded.split(',')[0].trim() : req.headers.get('x-real-ip')
+
   const backendRes = await apiFetch('/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(clientIp ? { 'X-Forwarded-For': clientIp } : {}),
+    },
     body: JSON.stringify(body),
   })
 
@@ -21,6 +27,8 @@ export async function POST(req: Request) {
     if (m) {
       const name = m[1]
       const value = m[2]
+      const maxAgeMatch = sc.match(/[Mm]ax-[Aa]ge=(\d+)/)
+      const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : undefined
       const ck = await cookies()
       const cookieOptions = {
         name,
@@ -29,6 +37,7 @@ export async function POST(req: Request) {
         sameSite: 'lax' as const,
         httpOnly: true,
         secure: isProduction,
+        ...(maxAge !== undefined ? { maxAge } : {}),
         ...(cookieDomain ? { domain: cookieDomain } : {}),
       }
       try {
@@ -41,6 +50,7 @@ export async function POST(req: Request) {
           sameSite: 'lax',
           httpOnly: true,
           secure: isProduction,
+          ...(maxAge !== undefined ? { maxAge } : {}),
         })
       }
     }

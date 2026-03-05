@@ -335,7 +335,7 @@ func SaveMySubjectsFromProgram(c *gin.Context) {
 	if len(records) > 0 {
 		if err := tx.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "user_id"}, {Name: "subject_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"status", "fianl_calification", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"status", "final_calification", "updated_at"}),
 		}).Create(&records).Error; err != nil {
 			slog.Error("Error upserting user subjects", slog.Any("error", err))
 			tx.Rollback()

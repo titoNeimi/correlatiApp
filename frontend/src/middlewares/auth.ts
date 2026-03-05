@@ -65,10 +65,24 @@ function isAllowed(pathname: string, role: Role): boolean {
 }
 
 export default async function auth_middleware(req: NextRequest) {
-  
+
   const { pathname, origin } = req.nextUrl
 
   if (isPublicPath(pathname)) {
+    if (pathname === '/login' || pathname === '/register') {
+      const sessionId = req.cookies.get('session_id')?.value
+      if (sessionId) {
+        const { ok } = await resolveSessionAndRole(req)
+        if (ok) {
+          const nextParam = req.nextUrl.searchParams.get('next')
+          const safePath =
+            nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
+              ? nextParam
+              : '/'
+          return NextResponse.redirect(new URL(safePath, origin))
+        }
+      }
+    }
     return NextResponse.next()
   }
 
@@ -78,6 +92,7 @@ export default async function auth_middleware(req: NextRequest) {
 
   if (!ok) {
     const loginUrl = new URL('/login', origin)
+    loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
