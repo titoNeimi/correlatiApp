@@ -164,7 +164,7 @@ export default function UniversitiesPage() {
   if (loading){
     return (
       <ClientPageShell mainClassName="max-w-3xl py-12">
-        <LoadingState title="Cargando universidades" description="Preparando el directorio academico." />
+        <LoadingState title="Cargando universidades" description="Preparando el directorio académico." />
       </ClientPageShell>
     )
   }
@@ -184,13 +184,13 @@ export default function UniversitiesPage() {
             <div>
               <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
                 <Sparkles className="w-4 h-4" />
-                Directorio academico
+                Directorio académico
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
                 Encuentra la universidad ideal para tu camino
               </h1>
               <p className="text-slate-600 mt-3 leading-relaxed">
-                Explora instituciones y prepara tu proximo paso.
+                Explora instituciones y prepara tu próximo paso.
                 El directorio ahora incluye tipo institucional, enfoque y recursos destacados.
               </p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -298,7 +298,7 @@ export default function UniversitiesPage() {
             </div>
             <div className="space-y-5 text-sm">
               <div>
-                <p className="text-slate-500 mb-2">Ubicacion</p>
+                <p className="text-slate-500 mb-2">Ubicación</p>
                 <div className="flex flex-wrap gap-2">
                   {(locationFilters.length > 0 ? locationFilters : ['Sin ubicaciones']).map((region) => (
                     <button
@@ -340,7 +340,7 @@ export default function UniversitiesPage() {
                 </div>
               </div>
               <div>
-                <p className="text-slate-500 mb-2">Enfoque academico</p>
+                <p className="text-slate-500 mb-2">Enfoque académico</p>
                 <div className="flex flex-wrap gap-2">
                   {(focusFilters.length > 0 ? focusFilters : ['Sin enfoque']).map((focus) => (
                     <button
@@ -428,7 +428,7 @@ export default function UniversitiesPage() {
                           <h3 className="text-xl font-bold text-slate-900 mt-3">{university.name}</h3>
                           <div className="flex items-center gap-2 text-sm text-slate-600 mt-2">
                             <MapPin className="w-4 h-4" />
-                            {university.location ?? 'Ubicacion pendiente'}
+                            {university.location ?? 'Ubicación pendiente'}
                           </div>
                           <div className="flex items-center gap-2 text-sm text-slate-600 mt-1">
                             <Globe className="w-4 h-4" />

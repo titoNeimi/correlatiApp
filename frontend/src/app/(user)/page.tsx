@@ -32,7 +32,7 @@ const onboardingSteps = [
   },
   {
     title: 'Empieza tu plan',
-    description: 'Marca avance por materia y proyecta los proximos semestres.',
+    description: 'Marca avance por materia y proyecta los próximos semestres.',
     href: '/mi-plan',
     cta: 'Abrir mi plan',
     icon: LayoutDashboard,
@@ -50,7 +50,7 @@ const quickLinks = [
   },
   {
     title: 'Comunidad',
-    description: 'Comparte sugerencias y ayudanos a mejorar el catalogo.',
+    description: 'Comparte sugerencias y ayudanos a mejorar el catálogo.',
     href: '/sugerencias',
     icon: Users
   }
@@ -110,7 +110,7 @@ export default function HomePage() {
               <div className="mt-4 space-y-3 text-sm">
                 <div className="rounded-xl border border-sky-100 bg-white/90 px-4 py-3">
                   <p className="text-slate-500 text-xs">Paso 1</p>
-                  <p className="font-semibold text-slate-900">Busca una carrera en el catalogo</p>
+                  <p className="font-semibold text-slate-900">Busca una carrera en el catálogo</p>
                 </div>
                 <div className="rounded-xl border border-amber-100 bg-white/90 px-4 py-3">
                   <p className="text-slate-500 text-xs">Paso 2</p>
@@ -183,7 +183,7 @@ export default function HomePage() {
       <section className="bg-gradient-to-br from-amber-50 via-white to-sky-50 rounded-3xl border border-slate-200 p-6 sm:p-8">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Listo para arrancar tu recorrido academico</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Listo para arrancar tu recorrido académico</h2>
             <p className="text-slate-600 mt-2 max-w-2xl">
               Crea tu cuenta para guardar tu progreso y continuar desde cualquier dispositivo.
             </p>

@@ -24,7 +24,7 @@ const getUniversityHighlight = (id: string) => {
 }
 
 const getInstitutionLabel = (value?: string) => {
-  if (value === 'public') return 'Publica'
+  if (value === 'public') return 'Pública'
   if (value === 'private') return 'Privada'
   if (value === 'mixed') return 'Mixta'
   return 'Pendiente'
@@ -52,7 +52,7 @@ export default function UniversityDetailPage() {
 
   useEffect(() => {
     if (!id) {
-      setError('No se encontro el id de la universidad.')
+      setError('No se encontró el id de la universidad.')
       setLoading(false)
       return
     }
@@ -82,7 +82,7 @@ export default function UniversityDetailPage() {
   if (loading) {
     return (
       <ClientPageShell mainClassName="max-w-3xl py-12">
-        <LoadingState title="Cargando universidad" description="Buscando la informacion mas reciente." />
+        <LoadingState title="Cargando universidad" description="Buscando la información más reciente." />
       </ClientPageShell>
     )
   }
@@ -127,7 +127,7 @@ export default function UniversityDetailPage() {
               <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mt-3">
                 <span className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  {university.location ?? 'Ubicacion pendiente'}
+                  {university.location ?? 'Ubicación pendiente'}
                 </span>
                 <span className="flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
@@ -159,10 +159,10 @@ export default function UniversityDetailPage() {
             <div className="bg-white/80 rounded-2xl border border-white/70 shadow-lg p-5 min-w-[240px]">
               <p className="text-xs uppercase tracking-wide text-slate-500">Carreras disponibles</p>
               <p className="text-3xl font-bold text-slate-900 mt-2">{programs.length}</p>
-              <p className="text-sm text-slate-600 mt-2">Programas activos en el catalogo.</p>
+              <p className="text-sm text-slate-600 mt-2">Programas activos en el catálogo.</p>
               <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
                 <GraduationCap className="w-4 h-4" />
-                Ultima actualizacion: {formatDate(university.updated_at)}
+                Última actualización: {formatDate(university.updated_at)}
               </div>
             </div>
           </div>
@@ -204,7 +204,7 @@ export default function UniversityDetailPage() {
 
           <aside className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-slate-900">Enfoque academico</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Enfoque académico</h3>
               <p className="text-slate-600 mt-2">{university.primary_focus ?? 'Pendiente'}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {focusTags.length === 0 ? (
@@ -220,9 +220,9 @@ export default function UniversityDetailPage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-slate-900">Accesos rapidos</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Accesos rápidos</h3>
               {quickLinks.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-500">No hay accesos rapidos disponibles.</p>
+                <p className="mt-4 text-sm text-slate-500">No hay accesos rápidos disponibles.</p>
               ) : (
                 <div className="mt-4 space-y-3 text-sm">
                   {quickLinks.map((link) => (
@@ -242,9 +242,9 @@ export default function UniversityDetailPage() {
             </div>
 
             <div className="bg-gradient-to-br from-slate-900 to-slate-700 text-white rounded-2xl p-6">
-              <h3 className="text-lg font-semibold">Informacion adicional</h3>
+              <h3 className="text-lg font-semibold">Información adicional</h3>
               {additionalInfo.length === 0 ? (
-                <p className="text-slate-200 text-sm mt-2">No hay informacion adicional disponible.</p>
+                <p className="text-slate-200 text-sm mt-2">No hay información adicional disponible.</p>
               ) : (
                 <div className="mt-4 space-y-3">
                   {additionalInfo.map((card) => (
@@ -259,7 +259,7 @@ export default function UniversityDetailPage() {
                           rel="noreferrer"
                           className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-white underline underline-offset-2"
                         >
-                          Ver mas
+                          Ver más
                           <ArrowRight className="w-3 h-3" />
                         </a>
                       )}

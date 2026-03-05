@@ -9,7 +9,7 @@ const suggestionTypes = [
   {
     id: 'career',
     title: 'Sugerir carrera',
-    description: 'Sumamos nuevas propuestas al catalogo.',
+    description: 'Sumamos nuevas propuestas al catálogo.',
     icon: GraduationCap,
     tone: 'from-sky-50 via-white to-cyan-50',
     badge: 'bg-sky-100 text-sky-700'
@@ -44,7 +44,7 @@ const COOLDOWN_SECS = 60
 const COOLDOWN_STORAGE_KEY = 'suggestion_last_sent'
 
 const quickTips = [
-  'Inclui la universidad, ciudad y link si lo tenes.',
+  'Incluí la universidad, ciudad y link si lo tenés.',
   'Detalla el plan o nombre oficial de la carrera.',
   'Para bugs, describe pasos para reproducir.',
   'Adjunta capturas o links si aplica.'
@@ -150,7 +150,7 @@ function SuggestionsPageContent() {
               Sugerencias y reportes
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
-              Ayudanos a mejorar el catalogo
+              Ayudanos a mejorar el catálogo
             </h1>
             <p className="text-slate-600 mt-3 max-w-2xl">
               Dejanos tu propuesta para nuevas carreras, universidades o mejoras.
@@ -197,7 +197,7 @@ function SuggestionsPageContent() {
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Tips rapidos</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Tips rápidos</h3>
               <div className="space-y-3 text-sm text-slate-600">
                 {quickTips.map((tip) => (
                   <div key={tip} className="flex items-start gap-3">

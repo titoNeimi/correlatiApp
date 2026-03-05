@@ -235,7 +235,7 @@ export default function UniversitiesPage() {
       return
     }
     if (payload.additional_information.some((info) => !info.title)) {
-      setFormError('Cada item de informacion adicional necesita titulo.')
+      setFormError('Cada item de información adicional necesita título.')
       return
     }
 
@@ -326,7 +326,7 @@ export default function UniversitiesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{university.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{university.location ?? 'Ubicacion pendiente'}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{university.location ?? 'Ubicación pendiente'}</p>
                 </div>
                 <Badge variant="info">{university.institution_type ?? 'pendiente'}</Badge>
               </div>
@@ -369,7 +369,7 @@ export default function UniversitiesPage() {
             />
           </label>
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Ubicacion</span>
+            <span className="font-medium">Ubicación</span>
             <input
               value={selected.location}
               onChange={(event) => handleChange('location', event.target.value)}
@@ -440,7 +440,7 @@ export default function UniversitiesPage() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Accesos rapidos</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Accesos rápidos</h3>
             <button
               type="button"
               onClick={addQuickLink}
@@ -478,7 +478,7 @@ export default function UniversitiesPage() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Informacion adicional</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Información adicional</h3>
             <button
               type="button"
               onClick={addAdditionalInfo}
