@@ -40,6 +40,9 @@ const suggestionTypes = [
   }
 ]
 
+const COOLDOWN_SECS = 60
+const COOLDOWN_STORAGE_KEY = 'suggestion_last_sent'
+
 const quickTips = [
   'Inclui la universidad, ciudad y link si lo tenes.',
   'Detalla el plan o nombre oficial de la carrera.',
@@ -57,6 +60,21 @@ function SuggestionsPageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cooldownRemaining, setCooldownRemaining] = useState(0)
+
+  useEffect(() => {
+    const raw = localStorage.getItem(COOLDOWN_STORAGE_KEY)
+    if (!raw) return
+    const elapsed = Math.floor((Date.now() - Number(raw)) / 1000)
+    const remaining = COOLDOWN_SECS - elapsed
+    if (remaining > 0) setCooldownRemaining(remaining)
+  }, [])
+
+  useEffect(() => {
+    if (cooldownRemaining <= 0) return
+    const id = setTimeout(() => setCooldownRemaining((s) => s - 1), 1000)
+    return () => clearTimeout(id)
+  }, [cooldownRemaining])
 
   const typeByParam = useMemo(() => {
     const value = searchParams.get('formulario')?.toLowerCase()
@@ -103,6 +121,8 @@ function SuggestionsPageContent() {
         setError(data.error ?? 'No se pudo enviar la sugerencia. Intenta de nuevo.')
         return
       }
+      localStorage.setItem(COOLDOWN_STORAGE_KEY, Date.now().toString())
+      setCooldownRemaining(COOLDOWN_SECS)
       setSubmitted(true)
     } catch {
       setError('Error de conexion. Intenta de nuevo.')
@@ -206,9 +226,10 @@ function SuggestionsPageContent() {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="mt-2 inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
+                    disabled={cooldownRemaining > 0}
+                    className="mt-2 inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Enviar otra sugerencia
+                    {cooldownRemaining > 0 ? `Espera ${cooldownRemaining}s` : 'Enviar otra sugerencia'}
                   </button>
                 </div>
               ) : (
@@ -289,11 +310,11 @@ function SuggestionsPageContent() {
                     <button
                       type="button"
                       onClick={handleSubmit}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || cooldownRemaining > 0}
                       className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <Send className="w-4 h-4" />
-                      {isSubmitting ? 'Enviando...' : 'Enviar sugerencia'}
+                      {isSubmitting ? 'Enviando...' : cooldownRemaining > 0 ? `Espera ${cooldownRemaining}s` : 'Enviar sugerencia'}
                     </button>
                   </div>
                 </>
