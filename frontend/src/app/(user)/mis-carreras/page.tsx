@@ -51,7 +51,7 @@ export default function MyProgramsPage() {
 
         const meResponse = await apiFetch('/me/programs', { credentials: 'include' })
         if (meResponse.status === 401) {
-          setError('Necesitas iniciar sesion para ver tus carreras.')
+          setError('Necesitas iniciar sesión para ver tus carreras.')
           setLoading(false)
           return
         }
@@ -118,7 +118,7 @@ export default function MyProgramsPage() {
           <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
             <GraduationCap className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mt-6">Inicia sesion para ver tus carreras</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mt-6">Inicia sesión para ver tus carreras</h2>
           <p className="text-slate-600 mt-3">
             Tus carreras inscriptas se muestran en este espacio personalizado.
           </p>
@@ -127,7 +127,7 @@ export default function MyProgramsPage() {
               href="/login?next=%2Fmis-carreras"
               className="inline-flex items-center justify-center bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800 transition-colors"
             >
-              Iniciar sesion
+              Iniciar sesión
             </Link>
           </div>
         </div>
@@ -164,10 +164,10 @@ export default function MyProgramsPage() {
               Mis carreras
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
-              Tu recorrido academico, en un solo lugar
+              Tu recorrido académico, en un solo lugar
             </h2>
             <p className="text-slate-600 mt-3 max-w-2xl">
-              Accede rapido a las carreras en las que estas inscripto y continua tu plan desde aca.
+              Accedé rápido a las carreras en las que estás inscripto y continuá tu plan desde acá.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
@@ -182,7 +182,7 @@ export default function MyProgramsPage() {
           </div>
 
             <div className="bg-slate-900 text-white rounded-2xl p-6">
-              <p className="text-sm uppercase tracking-wide text-slate-200">Acciones rapidas</p>
+              <p className="text-sm uppercase tracking-wide text-slate-200">Acciones rápidas</p>
               <div className="mt-4 space-y-3 text-sm">
                 <div className="bg-white/10 rounded-xl px-4 py-3">
                   <p className="text-white/70 text-xs">Seguimiento</p>
@@ -190,13 +190,13 @@ export default function MyProgramsPage() {
                 </div>
                 <div className="bg-white/10 rounded-xl px-4 py-3">
                   <p className="text-white/70 text-xs">Favoritos</p>
-                  <p className="font-semibold">Guarda carreras para despues</p>
+                  <p className="font-semibold">Guarda carreras para después</p>
                 </div>
                 <Link
                   href="/carreras"
                   className="block text-center bg-white text-slate-900 font-semibold py-3 rounded-xl hover:bg-slate-100 transition-colors"
                 >
-                  Ver catalogo completo
+                  Ver catálogo completo
                 </Link>
               </div>
             </div>
@@ -208,9 +208,9 @@ export default function MyProgramsPage() {
             <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
               <BookOpen className="w-6 h-6" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mt-6">Todavia no agregaste carreras</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mt-6">Todavía no agregaste carreras</h3>
             <p className="text-slate-600 mt-3">
-              Explora el catalogo, inscribite y guarda favoritos para verlos aca.
+              Explora el catálogo, inscribite y guarda favoritos para verlos acá.
             </p>
             <div className="mt-6">
               <Link
@@ -226,7 +226,7 @@ export default function MyProgramsPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
               <div>
                 <h3 className="text-2xl font-bold text-slate-900">Carreras inscriptas</h3>
-                <p className="text-slate-600">Accesos directos a tu plan academico.</p>
+                <p className="text-slate-600">Accesos directos a tu plan académico.</p>
               </div>
               <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600">
                 Actualizado con tus inscripciones
@@ -235,7 +235,7 @@ export default function MyProgramsPage() {
 
             {enrolledPrograms.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-100 shadow-md p-6 text-sm text-slate-600 mb-10">
-                Aun no tenes carreras inscriptas. Usa favoritos mientras elegis.
+                Aún no tenés carreras inscriptas. Usá favoritos mientras elegís.
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">

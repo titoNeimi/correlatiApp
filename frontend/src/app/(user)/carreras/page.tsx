@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import React from 'react';
 import { BookOpen, Filter, GraduationCap, Search, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +17,11 @@ type fetchDegree = {
   data: DegreeProgramDTO[]
   page?: number
   limit?: number
+}
+
+export const metadata: Metadata = {
+  title: 'Carreras',
+  description: 'Explorá el catálogo de carreras universitarias. Filtrá por universidad, área y modalidad.',
 }
 
 const fetchDegreePrograms = async (page: number, limit: number): Promise<fetchDegree | null> =>  {
@@ -84,7 +90,7 @@ async function CareersPage ({ searchParams }: CareersPageProps) {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-8 text-center">
           <h2 className="text-2xl font-bold text-slate-900">No pudimos cargar las carreras</h2>
           <p className="text-slate-600 mt-3">
-            La API no devolvio la estructura esperada. Intenta nuevamente en unos minutos.
+            La API no devolvió la estructura esperada. Intentá nuevamente en unos minutos.
           </p>
         </div>
       </PageShell>
@@ -98,13 +104,13 @@ async function CareersPage ({ searchParams }: CareersPageProps) {
           <div>
             <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
               <GraduationCap className="w-4 h-4" />
-              Catalogo de carreras
+              Catálogo de carreras
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-4">
               Explora carreras con una vista clara y moderna
             </h2>
             <p className="text-slate-600 mt-3 max-w-2xl">
-              Ordena por area, universidad o modalidad. Los filtros estan listos para conectarse con la data real.
+              Ordena por área, universidad o modalidad. Los filtros están listos para conectarse con la data real.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
@@ -221,7 +227,7 @@ async function CareersPage ({ searchParams }: CareersPageProps) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-2xl font-bold text-slate-900">Carreras destacadas</h3>
-              <p className="text-slate-600">Explora planes con informacion resumida y accesos rapidos.</p>
+              <p className="text-slate-600">Explora planes con información resumida y accesos rápidos.</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600">

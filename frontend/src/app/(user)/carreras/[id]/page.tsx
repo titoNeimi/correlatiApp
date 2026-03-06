@@ -150,7 +150,7 @@ export default function CareerDetailPage() {
 
   useEffect(() => {
     if (!id) {
-      setError('No se encontro la carrera.')
+      setError('No se encontró la carrera.')
       setLoading(false)
       return
     }
@@ -260,7 +260,7 @@ export default function CareerDetailPage() {
   const handleEnrollmentClick = async () => {
     if (isLoadingUser || actionLoading || !id) return
     if (!isLoggedIn) {
-      setActionMessage('Necesitas iniciar sesion para inscribirte.')
+      setActionMessage('Necesitas iniciar sesión para inscribirte.')
       return
     }
     setActionMessage(null)
@@ -271,16 +271,16 @@ export default function CareerDetailPage() {
         credentials: 'include'
       })
       if (response.status === 401) {
-        setActionMessage('Necesitas iniciar sesion para inscribirte.')
+        setActionMessage('Necesitas iniciar sesión para inscribirte.')
         return
       }
       if (response.status === 409) {
-        setActionMessage('Ya estas inscripto en esta carrera.')
+        setActionMessage('Ya estás inscripto en esta carrera.')
         await loadPrograms()
         return
       }
       if (!response.ok) {
-        setActionMessage('No se pudo completar la inscripcion.')
+        setActionMessage('No se pudo completar la inscripción.')
         return
       }
       setEnrolledProgramIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
@@ -295,7 +295,7 @@ export default function CareerDetailPage() {
   const handleUnenrollClick = async () => {
     if (isLoadingUser || actionLoading || !id) return
     if (!isLoggedIn) {
-      setActionMessage('Necesitas iniciar sesion para desinscribirte.')
+      setActionMessage('Necesitas iniciar sesión para desinscribirte.')
       return
     }
     setActionMessage(null)
@@ -306,16 +306,16 @@ export default function CareerDetailPage() {
         credentials: 'include'
       })
       if (response.status === 401) {
-        setActionMessage('Necesitas iniciar sesion para desinscribirte.')
+        setActionMessage('Necesitas iniciar sesión para desinscribirte.')
         return
       }
       if (response.status === 409) {
-        setActionMessage('No estas inscripto en esta carrera.')
+        setActionMessage('No estás inscripto en esta carrera.')
         await loadPrograms()
         return
       }
       if (!response.ok) {
-        setActionMessage('No se pudo completar la desinscripcion.')
+        setActionMessage('No se pudo completar la desinscripción.')
         return
       }
       setEnrolledProgramIds((prev) => prev.filter((programId) => programId !== id))
@@ -330,7 +330,7 @@ export default function CareerDetailPage() {
   const handleFavoriteClick = async () => {
     if (isLoadingUser || actionLoading || !id) return
     if (!isLoggedIn) {
-      setActionMessage('Necesitas iniciar sesion para guardar favoritos.')
+      setActionMessage('Necesitas iniciar sesión para guardar favoritos.')
       return
     }
     setActionMessage(null)
@@ -341,15 +341,15 @@ export default function CareerDetailPage() {
         credentials: 'include'
       })
       if (response.status === 401) {
-        setActionMessage('Necesitas iniciar sesion para guardar favoritos.')
+        setActionMessage('Necesitas iniciar sesión para guardar favoritos.')
         return
       }
       if (response.status === 409) {
-        setActionMessage(isFavorite ? 'No esta en favoritos.' : 'Ya esta en favoritos.')
+        setActionMessage(isFavorite ? 'No está en favoritos.' : 'Ya está en favoritos.')
         return
       }
       if (response.status === 404) {
-        setActionMessage('No se encontro la carrera.')
+        setActionMessage('No se encontró la carrera.')
         return
       }
       if (!response.ok) {
@@ -500,11 +500,11 @@ export default function CareerDetailPage() {
                 </span>
                 <span className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  {program.university?.location ?? 'Ubicacion pendiente'}
+                  {program.university?.location ?? 'Ubicación pendiente'}
                 </span>
               </div>
               <p className="text-slate-600 mt-4 max-w-2xl">
-                Revisa el plan de estudios, materias por anio y opciones de inscripcion.
+                Revisa el plan de estudios, materias por año y opciones de inscripción.
               </p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 {isEnrolled ? (
@@ -584,7 +584,7 @@ export default function CareerDetailPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">Plan de estudios</h2>
-                <p className="text-slate-600">Materias organizadas por anio.</p>
+                <p className="text-slate-600">Materias organizadas por año.</p>
               </div>
               <div className="text-sm text-slate-500 bg-slate-100 px-3 py-2 rounded-xl">
                 Orden actual: Año
@@ -593,7 +593,7 @@ export default function CareerDetailPage() {
 
             {years.length === 0 && electivePools.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-600">
-                Esta carrera aun no tiene materias asociadas.
+                Esta carrera aún no tiene materias asociadas.
               </div>
             ) : (
               <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
@@ -611,7 +611,7 @@ export default function CareerDetailPage() {
                             : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
                         }`}
                       >
-                        {year}° Anio
+                        {year}° Año
                       </button>
                     ))}
                     {electivePools.map((pool) => (
@@ -634,10 +634,10 @@ export default function CareerDetailPage() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-slate-900">
                       {selectedYear !== null
-                        ? `${selectedYear}° Anio`
+                        ? `${selectedYear}° Año`
                         : selectedPoolId
                           ? electivePools.find((pool) => pool.id === selectedPoolId)?.name ?? 'Pool'
-                          : 'Selecciona un anio o pool'}
+                          : 'Selecciona un año o pool'}
                     </h3>
                     <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
                       {selectedYear !== null
@@ -661,7 +661,7 @@ export default function CareerDetailPage() {
                       )}
                     {selectedYear !== null && selectedSubjects.length === 0 && (
                       <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-600">
-                        No hay materias para este anio.
+                        No hay materias para este año.
                       </div>
                     )}
                     {selectedPoolId && selectedPoolSubjects.length === 0 && (
@@ -677,7 +677,7 @@ export default function CareerDetailPage() {
 
           <aside className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-slate-900">Acciones rapidas</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Acciones rápidas</h3>
               <div className="mt-4 space-y-3 text-sm">
                 <button className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 transition-colors">
                   Ver requisitos de ingreso
@@ -688,19 +688,19 @@ export default function CareerDetailPage() {
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 transition-colors">
-                  Contactar coordinacion
+                  Contactar coordinación
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             <div className="bg-gradient-to-br from-slate-900 to-slate-700 text-white rounded-2xl p-6">
-              <h3 className="text-lg font-semibold">Inscripcion y seguimiento</h3>
+              <h3 className="text-lg font-semibold">Inscripción y seguimiento</h3>
               <p className="text-slate-200 text-sm mt-2">
-                Proximo formulario, requisitos y calendario se conectan mas adelante.
+                Próximo formulario, requisitos y calendario se conectan más adelante.
               </p>
               <div className="mt-4 space-y-3">
-                {['Estado de admision', 'Documentacion', 'Seguimiento'].map((item) => (
+                {['Estado de admisión', 'Documentación', 'Seguimiento'].map((item) => (
                   <div key={item} className="bg-white/10 rounded-xl px-4 py-3 flex items-center justify-between text-sm">
                     <span>{item}</span>
                     <BookOpen className="w-4 h-4 text-white/70" />

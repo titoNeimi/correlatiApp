@@ -45,7 +45,7 @@ export const getApiErrorMessage = (error: unknown, fallback = 'Error al cargar d
     }
     if (error.status === 401) return 'No autorizado'
     if (error.status === 403) return 'Acceso denegado'
-    if (error.status === 404) return 'No se encontro el recurso'
+    if (error.status === 404) return 'No se encontró el recurso'
     if (error.status && error.status >= 500) return 'Error del servidor'
     return fallback
   }

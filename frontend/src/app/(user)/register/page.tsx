@@ -50,10 +50,10 @@ export default function RegisterPage() {
     if (!password) newErrors.password = 'Campo requerido'
     if (!password2) newErrors.password2 = 'Campo requerido'
 
-    if (password?.length < 8) newErrors.password = 'La contrasena debe tener al menos 8 caracteres'
+    if (password?.length < 8) newErrors.password = 'La contraseña debe tener al menos 8 caracteres'
 
     if (!newErrors.password2 && password && password2 && password !== password2) {
-      newErrors.password2 = 'Las contrasenas no coinciden'
+      newErrors.password2 = 'Las contraseñas no coinciden'
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -92,13 +92,13 @@ export default function RegisterPage() {
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl sm:p-10 lg:order-1">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Crea tu cuenta</h1>
-            <p className="mt-2 text-sm text-slate-600">Te tomara menos de un minuto empezar.</p>
+            <p className="mt-2 text-sm text-slate-600">Te tomará menos de un minuto empezar.</p>
           </div>
 
           <form noValidate onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-semibold text-slate-700">
-                Correo electronico
+                Correo electrónico
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -123,7 +123,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-semibold text-slate-700">
-                Contrasena
+                Contraseña
               </label>
               <div className="relative">
                 <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                       ? 'border-red-300 focus:border-red-400'
                       : 'border-slate-200 focus:border-slate-400'
                   }`}
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                 />
               </div>
               {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
@@ -148,7 +148,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="password2" className="text-sm font-semibold text-slate-700">
-                Repetir contrasena
+                Repetir contraseña
               </label>
               <div className="relative">
                 <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -165,7 +165,7 @@ export default function RegisterPage() {
                       ? 'border-red-300 focus:border-red-400'
                       : 'border-slate-200 focus:border-slate-400'
                   }`}
-                  placeholder="Repite la contrasena"
+                  placeholder="Repite la contraseña"
                 />
               </div>
               {errors.password2 && <p className="text-xs text-red-600">{errors.password2}</p>}
@@ -199,7 +199,7 @@ export default function RegisterPage() {
           <p className="mt-7 text-center text-sm text-slate-600">
             Ya tienes cuenta?{' '}
             <Link href="/login" className="font-semibold text-slate-900 hover:text-slate-700">
-              Inicia sesion aqui
+              Inicia sesión aquí
             </Link>
           </p>
         </section>
@@ -222,7 +222,7 @@ export default function RegisterPage() {
             <div className="mt-8 grid gap-3">
               {[
                 'Explora carreras y universidades en un solo lugar',
-                'Define tu plan academico con una vista clara',
+                'Define tu plan académico con una vista clara',
                 'Mantiene tu progreso sincronizado',
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
@@ -235,7 +235,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              Al registrarte aceptas continuar con las politicas de uso de la plataforma.
+              Al registrarte aceptas continuar con las políticas de uso de la plataforma.
             </div>
           </div>
         </section>

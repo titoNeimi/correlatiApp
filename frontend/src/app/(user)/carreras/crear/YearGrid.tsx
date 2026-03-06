@@ -474,7 +474,7 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
     return (
       <div className="w-full">
         <div className="rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 via-white to-green-100 p-10 md:p-16 text-center shadow-sm">
-          <p className="text-sm uppercase tracking-[0.2em] text-green-700">Creacion exitosa</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-green-700">Creación exitosa</p>
           <h1 className="mt-4 text-4xl md:text-5xl font-bold text-green-900">
             {degreeData?.degreeName}
           </h1>
@@ -590,7 +590,7 @@ const YearGrid: React.FC<{ onResetWizard?: () => void }> = ({ onResetWizard }) =
           <div className="mb-4">
             <h2 className="text-xl font-semibold text-slate-900">Pools de electivas</h2>
             <p className="text-sm text-slate-600">
-              Agrupa electivas por tematica y asigna materias a cada pool.
+              Agrupa electivas por temática y asigna materias a cada pool.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">

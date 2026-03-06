@@ -72,7 +72,7 @@ function LoginPageContent() {
       })
 
       if (!result.ok) {
-        setAuthError('Usuario o contrasena incorrectos')
+        setAuthError('Usuario o contraseña incorrectos')
         return
       }
 
@@ -85,8 +85,8 @@ function LoginPageContent() {
 
       router.push(safeNextPath)
     } catch (error) {
-      console.error('Error al iniciar sesion:', error)
-      setAuthError('Usuario o contrasena incorrectos')
+      console.error('Error al iniciar sesión:', error)
+      setAuthError('Usuario o contraseña incorrectos')
     } finally {
       setIsLoading(false)
     }
@@ -107,7 +107,7 @@ function LoginPageContent() {
 
             <h1 className="mt-4 text-3xl font-bold text-slate-900 sm:text-4xl">Bienvenido de nuevo</h1>
             <p className="mt-3 max-w-xl text-slate-600">
-              Inicia sesion para seguir tu plan de carrera, revisar correlativas y continuar donde te quedaste.
+              Inicia sesión para seguir tu plan de carrera, revisar correlativas y continuar donde te quedaste.
             </p>
 
             <div className="mt-8 space-y-3">
@@ -125,14 +125,14 @@ function LoginPageContent() {
                   <ArrowRight className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">Acceso rapido</p>
+                  <p className="font-semibold text-slate-900">Acceso rápido</p>
                   <p className="text-sm text-slate-600">Entra a tus carreras, favoritas y plan en segundos.</p>
                 </div>
               </div>
             </div>
 
             <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              No tienes cuenta todavia?{' '}
+              No tienes cuenta todavía?{' '}
               <Link href={registerHref} className="font-semibold text-slate-900 hover:text-slate-700">
                 Registrate gratis
               </Link>
@@ -142,14 +142,14 @@ function LoginPageContent() {
 
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl sm:p-10">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Iniciar sesion</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Iniciar sesión</h2>
             <p className="mt-2 text-sm text-slate-600">Ingresa tus credenciales para continuar.</p>
           </div>
 
           <form noValidate onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-semibold text-slate-700">
-                Correo electronico
+                Correo electrónico
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -174,7 +174,7 @@ function LoginPageContent() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-semibold text-slate-700">
-                Contrasena
+                Contraseña
               </label>
               <div className="relative">
                 <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -191,7 +191,7 @@ function LoginPageContent() {
                       ? 'border-red-300 focus:border-red-400'
                       : 'border-slate-200 focus:border-slate-400'
                   }`}
-                  placeholder="Ingresa tu contrasena"
+                  placeholder="Ingresa tu contraseña"
                 />
               </div>
               {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
@@ -199,7 +199,7 @@ function LoginPageContent() {
 
             <div className="text-right">
               <Link href="/forgot-password" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
-                Olvidaste tu contrasena?
+                Olvidaste tu contraseña?
               </Link>
             </div>
 
